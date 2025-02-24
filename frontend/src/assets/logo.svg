@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <g transform="translate(25, 35)">
+    <!-- First red shape -->
+    <path d="M20 70 H0 L37.5 5 H63.5 L71.2 17.9 L60.6 35.7 L49.7 17.2 L20 70Z" fill="#E9423A"/>
+    
+    <!-- Second red shape -->
+    <path d="M85.2 8.2 H106.8 L69 73.8 H52.4 L38.5 50.4 L49.1 32.6 L60 51.1 L85.2 8.2Z" fill="#E9423A"/>
+  </g>
+</svg>
