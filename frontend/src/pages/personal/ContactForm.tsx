@@ -92,10 +92,10 @@ function ContactForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                classNames={{
-                    input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                    inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                  }}
+             classNames={{
+                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
+                }}
                 isRequired
               />
             </div>
