@@ -160,7 +160,7 @@ function ByPanelsForm() {
           <CardBody className="p-6">
             <div className="space-y-4">
               <div className="flex gap-4">
-                <div className="flex-1">
+                <div className="flex-1 font-electrolize">
                   <Input
                     type="number"
                     size="lg"
@@ -170,8 +170,8 @@ function ByPanelsForm() {
                     isReadOnly
                     endContent={<div className="text-default-400">Panels</div>}
                     classNames={{
-                      input: "bg-[#333333] text-white",
-                      inputWrapper: "bg-[#333333] border-2 border-gray-600",
+                      input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                      inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
                     }}
                   />
                 </div>
@@ -185,8 +185,8 @@ function ByPanelsForm() {
                     isReadOnly
                     startContent={<div className="text-default-400">$</div>}
                     classNames={{
-                      input: "bg-[#333333] text-white",
-                      inputWrapper: "bg-[#333333] border-2 border-gray-600",
+                      input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                      inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
                     }}
                   />
                 </div>

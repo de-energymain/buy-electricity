@@ -48,7 +48,7 @@ function BusinessContactForm() {
 
   return (
     <div className="w-full md:w-1/2 bg-[#202020] p-6 md:p-12 flex flex-col justify-center">
-            <div className="flex justify-center">
+      <div className="flex justify-center">
         <div className="w-24">
           <img src={logo} alt="logo" />
         </div>
@@ -66,7 +66,7 @@ function BusinessContactForm() {
         </CardHeader>
         <CardBody className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
+            <div className="relative font-electrolize">
               <Input
                 type="text"
                 size="lg"
@@ -77,8 +77,8 @@ function BusinessContactForm() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
+                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
                 }}
                 isRequired
               />
@@ -95,8 +95,8 @@ function BusinessContactForm() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
+                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
                 }}
                 isRequired
               />
@@ -113,8 +113,8 @@ function BusinessContactForm() {
                   setFormData({ ...formData, company: e.target.value })
                 }
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
+                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
                 }}
                 isRequired
               />
@@ -131,8 +131,8 @@ function BusinessContactForm() {
                   setFormData({ ...formData, title: e.target.value })
                 }
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
+                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
                 }}
                 isRequired
               />
@@ -148,8 +148,9 @@ function BusinessContactForm() {
                   setFormData({ ...formData, country: e.target.value })
                 }
                 classNames={{
-                  trigger: "bg-[#333333] border-2 border-gray-600",
-                  value: "text-white",
+                  trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
+                  value: "text-white !text-white", // Force selected value to stay white
+                  popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
                 }}
                 isRequired
               >
@@ -171,8 +172,9 @@ function BusinessContactForm() {
                   setFormData({ ...formData, state: e.target.value })
                 }
                 classNames={{
-                  trigger: "bg-[#333333] border-2 border-gray-600",
-                  value: "text-white",
+                  trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
+                  value: "text-white !text-white", // Force selected value to stay white
+                  popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
                 }}
                 isRequired
               >
@@ -194,8 +196,9 @@ function BusinessContactForm() {
                   setFormData({ ...formData, city: e.target.value })
                 }
                 classNames={{
-                  trigger: "bg-[#333333] border-2 border-gray-600",
-                  value: "text-white",
+                  trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
+                  value: "text-white !text-white", // Force selected value to stay white
+                  popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
                 }}
                 isRequired
               >
@@ -218,8 +221,8 @@ function BusinessContactForm() {
                   setFormData({ ...formData, phone: e.target.value })
                 }
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
+                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
                 }}
               />
             </div>
@@ -235,8 +238,8 @@ function BusinessContactForm() {
                   setFormData({ ...formData, properties: e.target.value })
                 }
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
+                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
                 }}
               />
             </div>

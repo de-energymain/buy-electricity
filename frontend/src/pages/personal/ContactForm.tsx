@@ -81,7 +81,7 @@ function ContactForm() {
           </div>
         </CardHeader>
         <CardBody className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 font-electrolize">
             <div className="relative">
               <Input
                 type="text"
@@ -93,14 +93,14 @@ function ContactForm() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
-                }}
+                    input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                    inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
+                  }}
                 isRequired
               />
             </div>
 
-            <div className="relative">
+            <div className="relative font-electrolize">
               <Input
                 type="email"
                 size="lg"
@@ -112,9 +112,9 @@ function ContactForm() {
                 }
                 isRequired
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
-                }}
+                    input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                    inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
+                  }}
               />
             </div>
 
@@ -129,9 +129,10 @@ function ContactForm() {
                 }
                 isRequired
                 classNames={{
-                  trigger: "bg-[#333333] border-2 border-gray-600",
-                  value: "text-white",
-                }}
+                    trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
+                    value: "text-white !text-white", // Force selected value to stay white
+                    popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
+                  }}
               >
                 {countries.map((country) => (
                   <SelectItem key={country.value} value={country.value}>
@@ -152,9 +153,10 @@ function ContactForm() {
                 }
                 isRequired
                 classNames={{
-                  trigger: "bg-[#333333] border-2 border-gray-600",
-                  value: "text-white",
-                }}
+                    trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
+                    value: "text-white !text-white", // Force selected value to stay white
+                    popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
+                  }}
               >
                 {states.map((state) => (
                   <SelectItem key={state.value} value={state.value}>
@@ -175,9 +177,10 @@ function ContactForm() {
                 }
                 isRequired
                 classNames={{
-                  trigger: "bg-[#333333] border-2 border-gray-600",
-                  value: "text-white",
-                }}
+                    trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
+                    value: "text-white !text-white", // Force selected value to stay white
+                    popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
+                  }}
               >
                 {cities.map((city) => (
                   <SelectItem key={city.value} value={city.value}>
@@ -198,9 +201,9 @@ function ContactForm() {
                   setFormData({ ...formData, phone: e.target.value })
                 }
                 classNames={{
-                  input: "bg-[#333333] text-white",
-                  inputWrapper: "bg-[#333333] border-2 border-gray-600",
-                }}
+                    input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                    inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
+                  }}
               />
             </div>
 
