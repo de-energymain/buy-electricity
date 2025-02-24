@@ -10,15 +10,15 @@ import {
   cardClasses,
   secondaryButtonClasses,
   formElementTransition
-} from "../../shared/styles.jsx";
+} from "../../shared/styles";
 
 function ByPanelsForm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [panelCount, setPanelCount] = useState(0);
-  const [estimatedCost, setEstimatedCost] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [panelCount, setPanelCount] = useState<number>(0);
+  const [estimatedCost, setEstimatedCost] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isNavigating, setIsNavigating] = useState<boolean>(false);
 
   useEffect(() => {
     // Extract kWh from query params

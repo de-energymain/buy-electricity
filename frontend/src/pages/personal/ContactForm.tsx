@@ -19,7 +19,7 @@ import {
   cardClasses,
   secondaryButtonClasses,
   formElementTransition
-} from "../../shared/styles.jsx";
+} from "../../shared/styles";
 
 function ContactForm() {
   const [formData, setFormData] = useState({

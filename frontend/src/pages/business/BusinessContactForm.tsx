@@ -19,10 +19,24 @@ import {
   selectClasses, 
   cardClasses,
   formElementTransition
-} from "../../shared/styles.jsx";
+} from "../../shared/styles";
+
+interface FormData {
+  name: string;
+  email: string;
+  company: string;
+  title: string;
+  country: string;
+  state: string;
+  city: string;
+  phone: string;
+  properties: string;
+}
+
+type FormState = "idle" | "loading" | "success";
 
 function BusinessContactForm() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
     company: "",
@@ -34,7 +48,7 @@ function BusinessContactForm() {
     properties: "",
   });
 
-  const [formState, setFormState] = useState("idle"); // idle, loading, success
+  const [formState, setFormState] = useState<FormState>("idle");
 
   const countries = [
     { label: "United States", value: "USA" },
@@ -54,7 +68,7 @@ function BusinessContactForm() {
     { label: "Dubai", value: "Dubai" },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormState("loading");
     
@@ -198,9 +212,9 @@ function BusinessContactForm() {
                       placeholder="Country *"
                       variant="faded"
                       size="lg"
-                      selectedKeys={[formData.country]}
+                      selectedKeys={formData.country ? [formData.country] : []}
                       onChange={(e) =>
-                        setFormData({ ...formData, country: e.target.value })
+                        setFormData({ ...formData, country: e.target.value as string })
                       }
                       classNames={selectClasses}
                       isRequired
@@ -219,9 +233,9 @@ function BusinessContactForm() {
                       placeholder="State *"
                       variant="faded"
                       size="lg"
-                      selectedKeys={[formData.state]}
+                      selectedKeys={formData.state ? [formData.state] : []}
                       onChange={(e) =>
-                        setFormData({ ...formData, state: e.target.value })
+                        setFormData({ ...formData, state: e.target.value as string })
                       }
                       classNames={selectClasses}
                       isRequired
@@ -243,9 +257,9 @@ function BusinessContactForm() {
                       placeholder="City *"
                       variant="faded"
                       size="lg"
-                      selectedKeys={[formData.city]}
+                      selectedKeys={formData.city ? [formData.city] : []}
                       onChange={(e) =>
-                        setFormData({ ...formData, city: e.target.value })
+                        setFormData({ ...formData, city: e.target.value as string })
                       }
                       classNames={selectClasses}
                       isRequired
