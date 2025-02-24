@@ -18,7 +18,7 @@ import {
   selectClasses, 
   cardClasses,
   formElementTransition
-} from "../../shared/styles.jsx";
+} from "../../shared/styles";
 
 function ElectricityEstimateForm() {
   const [formData, setFormData] = useState({

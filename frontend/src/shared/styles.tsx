@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { motion } from "framer-motion";
 import logoBlack from "../assets/logo-black.png";
 
 // Background watermark component that can be reused across forms
-export const BackgroundWatermark = () => (
+export const BackgroundWatermark: React.FC = () => (
   <div 
     className="absolute right-0 bottom-0 w-full h-full pointer-events-none"
     style={{
@@ -30,8 +30,13 @@ export const formElementTransition = {
   whileTap: { scale: 0.97 }
 };
 
+// Types for the FormContainer props
+interface FormContainerProps {
+  children: ReactNode;
+}
+
 // Common container for all forms
-export const FormContainer = ({ children }) => (
+export const FormContainer: React.FC<FormContainerProps> = ({ children }) => (
   <motion.div 
     initial="initial"
     animate="animate"
