@@ -1,143 +1,3 @@
-
-// import {
-//   Button,
-//   Card,
-//   CardBody,
-//   CardHeader,
-//   Input,
-//   Select,
-//   SelectItem,
-// } from "@nextui-org/react";
-// import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import logo from "../../assets/logo.svg";
-
-// function ElectricityEstimateForm() {
-//   const [formData, setFormData] = useState({
-//     kwh: "",
-//     city: "Dubai",
-//     utility: "",
-//   });
-
-//   const cities = [
-//     { label: "Mumbai", value: "Mumbai" },
-//     { label: "Chennai", value: "Chennai" },
-//     { label: "Delhi", value: "Delhi" },
-//   ];
-
-//   const navigate = useNavigate();
-
-//   const handleEstimate = () => {
-//     navigate(`/by-panels?kwh=${formData.kwh}`);
-//   };
-
-//   return (
-//     <div className="w-full md:w-1/2 bg-[#202020] p-6 md:p-12 flex flex-col items-center">
-//       {/* Logo Section - Now properly centered */}
-//       <div className="flex justify-center">
-//         <div className="w-24">
-//           <img src={logo} alt="logo" />
-//         </div>
-//       </div>
-
-//       <Card className="max-w-md w-full shadow-sm bg-[#202020]">
-//         <CardHeader>
-//           <div className="mt-3 p-4 bg-[#202020] rounded-lg shadow-inner w-full">
-//             <h2 className="text-3xl font-bold text-center text-white mb-2 font-electrolize">
-//               Electricity Estimate
-//             </h2>
-//             <p className="text-sm text-white text-center font-inter">
-//               Get an estimate of how many panels you need to offset your
-//               electricity bill
-//             </p>
-//           </div>
-//         </CardHeader>
-//         <CardBody className="p-6">
-//           <div className="space-y-4">
-//             <div className="relative font-electrolize">
-//               <Input
-//                 type="number"
-//                 size="lg"
-//                 placeholder="Enter usage in kWh"
-//                 value={formData.kwh}
-//                 variant="bordered"
-//                 classNames={{
-//                   input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-//                   inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-//                 }}
-//                 endContent={<div className="text-default-400">kWh</div>}
-//                 onChange={(e) =>
-//                   setFormData({ ...formData, kwh: e.target.value })
-//                 }
-//               />
-//             </div>
-
-//             <div className="relative font-electrolize">
-//               <Select
-//                 placeholder="Select a city"
-//                 variant="bordered"
-//                 size="lg"
-//                 selectedKeys={[formData.city]}
-//                 classNames={{
-//                   trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
-//                   value: "text-white !text-white", // Force selected value to stay white
-//                   popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
-//                 }}
-//                 onChange={(e) =>
-//                   setFormData({ ...formData, city: e.target.value })
-//                 }
-//               >
-//                 {cities.map((city) => (
-//                   <SelectItem key={city.value} value={city.value}>
-//                     {city.label}
-//                   </SelectItem>
-//                 ))}
-//               </Select>
-//             </div>
-//             <div className="relative font-electrolize">
-//               <Input
-//                 type="text"
-//                 size="lg"
-//                 placeholder="Enter utility provider name"
-//                 variant="bordered"
-//                 value={formData.utility}
-//                 classNames={{
-//                   input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-//                   inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-//                 }}
-//                 onChange={(e) =>
-//                   setFormData({ ...formData, utility: e.target.value })
-//                 }
-//               />
-//             </div>
-//             <Button
-//               className="w-full bg-[#E9423A] text-white"
-//               onPress={handleEstimate}
-//             >
-//               Calculate Estimate
-//             </Button>
-
-//             <div className="mt-6 text-center">
-//               <p className="text-sm text-white font-inter">
-//                 Want to skip the estimate?{" "}
-//                 <a
-//                   href="#"
-//                   onClick={() => navigate("/contact")}
-//                   className="text-red-500 hover:underline"
-//                 >
-//                   Browse panels directly
-//                 </a>
-//               </p>
-//             </div>
-//           </div>
-//         </CardBody>
-//       </Card>
-//     </div>
-//   );
-// }
-
-// export default ElectricityEstimateForm;
-
 import {
   Button,
   Card,
@@ -146,11 +6,19 @@ import {
   Input,
   Select,
   SelectItem,
+  Spinner
 } from "@nextui-org/react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion"; // For smooth transitions
+import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/logo.svg";
+import { 
+  FormContainer, 
+  inputClasses, 
+  selectClasses, 
+  cardClasses,
+  formElementTransition
+} from "../../shared/styles.jsx";
 
 function ElectricityEstimateForm() {
   const [formData, setFormData] = useState({
@@ -164,7 +32,13 @@ function ElectricityEstimateForm() {
     utility: false
   });
   
+  const [touched, setTouched] = useState({
+    kwh: false,
+    utility: false
+  });
+  
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const cities = [
     { label: "Mumbai", value: "Mumbai" },
@@ -176,10 +50,6 @@ function ElectricityEstimateForm() {
 
   // Validate form whenever formData changes
   useEffect(() => {
-    validateForm();
-  }, [formData]);
-
-  const validateForm = () => {
     const newErrors = {
       kwh: !formData.kwh.trim(),
       utility: !formData.utility.trim()
@@ -187,27 +57,34 @@ function ElectricityEstimateForm() {
     
     setErrors(newErrors);
     setIsFormValid(!newErrors.kwh && !newErrors.utility);
-  };
+  }, [formData]);
 
   const handleEstimate = () => {
+    // Mark all fields as touched when attempting to submit
+    const allTouched = { kwh: true, utility: true };
+    setTouched(allTouched);
+    
     if (isFormValid) {
-      navigate(`/by-panels?kwh=${formData.kwh}`);
+      setIsSubmitting(true);
+      
+      // Add a subtle loading delay for better UX
+      setTimeout(() => {
+        setIsSubmitting(false);
+        navigate(`/by-panels?kwh=${formData.kwh}`);
+      }, 800);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+    // Mark field as touched when user interacts with it
+    setTouched({ ...touched, [field]: true });
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="w-full md:w-1/2 bg-[#202020] p-6 md:p-12 flex flex-col items-center"
-    >
-      {/* Logo Section - Now properly centered */}
-      <div className="flex justify-center">
+    <FormContainer>
+      {/* Logo Section */}
+      <div className="flex justify-center relative z-10">
         <motion.div 
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
@@ -218,7 +95,7 @@ function ElectricityEstimateForm() {
         </motion.div>
       </div>
 
-      <Card className="max-w-md w-full shadow-sm bg-[#202020]">
+      <Card className={cardClasses}>
         <CardHeader>
           <div className="mt-3 p-4 bg-[#202020] rounded-lg shadow-inner w-full">
             <h2 className="text-3xl font-bold text-center text-white mb-2 font-electrolize">
@@ -231,7 +108,14 @@ function ElectricityEstimateForm() {
           </div>
         </CardHeader>
         <CardBody className="p-6">
-          <div className="space-y-4">
+          <div className="space-y-4 relative">
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-[#202020] bg-opacity-80 flex flex-col items-center justify-center z-20 rounded-lg">
+                <Spinner size="lg" color="danger" className="mb-4" />
+                <p className="text-white">Calculating estimate...</p>
+              </div>
+            )}
+            
             <div className="relative font-electrolize">
               <Input
                 type="number"
@@ -239,15 +123,13 @@ function ElectricityEstimateForm() {
                 placeholder="Enter usage in kWh"
                 value={formData.kwh}
                 variant="bordered"
-                isInvalid={errors.kwh}
-                errorMessage={errors.kwh ? "kWh is required" : ""}
-                classNames={{
-                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                  errorMessage: "text-red-500"
-                }}
+                isInvalid={touched.kwh && errors.kwh}
+                errorMessage={touched.kwh && errors.kwh ? "kWh is required" : ""}
+                classNames={inputClasses}
                 endContent={<div className="text-default-400">kWh</div>}
                 onChange={(e) => handleInputChange("kwh", e.target.value)}
+                onBlur={() => setTouched({ ...touched, kwh: true })}
+                isDisabled={isSubmitting}
               />
             </div>
 
@@ -257,12 +139,9 @@ function ElectricityEstimateForm() {
                 variant="bordered"
                 size="lg"
                 selectedKeys={[formData.city]}
-                classNames={{
-                  trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white",
-                  value: "text-white !text-white",
-                  popoverContent: "bg-[#333333] text-[#E2E2E2]",
-                }}
+                classNames={selectClasses}
                 onChange={(e) => handleInputChange("city", e.target.value)}
+                isDisabled={isSubmitting}
               >
                 {cities.map((city) => (
                   <SelectItem key={city.value} value={city.value}>
@@ -279,27 +158,29 @@ function ElectricityEstimateForm() {
                 placeholder="Enter utility provider name"
                 variant="bordered"
                 value={formData.utility}
-                isInvalid={errors.utility}
-                errorMessage={errors.utility ? "Utility provider is required" : ""}
-                classNames={{
-                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                  errorMessage: "text-red-500"
-                }}
+                isInvalid={touched.utility && errors.utility}
+                errorMessage={touched.utility && errors.utility ? "Utility provider is required" : ""}
+                classNames={inputClasses}
                 onChange={(e) => handleInputChange("utility", e.target.value)}
+                onBlur={() => setTouched({ ...touched, utility: true })}
+                isDisabled={isSubmitting}
               />
             </div>
             
             <motion.div
-              whileHover={{ scale: isFormValid ? 1.03 : 1 }}
-              whileTap={{ scale: isFormValid ? 0.97 : 1 }}
+              {...formElementTransition}
+              style={{ pointerEvents: isSubmitting ? 'none' : 'auto' }}
             >
               <Button
-                className={`w-full ${isFormValid ? 'bg-[#E9423A]' : 'bg-[#8F2320] opacity-70'} text-white transition-all duration-300`}
+                className={`w-full ${isFormValid || !Object.values(touched).some(t => t) ? 'bg-[#E9423A]' : 'bg-[#8F2320] opacity-70'} text-white transition-all duration-300`}
                 onPress={handleEstimate}
-                disabled={!isFormValid}
+                disabled={isSubmitting}
               >
-                Calculate Estimate
+                {isSubmitting ? (
+                  <Spinner color="white" size="sm" />
+                ) : (
+                  "Calculate Estimate"
+                )}
               </Button>
             </motion.div>
 
@@ -313,7 +194,10 @@ function ElectricityEstimateForm() {
                 Want to skip the estimate?{" "}
                 <a
                   href="#"
-                  onClick={() => navigate("/contact")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate("/contact");
+                  }}
                   className="text-red-500 hover:underline"
                 >
                   Browse panels directly
@@ -323,7 +207,7 @@ function ElectricityEstimateForm() {
           </div>
         </CardBody>
       </Card>
-    </motion.div>
+    </FormContainer>
   );
 }
 

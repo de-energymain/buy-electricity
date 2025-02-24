@@ -6,9 +6,20 @@ import {
   Input,
   Select,
   SelectItem,
+  Spinner,
+  Textarea,
 } from "@nextui-org/react";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle } from "lucide-react";
 import logo from "../../assets/logo.svg";
+import { 
+  FormContainer, 
+  inputClasses, 
+  selectClasses, 
+  cardClasses,
+  formElementTransition
+} from "../../shared/styles.jsx";
 
 function BusinessContactForm() {
   const [formData, setFormData] = useState({
@@ -22,6 +33,8 @@ function BusinessContactForm() {
     phone: "",
     properties: "",
   });
+
+  const [formState, setFormState] = useState("idle"); // idle, loading, success
 
   const countries = [
     { label: "United States", value: "USA" },
@@ -41,19 +54,26 @@ function BusinessContactForm() {
     { label: "Dubai", value: "Dubai" },
   ];
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setFormState("loading");
+    
+    // Simulate API call
+    setTimeout(() => {
+      console.log("Form submitted:", formData);
+      setFormState("success");
+    }, 2000);
   };
 
   return (
-    <div className="w-full md:w-1/2 bg-[#202020] p-6 md:p-12 flex flex-col justify-center">
-      <div className="flex justify-center">
+    <FormContainer>
+      <div className="flex justify-center relative z-10">
         <div className="w-24">
           <img src={logo} alt="logo" />
         </div>
       </div>
-      <Card className="max-w-md mx-auto w-full shadow-sm bg-[#202020]">
+
+      <Card className={cardClasses}>
         <CardHeader className="flex justify-center items-center flex-col">
           <div className="mt-3 p-4 bg-[#202020] rounded-lg shadow-inner w-full text-center">
             <h2 className="text-3xl font-bold text-white mb-2 font-electrolize">
@@ -65,192 +85,237 @@ function BusinessContactForm() {
           </div>
         </CardHeader>
         <CardBody className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative font-electrolize">
-              <Input
-                type="text"
-                size="lg"
-                placeholder="Name *"
-                variant="faded"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                classNames={{
-                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                }}
-                isRequired
-              />
-            </div>
-
-            <div className="relative">
-              <Input
-                type="email"
-                size="lg"
-                placeholder="Email *"
-                variant="faded"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                classNames={{
-                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                }}
-                isRequired
-              />
-            </div>
-
-            <div className="relative">
-              <Input
-                type="text"
-                size="lg"
-                placeholder="Company *"
-                variant="faded"
-                value={formData.company}
-                onChange={(e) =>
-                  setFormData({ ...formData, company: e.target.value })
-                }
-                classNames={{
-                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                }}
-                isRequired
-              />
-            </div>
-
-            <div className="relative">
-              <Input
-                type="text"
-                size="lg"
-                placeholder="Title *"
-                variant="faded"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                classNames={{
-                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                }}
-                isRequired
-              />
-            </div>
-
-            <div className="relative">
-              <Select
-                placeholder="Country *"
-                variant="faded"
-                size="lg"
-                selectedKeys={[formData.country]}
-                onChange={(e) =>
-                  setFormData({ ...formData, country: e.target.value })
-                }
-                classNames={{
-                  trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
-                  value: "text-white !text-white", // Force selected value to stay white
-                  popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
-                }}
-                isRequired
+          <AnimatePresence mode="wait">
+            {formState === "success" ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="flex flex-col items-center justify-center py-12"
               >
-                {countries.map((country) => (
-                  <SelectItem key={country.value} value={country.value}>
-                    {country.label}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
-
-            <div className="relative">
-              <Select
-                placeholder="State *"
-                variant="faded"
-                size="lg"
-                selectedKeys={[formData.state]}
-                onChange={(e) =>
-                  setFormData({ ...formData, state: e.target.value })
-                }
-                classNames={{
-                  trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
-                  value: "text-white !text-white", // Force selected value to stay white
-                  popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
-                }}
-                isRequired
+                <CheckCircle size={80} className="text-[#E9423A] mb-6" />
+                <h3 className="text-2xl font-bold text-white mb-2 text-center">
+                  Thank You!
+                </h3>
+                <p className="text-white text-center mb-6">
+                  Your business inquiry has been submitted. Our team will contact you shortly.
+                </p>
+                <Button 
+                  className="bg-[#E9423A] text-white"
+                  onPress={() => setFormState("idle")}
+                >
+                  Submit Another Inquiry
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.form 
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onSubmit={handleSubmit} 
+                className="space-y-4 font-electrolize relative"
               >
-                {states.map((state) => (
-                  <SelectItem key={state.value} value={state.value}>
-                    {state.label}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
+                {formState === "loading" && (
+                  <div className="absolute inset-0 bg-[#202020] bg-opacity-80 flex flex-col items-center justify-center z-20 rounded-lg">
+                    <Spinner size="lg" color="danger" className="mb-4" />
+                    <p className="text-white">Submitting your request...</p>
+                  </div>
+                )}
 
-            <div className="relative">
-              <Select
-                placeholder="City *"
-                variant="faded"
-                size="lg"
-                selectedKeys={[formData.city]}
-                onChange={(e) =>
-                  setFormData({ ...formData, city: e.target.value })
-                }
-                classNames={{
-                  trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white", // Ensure text stays white
-                  value: "text-white !text-white", // Force selected value to stay white
-                  popoverContent: "bg-[#333333] text-[#E2E2E2]", // Dropdown styling
-                }}
-                isRequired
-              >
-                {cities.map((city) => (
-                  <SelectItem key={city.value} value={city.value}>
-                    {city.label}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
+                {/* Name and Email - Side by side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      size="lg"
+                      placeholder="Name *"
+                      variant="faded"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      classNames={inputClasses}
+                      isRequired
+                      isDisabled={formState === "loading"}
+                    />
+                  </div>
 
-            <div className="relative">
-              <Input
-                type="tel"
-                size="lg"
-                placeholder="Phone"
-                variant="faded"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                classNames={{
-                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                }}
-              />
-            </div>
+                  <div className="relative">
+                    <Input
+                      type="email"
+                      size="lg"
+                      placeholder="Email *"
+                      variant="faded"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      classNames={inputClasses}
+                      isRequired
+                      isDisabled={formState === "loading"}
+                    />
+                  </div>
+                </div>
 
-            <div className="relative">
-              <Input
-                type="text"
-                size="lg"
-                placeholder="Tell us about your properties"
-                variant="faded"
-                value={formData.properties}
-                onChange={(e) =>
-                  setFormData({ ...formData, properties: e.target.value })
-                }
-                classNames={{
-                  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
-                }}
-              />
-            </div>
+                {/* Company and Title - Side by side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      size="lg"
+                      placeholder="Company *"
+                      variant="faded"
+                      value={formData.company}
+                      onChange={(e) =>
+                        setFormData({ ...formData, company: e.target.value })
+                      }
+                      classNames={inputClasses}
+                      isRequired
+                      isDisabled={formState === "loading"}
+                    />
+                  </div>
 
-            <Button type="submit" className="w-full bg-[#E9423A] text-white">
-              Submit
-            </Button>
-          </form>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      size="lg"
+                      placeholder="Title *"
+                      variant="faded"
+                      value={formData.title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
+                      classNames={inputClasses}
+                      isRequired
+                      isDisabled={formState === "loading"}
+                    />
+                  </div>
+                </div>
+
+                {/* Country and State - Side by side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Select
+                      placeholder="Country *"
+                      variant="faded"
+                      size="lg"
+                      selectedKeys={[formData.country]}
+                      onChange={(e) =>
+                        setFormData({ ...formData, country: e.target.value })
+                      }
+                      classNames={selectClasses}
+                      isRequired
+                      isDisabled={formState === "loading"}
+                    >
+                      {countries.map((country) => (
+                        <SelectItem key={country.value} value={country.value}>
+                          {country.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="relative">
+                    <Select
+                      placeholder="State *"
+                      variant="faded"
+                      size="lg"
+                      selectedKeys={[formData.state]}
+                      onChange={(e) =>
+                        setFormData({ ...formData, state: e.target.value })
+                      }
+                      classNames={selectClasses}
+                      isRequired
+                      isDisabled={formState === "loading"}
+                    >
+                      {states.map((state) => (
+                        <SelectItem key={state.value} value={state.value}>
+                          {state.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+
+                {/* City and Phone - Side by side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Select
+                      placeholder="City *"
+                      variant="faded"
+                      size="lg"
+                      selectedKeys={[formData.city]}
+                      onChange={(e) =>
+                        setFormData({ ...formData, city: e.target.value })
+                      }
+                      classNames={selectClasses}
+                      isRequired
+                      isDisabled={formState === "loading"}
+                    >
+                      {cities.map((city) => (
+                        <SelectItem key={city.value} value={city.value}>
+                          {city.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="relative">
+                    <Input
+                      type="tel"
+                      size="lg"
+                      placeholder="Phone"
+                      variant="faded"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
+                      classNames={inputClasses}
+                      isDisabled={formState === "loading"}
+                    />
+                  </div>
+                </div>
+
+                {/* Properties - Full width textarea */}
+                <div className="relative">
+                  <Textarea
+                    placeholder="Tell us about your properties"
+                    variant="bordered"
+                    value={formData.properties}
+                    onChange={(e) =>
+                      setFormData({ ...formData, properties: e.target.value })
+                    }
+                    classNames={{
+                      input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
+                      inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2] min-h-[120px]",
+                    }}
+                    isDisabled={formState === "loading"}
+                    minRows={3}
+                    size="lg"
+                  />
+                </div>
+
+                <motion.div
+                  {...formElementTransition}
+                  style={{ pointerEvents: formState === "loading" ? 'none' : 'auto' }}
+                >
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-[#E9423A] text-white"
+                    disabled={formState === "loading"}
+                  >
+                    {formState === "loading" ? (
+                      <Spinner color="white" size="sm" />
+                    ) : (
+                      "Submit"
+                    )}
+                  </Button>
+                </motion.div>
+              </motion.form>
+            )}
+          </AnimatePresence>
         </CardBody>
       </Card>
-    </div>
+    </FormContainer>
   );
 }
 
