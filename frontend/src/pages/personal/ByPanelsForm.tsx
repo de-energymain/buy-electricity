@@ -15,37 +15,43 @@ import {
 function ByPanelsForm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [panelCount, setPanelCount] = useState<number>(0);
-  const [estimatedCost, setEstimatedCost] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isNavigating, setIsNavigating] = useState<boolean>(false);
+  const [panelCount, setPanelCount] = useState(0);
+  const [estimatedCost, setEstimatedCost] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
-    // Extract kWh from query params
+    // Extract monthly usage from query params
     const queryParams = new URLSearchParams(location.search);
-    const kwhInput = parseFloat(queryParams.get("kwh") || "0");
+    const usageInput = parseFloat(queryParams.get("kwh") || "0");
 
     // Show a loading state while calculating
     setIsLoading(true);
-    
+
     setTimeout(() => {
-      if (kwhInput > 0) {
-        // Calculation: Panels needed = kWh per day / 3
-        const requiredPanels = Math.ceil(kwhInput / 3); // Round up
+      if (usageInput > 0) {
+        /*
+          Calculation using the formula:
+          - 3.75 kWh per kW per day × 80% = 3.0 kWh per day per kW
+          - 3 kWh/day → 3 × 30 = 90 kWh/month per kW
+          - requiredCapacity (in kW) = monthlyUsage / 90
+          - For simplicity, 1 kW = 1 "panel"
+        */
+        const effectiveMonthlyProduction = 3.75 * 0.8 * 30; // = 90
+        const requiredCapacity = usageInput / effectiveMonthlyProduction;
+        const requiredPanels = Math.ceil(requiredCapacity);
         setPanelCount(requiredPanels);
 
-        // Calculation: Cost = Panels × $525
+        // Cost = Panels × $525
         const totalCost = requiredPanels * 525;
         setEstimatedCost(totalCost);
       }
       setIsLoading(false);
-    }, 1000); // Add a slight delay for loading effect
+    }, 1000); // Slight delay for loading effect
   }, [location.search]);
 
   const handleBuyPanels = () => {
     setIsNavigating(true);
-    
-    // Add a short delay for visual feedback before navigating
     setTimeout(() => {
       navigate("/contact");
     }, 800);
@@ -76,8 +82,7 @@ function ByPanelsForm() {
                 Electricity Estimate
               </h2>
               <p className="text-sm text-white text-center font-inter">
-                Based on your current usage and your city and utility service,
-                you need
+                Based on your monthly usage and utility service, you need:
               </p>
             </div>
           </CardHeader>
@@ -89,15 +94,16 @@ function ByPanelsForm() {
                   <p className="text-white">Calculating your estimate...</p>
                 </div>
               )}
-              
+
               {isNavigating && (
                 <div className="absolute inset-0 bg-[#202020] bg-opacity-80 flex flex-col items-center justify-center z-20 rounded-lg">
                   <Spinner size="lg" color="danger" className="mb-4" />
                   <p className="text-white">Processing...</p>
                 </div>
               )}
-              
+
               <div className="flex gap-4">
+                {/* Panels Required */}
                 <div className="flex-1 font-electrolize">
                   <Input
                     type="number"
@@ -110,7 +116,8 @@ function ByPanelsForm() {
                     classNames={inputClasses}
                   />
                 </div>
-                <div className="flex-1">
+                {/* Estimated Cost */}
+                <div className="flex-1 font-electrolize">
                   <Input
                     type="text"
                     size="lg"
@@ -118,7 +125,6 @@ function ByPanelsForm() {
                     value={estimatedCost ? `$${estimatedCost}` : ""}
                     variant="faded"
                     isReadOnly
-                    startContent={<div className="text-default-400">$</div>}
                     classNames={inputClasses}
                   />
                 </div>
