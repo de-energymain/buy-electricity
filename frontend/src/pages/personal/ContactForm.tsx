@@ -22,7 +22,7 @@ import {
 } from "../../shared/styles";
 
 // Simple email validation
-const isValidEmail = (email) =>
+const isValidEmail = (email: string) =>
   /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
 
 // Brevo API configuration
@@ -40,25 +40,47 @@ type ContactFormData = {
   properties?: string; // Optional field
 };
 
+// Add a matching error type
+type ContactFormErrors = {
+  name?: string;
+  email?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  phoneCode?: string;
+  phone?: string;
+  properties?: string;
+};
+
+// Country type
+type Country = {
+  name: string;
+  flag: string;
+  callingCode: string;
+};
+
+type FormState = "idle" | "loading" | "success";
+type EmailStatus = null | "sending" | "sent" | "failed";
+
 function ContactForm() {
   const [formData, setFormData] = useState<ContactFormData>({
-  name: "",
-  email: "",
-  country: "",
-  state: "",
-  city: "",
-  phoneCode: "",
-  phone: "",
-  properties: "",
-});
+    name: "",
+    email: "",
+    country: "",
+    state: "",
+    city: "",
+    phoneCode: "",
+    phone: "",
+    properties: "",
+  });
 
-  const [errors, setErrors] = useState({});
-  const [formState, setFormState] = useState("idle"); // "idle" | "loading" | "success"
-  const [emailStatus, setEmailStatus] = useState(null); // null | "sending" | "sent" | "failed"
+  const [errors, setErrors] = useState<ContactFormErrors>({});
+  const [formState, setFormState] = useState<FormState>("idle");
+  const [emailStatus, setEmailStatus] = useState<EmailStatus>(null);
 
   // Data from APIs
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [states, setStates] = useState<string[]>([]);
   const [isFetchingStates, setIsFetchingStates] = useState(false);
 
   // 1) Fetch countries on mount
@@ -69,7 +91,7 @@ function ContactForm() {
         const data = await res.json();
         // Sort by country name
         const countryList = data
-          .map((country) => ({
+          .map((country: any) => ({
             name: country.name.common,
             flag: country.flags.svg,
             callingCode:
@@ -77,7 +99,7 @@ function ContactForm() {
                 ? `${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ""}`
                 : "",
           }))
-          .sort((a, b) => a.name.localeCompare(b.name));
+          .sort((a: Country, b: Country) => a.name.localeCompare(b.name));
         setCountries(countryList);
       } catch (error) {
         console.error("Error fetching countries:", error);
@@ -99,7 +121,7 @@ function ContactForm() {
           });
           const data = await res.json();
           if (!data.error && data.data && data.data.states) {
-            setStates(data.data.states.map((s) => s.name));
+            setStates(data.data.states.map((s: any) => s.name));
           } else {
             setStates([]);
           }
@@ -130,11 +152,11 @@ function ContactForm() {
     if (Object.keys(newErrors).length !== Object.keys(errors).length) {
       setErrors(newErrors);
     }
-  }, [formData]);
+  }, [formData, errors]);
 
   // Validate form fields
-  const validateForm = () => {
-    const newErrors = {};
+  const validateForm = (): ContactFormErrors => {
+    const newErrors: ContactFormErrors = {};
     if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.email.trim() || !isValidEmail(formData.email)) {
       newErrors.email = "Valid email is required";
@@ -238,7 +260,7 @@ function ContactForm() {
   };
 
   // On form submit
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors = validateForm();
     setErrors(newErrors);
@@ -264,7 +286,7 @@ function ContactForm() {
   };
 
   // Helper to update formData
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: keyof ContactFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -410,7 +432,7 @@ function ContactForm() {
                       classNames={selectClasses}
                       selectedKeys={formData.country ? [formData.country] : []}
                       onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] || "";
+                        const selected = Array.from(keys)[0]?.toString() || "";
                         handleInputChange("country", selected);
                         // Clear state when country changes
                         if (selected !== formData.country) {
@@ -445,7 +467,7 @@ function ContactForm() {
                       classNames={selectClasses}
                       selectedKeys={formData.state ? [formData.state] : []}
                       onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] || "";
+                        const selected = Array.from(keys)[0]?.toString() || "";
                         handleInputChange("state", selected);
                       }}
                     >
@@ -495,7 +517,7 @@ function ContactForm() {
                       classNames={selectClasses}
                       selectedKeys={formData.phoneCode ? [formData.phoneCode] : []}
                       onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] || "";
+                        const selected = Array.from(keys)[0]?.toString() || "";
                         handleInputChange("phoneCode", selected);
                       }}
                     >
