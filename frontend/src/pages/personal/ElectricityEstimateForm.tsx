@@ -4,18 +4,15 @@ import {
   CardBody,
   CardHeader,
   Input,
-  Select,
-  SelectItem,
   Spinner
 } from "@nextui-org/react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import logo from "../../assets/logo.svg";
 import { 
   FormContainer, 
   inputClasses, 
-  selectClasses, 
   cardClasses,
   formElementTransition
 } from "../../shared/styles";
@@ -23,7 +20,6 @@ import {
 function ElectricityEstimateForm() {
   const [formData, setFormData] = useState({
     kwh: "",
-    city: "Dubai",
     utility: "",
   });
   
@@ -40,12 +36,6 @@ function ElectricityEstimateForm() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const cities = [
-    { label: "Mumbai", value: "Mumbai" },
-    { label: "Chennai", value: "Chennai" },
-    { label: "Delhi", value: "Delhi" },
-  ];
-
   const navigate = useNavigate();
 
   // Validate form whenever formData changes
@@ -61,8 +51,7 @@ function ElectricityEstimateForm() {
 
   const handleEstimate = () => {
     // Mark all fields as touched when attempting to submit
-    const allTouched = { kwh: true, utility: true };
-    setTouched(allTouched);
+    setTouched({ kwh: true, utility: true });
     
     if (isFormValid) {
       setIsSubmitting(true);
@@ -70,6 +59,7 @@ function ElectricityEstimateForm() {
       // Add a subtle loading delay for better UX
       setTimeout(() => {
         setIsSubmitting(false);
+        // Pass the monthly usage (kWh) as query parameter
         navigate(`/by-panels?kwh=${formData.kwh}`);
       }, 800);
     }
@@ -77,7 +67,6 @@ function ElectricityEstimateForm() {
 
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
-    // Mark field as touched when user interacts with it
     setTouched({ ...touched, [field]: true });
   };
 
@@ -120,11 +109,11 @@ function ElectricityEstimateForm() {
               <Input
                 type="number"
                 size="lg"
-                placeholder="Enter usage in kWh"
+                placeholder="Enter monthly usage in kWh"
                 value={formData.kwh}
                 variant="bordered"
                 isInvalid={touched.kwh && errors.kwh}
-                errorMessage={touched.kwh && errors.kwh ? "kWh is required" : ""}
+                errorMessage={touched.kwh && errors.kwh ? "Usage is required" : ""}
                 classNames={inputClasses}
                 endContent={<div className="text-default-400">kWh</div>}
                 onChange={(e) => handleInputChange("kwh", e.target.value)}
@@ -133,24 +122,6 @@ function ElectricityEstimateForm() {
               />
             </div>
 
-            <div className="relative font-electrolize">
-              <Select
-                placeholder="Select a city"
-                variant="bordered"
-                size="lg"
-                selectedKeys={[formData.city]}
-                classNames={selectClasses}
-                onChange={(e) => handleInputChange("city", e.target.value)}
-                isDisabled={isSubmitting}
-              >
-                {cities.map((city) => (
-                  <SelectItem key={city.value} value={city.value}>
-                    {city.label}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
-            
             <div className="relative font-electrolize">
               <Input
                 type="text"
