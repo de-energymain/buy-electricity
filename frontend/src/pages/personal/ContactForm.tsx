@@ -29,17 +29,28 @@ const isValidEmail = (email) =>
 const BREVO_API_KEY = "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"; // Replace with your actual API key
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
+type ContactFormData = {
+  name: string;
+  email: string;
+  country: string;
+  state: string;
+  city: string;
+  phoneCode: string;
+  phone: string;
+  properties?: string; // Optional field
+};
+
 function ContactForm() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    country: "",
-    state: "",
-    city: "",
-    phoneCode: "",
-    phone: "",
-    properties: "",
-  });
+  const [formData, setFormData] = useState<ContactFormData>({
+  name: "",
+  email: "",
+  country: "",
+  state: "",
+  city: "",
+  phoneCode: "",
+  phone: "",
+  properties: "",
+});
 
   const [errors, setErrors] = useState({});
   const [formState, setFormState] = useState("idle"); // "idle" | "loading" | "success"
