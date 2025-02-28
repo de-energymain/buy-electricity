@@ -42,7 +42,7 @@ function ElectricityEstimateForm() {
   useEffect(() => {
     const newErrors = {
       kwh: !formData.kwh.trim(),
-     // utility: !formData.utility.trim()
+      utility: !formData.utility.trim()  // Uncommented this line
     };
     
     setErrors(newErrors);
@@ -121,8 +121,6 @@ function ElectricityEstimateForm() {
                 isDisabled={isSubmitting}
               />
             </div>
-
-           
             
             <motion.div
               {...formElementTransition}
