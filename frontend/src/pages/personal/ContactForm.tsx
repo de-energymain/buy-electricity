@@ -448,7 +448,7 @@ function ContactForm() {
                   </div>
                 </div>
 
-                {/* Row 2: Country & State */}
+                {/* Row 2: Country, State & City */}
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex-1">
                     <Select
@@ -512,26 +512,25 @@ function ContactForm() {
                       )}
                     </Select>
                   </div>
+                  
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      size="lg"
+                      placeholder="City *"
+                      variant="faded"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange("city", e.target.value)}
+                      onBlur={(e) => handleInputChange("city", e.target.value)}
+                      classNames={inputClasses}
+                      isInvalid={!!errors.city}
+                      errorMessage={errors.city}
+                      isDisabled={formState === "loading"}
+                    />
+                  </div>
                 </div>
 
-                {/* Row 3: City */}
-                <div>
-                  <Input
-                    type="text"
-                    size="lg"
-                    placeholder="City *"
-                    variant="faded"
-                    value={formData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    onBlur={(e) => handleInputChange("city", e.target.value)}
-                    classNames={inputClasses}
-                    isInvalid={!!errors.city}
-                    errorMessage={errors.city}
-                    isDisabled={formState === "loading"}
-                  />
-                </div>
-
-                {/* Row 4: Phone Code & Phone (separate row for better visibility) */}
+                {/* Row 3: Phone Code & Phone */}
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Phone code */}
                   <div className="md:w-1/3">
@@ -583,7 +582,7 @@ function ContactForm() {
                   </div>
                 </div>
 
-                {/* Row 5: Property Details (Optional) */}
+                {/* Row 4: Property Details (Optional) */}
                 <div>
                   <Input
                     type="text"
