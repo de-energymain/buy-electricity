@@ -9,7 +9,7 @@ import {
   Spinner,
   Textarea,
 } from "@nextui-org/react";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/logo.svg";
@@ -18,7 +18,6 @@ import {
   inputClasses, 
   selectClasses, 
   cardClasses,
-  secondaryButtonClasses,
   formElementTransition
 } from "../../shared/styles";
 
@@ -139,24 +138,7 @@ function BusinessContactForm() {
     }
   }, [formData.country]);
 
-  // Clear errors when field values change
-  useEffect(() => {
-    const newErrors = { ...errors };
-    
-    if (formData.name.trim()) delete newErrors.name;
-    if (formData.email.trim() && isValidEmail(formData.email)) delete newErrors.email;
-    if (formData.company.trim()) delete newErrors.company;
-    if (formData.title.trim()) delete newErrors.title;
-    if (formData.country) delete newErrors.country;
-    if (formData.state) delete newErrors.state;
-    if (formData.city) delete newErrors.city;
-    if (formData.phoneCode) delete newErrors.phoneCode;
-    if (formData.phone.trim()) delete newErrors.phone;
-    
-    if (Object.keys(newErrors).length !== Object.keys(errors).length) {
-      setErrors(newErrors);
-    }
-  }, [formData]);
+  // Not needed anymore since validation happens in handleInputChange
 
   // Validate form fields
   const validateForm = () => {
@@ -283,35 +265,95 @@ function BusinessContactForm() {
     }
   };
 
-  // Go back to the previous page
-  const handleBack = () => {
-    window.history.back();
-  };
-
-  // Helper to update formData
+  // Helper to update formData with real-time validation
   const handleInputChange = (field: keyof FormData, value: string) => {
+    // Update form data
     setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Validate the field immediately
+    const newErrors = { ...errors };
+    
+    switch (field) {
+      case "name":
+        if (!value.trim()) {
+          newErrors.name = "Name is required";
+        } else {
+          delete newErrors.name;
+        }
+        break;
+      case "email":
+        if (!value.trim()) {
+          newErrors.email = "Email is required";
+        } else if (!isValidEmail(value)) {
+          newErrors.email = "Valid email is required";
+        } else {
+          delete newErrors.email;
+        }
+        break;
+      case "company":
+        if (!value.trim()) {
+          newErrors.company = "Company is required";
+        } else {
+          delete newErrors.company;
+        }
+        break;
+      case "title":
+        if (!value.trim()) {
+          newErrors.title = "Title is required";
+        } else {
+          delete newErrors.title;
+        }
+        break;
+      case "country":
+        if (!value) {
+          newErrors.country = "Country is required";
+        } else {
+          delete newErrors.country;
+        }
+        break;
+      case "state":
+        if (!value) {
+          newErrors.state = "State is required";
+        } else {
+          delete newErrors.state;
+        }
+        break;
+      case "city":
+        if (!value.trim()) {
+          newErrors.city = "City is required";
+        } else {
+          delete newErrors.city;
+        }
+        break;
+      case "phoneCode":
+        if (!value) {
+          newErrors.phoneCode = "Code is required";
+        } else {
+          delete newErrors.phoneCode;
+        }
+        break;
+      case "phone":
+        if (!value.trim()) {
+          newErrors.phone = "Phone is required";
+        } else {
+          delete newErrors.phone;
+        }
+        break;
+      default:
+        // No validation needed for properties field
+        break;
+    }
+    
+    setErrors(newErrors);
   };
 
   return (
     <FormContainer>
       {/* Logo */}
-      <div className="flex justify-center relative z-10 mb-4">
+      <div className="flex justify-center relative z-10 mb-6">
         <div className="w-24">
           <img src={logo} alt="logo" />
         </div>
-      </div>
-
-      {/* Back Button */}
-      <div className="max-w-md mx-auto w-full mb-4 relative z-10">
-        <Button
-          className={`mb-4 ${secondaryButtonClasses}`}
-          onPress={handleBack}
-          startContent={<ArrowLeft size={20} />}
-          disabled={formState === "loading"}
-        >
-          Back to Estimate
-        </Button>
       </div>
 
       {/* Card */}
