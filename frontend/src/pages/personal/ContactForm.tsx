@@ -135,37 +135,67 @@ function ContactForm() {
     }
   }, [formData.country]);
 
-  // Clear errors when field values change
-  useEffect(() => {
-    // Create a new errors object without properties that are now valid
-    const newErrors = { ...errors };
-    
-    if (formData.name.trim()) delete newErrors.name;
-    if (formData.email.trim() && isValidEmail(formData.email)) delete newErrors.email;
-    if (formData.country) delete newErrors.country;
-    if (formData.state) delete newErrors.state;
-    if (formData.city.trim()) delete newErrors.city;
-    if (formData.phoneCode) delete newErrors.phoneCode;
-    if (formData.phone.trim()) delete newErrors.phone;
-    
-    // Only update if errors have changed
-    if (Object.keys(newErrors).length !== Object.keys(errors).length) {
-      setErrors(newErrors);
+  // Validate a single field
+  const validateField = (field: keyof ContactFormData, value: string): string | undefined => {
+    switch (field) {
+      case "name":
+        return !value.trim() ? "Name is required" : undefined;
+      case "email":
+        return !value.trim() 
+          ? "Email is required" 
+          : !isValidEmail(value) 
+            ? "Valid email is required" 
+            : undefined;
+      case "country":
+        return !value ? "Country is required" : undefined;
+      case "state":
+        return !value ? "State is required" : undefined;
+      case "city":
+        return !value.trim() ? "City is required" : undefined;
+      case "phoneCode":
+        return !value ? "Code is required" : undefined;
+      case "phone":
+        return !value.trim() ? "Phone is required" : undefined;
+      default:
+        return undefined;
     }
-  }, [formData, errors]);
+  };
 
-  // Validate form fields
+  // Helper to update formData with real-time validation
+  const handleInputChange = (field: keyof ContactFormData, value: string) => {
+    // Update form data
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Validate the field and update errors
+    const errorMessage = validateField(field, value);
+    
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      if (errorMessage) {
+        newErrors[field] = errorMessage;
+      } else {
+        delete newErrors[field];
+      }
+      return newErrors;
+    });
+  };
+
+  // Validate all form fields
   const validateForm = (): ContactFormErrors => {
     const newErrors: ContactFormErrors = {};
-    if (!formData.name.trim()) newErrors.name = "Name is required";
-    if (!formData.email.trim() || !isValidEmail(formData.email)) {
-      newErrors.email = "Valid email is required";
-    }
-    if (!formData.country) newErrors.country = "Country is required";
-    if (!formData.state) newErrors.state = "State is required";
-    if (!formData.city.trim()) newErrors.city = "City is required";
-    if (!formData.phoneCode) newErrors.phoneCode = "Code is required";
-    if (!formData.phone.trim()) newErrors.phone = "Phone is required";
+    
+    // Check each required field
+    Object.keys(formData).forEach((key) => {
+      const field = key as keyof ContactFormData;
+      // Skip optional fields
+      if (field === 'properties') return;
+      
+      const error = validateField(field, formData[field]);
+      if (error) {
+        newErrors[field] = error;
+      }
+    });
+    
     return newErrors;
   };
 
@@ -285,24 +315,19 @@ function ContactForm() {
     window.history.back();
   };
 
-  // Helper to update formData
-  const handleInputChange = (field: keyof ContactFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   return (
     <FormContainer>
-      {/* Logo */}
-      <div className="flex justify-center relative z-10 mb-4">
+      {/* Logo - reduced vertical space */}
+      <div className="flex justify-center relative z-10 mb-2">
         <div className="w-24">
           <img src={logo} alt="logo" />
         </div>
       </div>
 
-      {/* Back Button */}
-      <div className="max-w-md mx-auto w-full mb-4 relative z-10">
+      {/* Back Button - reduced vertical space */}
+      <div className="max-w-md mx-auto w-full mb-3 relative z-10">
         <Button
-          className={`mb-4 ${secondaryButtonClasses}`}
+          className={`mb-2 ${secondaryButtonClasses}`}
           onPress={handleBack}
           startContent={<ArrowLeft size={20} />}
           disabled={formState === "loading"}
@@ -399,6 +424,7 @@ function ContactForm() {
                       variant="faded"
                       value={formData.name}
                       onChange={(e) => handleInputChange("name", e.target.value)}
+                      onBlur={(e) => handleInputChange("name", e.target.value)}
                       classNames={inputClasses}
                       isInvalid={!!errors.name}
                       errorMessage={errors.name}
@@ -413,6 +439,7 @@ function ContactForm() {
                       variant="faded"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
+                      onBlur={(e) => handleInputChange("email", e.target.value)}
                       classNames={inputClasses}
                       isInvalid={!!errors.email}
                       errorMessage={errors.email}
@@ -439,6 +466,8 @@ function ContactForm() {
                           handleInputChange("state", "");
                         }
                       }}
+                      isInvalid={!!errors.country}
+                      errorMessage={errors.country}
                     >
                       {countries.map((country) => (
                         <SelectItem key={country.name} textValue={country.name}>
@@ -453,9 +482,6 @@ function ContactForm() {
                         </SelectItem>
                       ))}
                     </Select>
-                    {errors.country && (
-                      <p className="text-xs text-red-500 mt-1">{errors.country}</p>
-                    )}
                   </div>
 
                   <div className="flex-1">
@@ -470,6 +496,8 @@ function ContactForm() {
                         const selected = Array.from(keys)[0]?.toString() || "";
                         handleInputChange("state", selected);
                       }}
+                      isInvalid={!!errors.state}
+                      errorMessage={errors.state}
                     >
                       {states.length > 0 ? (
                         states.map((state) => (
@@ -483,9 +511,6 @@ function ContactForm() {
                         </SelectItem>
                       )}
                     </Select>
-                    {errors.state && (
-                      <p className="text-xs text-red-500 mt-1">{errors.state}</p>
-                    )}
                   </div>
                 </div>
 
@@ -498,6 +523,7 @@ function ContactForm() {
                     variant="faded"
                     value={formData.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
+                    onBlur={(e) => handleInputChange("city", e.target.value)}
                     classNames={inputClasses}
                     isInvalid={!!errors.city}
                     errorMessage={errors.city}
@@ -520,6 +546,8 @@ function ContactForm() {
                         const selected = Array.from(keys)[0]?.toString() || "";
                         handleInputChange("phoneCode", selected);
                       }}
+                      isInvalid={!!errors.phoneCode}
+                      errorMessage={errors.phoneCode}
                     >
                       {countries
                         .filter((c) => c.callingCode)
@@ -536,9 +564,6 @@ function ContactForm() {
                           </SelectItem>
                         ))}
                     </Select>
-                    {errors.phoneCode && (
-                      <p className="text-xs text-red-500 mt-1">{errors.phoneCode}</p>
-                    )}
                   </div>
                   {/* Phone number */}
                   <div className="md:w-2/3">
@@ -549,6 +574,7 @@ function ContactForm() {
                       variant="faded"
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
+                      onBlur={(e) => handleInputChange("phone", e.target.value)}
                       classNames={inputClasses}
                       isInvalid={!!errors.phone}
                       errorMessage={errors.phone}
