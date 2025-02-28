@@ -20,17 +20,14 @@ import {
 function ElectricityEstimateForm() {
   const [formData, setFormData] = useState({
     kwh: "",
-    utility: "",
   });
   
   const [errors, setErrors] = useState({
     kwh: false,
-    utility: false
   });
   
   const [touched, setTouched] = useState({
     kwh: false,
-    utility: false
   });
   
   const [isFormValid, setIsFormValid] = useState(false);
@@ -42,16 +39,15 @@ function ElectricityEstimateForm() {
   useEffect(() => {
     const newErrors = {
       kwh: !formData.kwh.trim(),
-      utility: !formData.utility.trim()  // Uncommented this line
     };
     
     setErrors(newErrors);
-    setIsFormValid(!newErrors.kwh && !newErrors.utility);
+    setIsFormValid(!newErrors.kwh);
   }, [formData]);
 
   const handleEstimate = () => {
     // Mark all fields as touched when attempting to submit
-    setTouched({ kwh: true, utility: true });
+    setTouched({ kwh: true });
     
     if (isFormValid) {
       setIsSubmitting(true);
