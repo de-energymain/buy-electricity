@@ -42,7 +42,7 @@ function ElectricityEstimateForm() {
   useEffect(() => {
     const newErrors = {
       kwh: !formData.kwh.trim(),
-      utility: !formData.utility.trim()
+     // utility: !formData.utility.trim()
     };
     
     setErrors(newErrors);
@@ -122,21 +122,7 @@ function ElectricityEstimateForm() {
               />
             </div>
 
-            <div className="relative font-electrolize">
-              <Input
-                type="text"
-                size="lg"
-                placeholder="Enter utility provider name"
-                variant="bordered"
-                value={formData.utility}
-                isInvalid={touched.utility && errors.utility}
-                errorMessage={touched.utility && errors.utility ? "Utility provider is required" : ""}
-                classNames={inputClasses}
-                onChange={(e) => handleInputChange("utility", e.target.value)}
-                onBlur={() => setTouched({ ...touched, utility: true })}
-                isDisabled={isSubmitting}
-              />
-            </div>
+           
             
             <motion.div
               {...formElementTransition}
