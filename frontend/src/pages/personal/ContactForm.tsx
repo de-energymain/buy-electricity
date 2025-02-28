@@ -6,7 +6,8 @@ import {
   Input,
   Select,
   SelectItem,
-  Spinner
+  Spinner,
+  Textarea
 } from "@nextui-org/react";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -582,17 +583,21 @@ function ContactForm() {
                   </div>
                 </div>
 
-                {/* Row 4: Property Details (Optional) */}
+                {/* Row 4: Property Details (Optional) - Now using Textarea instead of Input */}
                 <div>
-                  <Input
-                    type="text"
+                  <Textarea
                     size="lg"
                     placeholder="Property Details (Optional)"
                     variant="faded"
                     value={formData.properties}
                     onChange={(e) => handleInputChange("properties", e.target.value)}
-                    classNames={inputClasses}
+                    classNames={{
+                      ...inputClasses,
+                      input: "bg-[#333] text-white min-h-[100px]"
+                    }}
                     isDisabled={formState === "loading"}
+                    minRows={3}
+                    maxRows={6}
                   />
                 </div>
 
