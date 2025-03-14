@@ -76,8 +76,8 @@ function ByPanelsForm() {
         </Button>
 
         <Card className={cardClasses}>
-          <CardHeader>
-            <div className="mt-3 p-4 bg-[#202020] rounded-lg shadow-inner">
+          <CardHeader className="bg-[#2F2F2F]">
+            <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner">
               <h2 className="text-3xl font-bold text-center text-white mb-2 font-electrolize">
                 Electricity Estimate
               </h2>
@@ -86,17 +86,17 @@ function ByPanelsForm() {
               </p>
             </div>
           </CardHeader>
-          <CardBody className="p-6">
+          <CardBody className="p-6 bg-[#2F2F2F]">
             <div className="space-y-4 relative">
               {isLoading && (
-                <div className="absolute inset-0 bg-[#202020] bg-opacity-80 flex flex-col items-center justify-center z-20 rounded-lg">
+                <div className="absolute inset-0 bg-[#2F2F2F] bg-opacity-80 flex flex-col items-center justify-center z-20 rounded-lg">
                   <Spinner size="lg" color="danger" className="mb-4" />
                   <p className="text-white">Calculating your estimate...</p>
                 </div>
               )}
 
               {isNavigating && (
-                <div className="absolute inset-0 bg-[#202020] bg-opacity-80 flex flex-col items-center justify-center z-20 rounded-lg">
+                <div className="absolute inset-0 bg-[#2F2F2F] bg-opacity-80 flex flex-col items-center justify-center z-20 rounded-lg">
                   <Spinner size="lg" color="danger" className="mb-4" />
                   <p className="text-white">Processing...</p>
                 </div>
@@ -113,7 +113,15 @@ function ByPanelsForm() {
                     variant="faded"
                     isReadOnly
                     endContent={<div className="text-default-400">Panels</div>}
-                    classNames={inputClasses}
+                    classNames={{
+                      ...inputClasses, 
+                      inputWrapper: [
+                        "rounded-none", 
+                        "!border-gray-500",
+                        "!bg-[#5E5E5E]",
+                        inputClasses.inputWrapper,
+                      ].join(" "),
+                    }}
                   />
                 </div>
                 {/* Estimated Cost */}
@@ -125,14 +133,23 @@ function ByPanelsForm() {
                     value={estimatedCost ? `$${estimatedCost}` : ""}
                     variant="faded"
                     isReadOnly
-                    classNames={inputClasses}
+                    classNames={{
+                      ...inputClasses, 
+                      inputWrapper: [
+                        "rounded-none", 
+                        "!border-gray-500",
+                        "!bg-[#5E5E5E]",
+                        inputClasses.inputWrapper, 
+                      ].join(" "),
+                    }}
                   />
                 </div>
               </div>
 
+              <div className="p-6 flex justify-center">       
               <motion.div {...formElementTransition}>
                 <Button
-                  className="w-full bg-[#E9423A] text-white"
+                  className="w-full bg-[#E9423A] text-white rounded-none"
                   onPress={handleBuyPanels}
                   disabled={isLoading || isNavigating}
                 >
@@ -143,6 +160,7 @@ function ByPanelsForm() {
                   )}
                 </Button>
               </motion.div>
+              </div>
             </div>
           </CardBody>
         </Card>
