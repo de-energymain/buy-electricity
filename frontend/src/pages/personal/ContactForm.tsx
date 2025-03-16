@@ -340,7 +340,7 @@ function ContactForm() {
       {/* Card */}
       <Card className={cardClasses}>
         <CardHeader className="flex justify-center items-center flex-col">
-          <div className="mt-3 p-4 bg-[#202020] rounded-lg shadow-inner w-full text-center">
+          <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner w-full text-center">
             <h2 className="text-3xl font-bold text-white mb-2 font-electrolize">
               Get in Touch
             </h2>
@@ -608,7 +608,7 @@ function ContactForm() {
                 >
                   <Button 
                     type="submit" 
-                    className="w-full bg-[#E9423A] text-white"
+                    className="w-full bg-[#E9423A] text-white rounded-none"
                     disabled={formState === "loading"}
                   >
                     {formState === "loading" ? (
