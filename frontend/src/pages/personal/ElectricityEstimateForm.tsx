@@ -188,7 +188,7 @@ function ElectricityEstimateForm() {
         </CardBody>
       </Card>
       <div className="absolute bottom-6 text-sm text-white">
-            Are you a business? <a href="/business" className="text-[#E9423A] hover:underline">Switch to Business Profile</a>
+            Are you a business? <a href="/business-contact" className="text-[#E9423A] hover:underline">Switch to Business Profile</a>
           </div>
           
     </FormContainer>
