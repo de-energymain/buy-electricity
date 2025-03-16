@@ -9,9 +9,10 @@ export const BackgroundWatermark: React.FC = () => (
     style={{
       backgroundImage: `url(${logoBlack})`,
       backgroundPosition: 'bottom right',
-      backgroundSize: '70%',
+      backgroundSize: '80%',
       backgroundRepeat: 'no-repeat',
-      opacity: 0.1
+      opacity: 0.8,
+      filter: 'grayscale(100%)'
     }}
   />
 );
@@ -44,7 +45,7 @@ export const FormContainer: React.FC<FormContainerProps> = ({ children }) => (
     variants={pageTransition}
     className="w-full md:w-1/2 p-6 md:p-12 flex flex-col items-center relative overflow-hidden"
     style={{
-      background: "linear-gradient(to bottom, #e6e6e6, #999999)",
+      background: "linear-gradient(to bottom, #202020, #000000)",
     }}
   >
     <BackgroundWatermark />
@@ -54,20 +55,20 @@ export const FormContainer: React.FC<FormContainerProps> = ({ children }) => (
 
 // Common input styling
 export const inputClasses = {
-  input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-  inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2]",
+  input: "bg-[#3A3A3A] text-white placeholder:text-[#E2E2E2] rounded-none",
+  inputWrapper: "bg-[#3A3A3A] border border-gray-600 border-opacity-50 rounded-none",
   errorMessage: "text-red-500"
 };
 
 // Common select styling
 export const selectClasses = {
-  trigger: "bg-[#333333] border-2 border-[#E2E2E2] text-white",
-  value: "text-white !text-white",
+  trigger: "bg-[#333333] border border-gray-600 border-opacity-50 text-white rounded-none",
+  value: "text-white !text-white rounded",
   popoverContent: "bg-[#333333] text-[#E2E2E2]",
 };
 
 // Common card styling
-export const cardClasses = "max-w-md w-full shadow-sm bg-[#202020] border-none relative z-10";
+export const cardClasses = "max-w-md w-full shadow-sm bg-[#2F2F2F] border-none relative z-10";
 
 // Common button styling
 export const primaryButtonClasses = "w-full bg-[#E9423A] text-white";
