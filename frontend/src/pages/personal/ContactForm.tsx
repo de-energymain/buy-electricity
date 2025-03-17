@@ -24,7 +24,7 @@ import {
 
 // Simple email validation
 const isValidEmail = (email: string) =>
-  /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
+  /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/.test(email);
 
 // Brevo API configuration
 const BREVO_API_KEY = "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"; // Replace with your actual API key
@@ -339,7 +339,7 @@ function ContactForm() {
 
       {/* Card */}
       <Card className={cardClasses}>
-        <CardHeader className="flex justify-center items-center flex-col">
+        <CardHeader className="flex justify-center items-center flex-col -mb-4">
           <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner w-full text-center">
             <h2 className="text-3xl font-bold text-white mb-2 font-electrolize">
               Get in Touch
@@ -552,7 +552,7 @@ function ContactForm() {
                       {countries
                         .filter((c) => c.callingCode)
                         .map((country) => (
-                          <SelectItem key={country.callingCode}>
+                          <SelectItem key={country.callingCode} textValue={country.callingCode}>
                             <div className="flex items-center gap-2">
                               <img
                                 src={country.flag}
@@ -593,11 +593,11 @@ function ContactForm() {
                     onChange={(e) => handleInputChange("properties", e.target.value)}
                     classNames={{
                       ...inputClasses,
-                      input: "bg-[#333] text-white min-h-[100px]"
+                      input: "bg-[#333] text-white min-h-[50px]"
                     }}
                     isDisabled={formState === "loading"}
-                    minRows={3}
-                    maxRows={6}
+                    minRows={2}
+                    maxRows={4}
                   />
                 </div>
 
