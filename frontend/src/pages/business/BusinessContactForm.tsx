@@ -23,7 +23,7 @@ import {
 
 // Simple email validation
 const isValidEmail = (email: string) =>
-  /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
+  /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/.test(email);
 
 // Brevo API configuration
 const BREVO_API_KEY = "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";
@@ -358,8 +358,8 @@ function BusinessContactForm() {
 
       {/* Card */}
       <Card className={cardClasses}>
-        <CardHeader className="flex justify-center items-center flex-col">
-          <div className="mt-3 p-4 bg-[#202020] rounded-lg shadow-inner w-full text-center">
+        <CardHeader className="flex justify-center items-center flex-col -mb-2">
+          <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner w-full text-center">
             <h2 className="text-3xl font-bold text-white mb-2 font-electrolize">
               Business Inquiry
             </h2>
@@ -598,7 +598,7 @@ function BusinessContactForm() {
                       {countries
                         .filter((c) => c.callingCode)
                         .map((country) => (
-                          <SelectItem key={country.callingCode}>
+                          <SelectItem key={country.callingCode} textValue={country.callingCode}>
                             <div className="flex items-center gap-2">
                               <img
                                 src={country.flag}
@@ -635,11 +635,12 @@ function BusinessContactForm() {
                     value={formData.properties}
                     onChange={(e) => handleInputChange("properties", e.target.value)}
                     classNames={{
-                      input: "bg-[#333333] text-white placeholder:text-[#E2E2E2]",
-                      inputWrapper: "bg-[#333333] border-2 border-[#E2E2E2] min-h-[150px]",
+                      ...inputClasses,
+                      input: "bg-[#333] text-white min-h-[50px]"
                     }}
                     isDisabled={formState === "loading"}
-                    minRows={4}
+                    minRows={2}
+                    maxRows={4}
                     size="lg"
                   />
                 </div>
@@ -652,7 +653,7 @@ function BusinessContactForm() {
                 >
                   <Button 
                     type="submit" 
-                    className="w-full bg-[#E9423A] text-white"
+                    className="w-full bg-[#E9423A] text-white rounded-none"
                     disabled={formState === "loading"}
                   >
                     {formState === "loading" ? (

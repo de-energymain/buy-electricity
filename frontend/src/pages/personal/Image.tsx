@@ -2,7 +2,7 @@ import video from "../../assets/video.mp4";
 
 const ImpactSection = () => {
   return (
-    <div className="relative w-full md:w-1/2 h-screen bg-black">
+    <div className="relative w-full md:w-1/2 min-h-full bg-black">
       {/* Full container for video */}
       <div className="absolute inset-0">
         {/* Video background - full size */}
