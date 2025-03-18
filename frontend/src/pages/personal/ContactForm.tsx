@@ -39,6 +39,9 @@ type ContactFormData = {
   phoneCode: string;
   phone: string;
   properties?: string; // Optional field
+  kwh?: string;
+  panels?: string;
+  cost?: string;
 };
 
 // Add a matching error type
@@ -200,6 +203,22 @@ function ContactForm() {
     return newErrors;
   };
 
+  // Add monthly usage, calculated panel count and cost to e-mail
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const usageInput = parseFloat(queryParams.get("kwh") || "0");
+    const panelCount = parseInt(queryParams.get("panels") || "0", 10);
+    const totalCost = parseFloat(queryParams.get("cost") || "0");
+  
+    setFormData((prevData) => ({
+      ...prevData,
+      kwh: usageInput.toString(),
+      panels: panelCount.toString(),
+      cost: totalCost.toString(),
+    }));
+  }, [location.search]);
+  
+
   // Send confirmation email with Brevo API
   const sendConfirmationEmail = async () => {
     setEmailStatus("sending");
@@ -247,7 +266,7 @@ function ContactForm() {
               <body>
                 <div class="container">
                   <div class="header">
-                    <img src="https://renrg.io/wp-content/uploads/2025/02/nrg-logo-icon.svg" alt="Logo" width="120" />
+                    <img src="https://pbs.twimg.com/profile_images/1819274578092339200/y18Mi81U_400x400.jpg" alt="Logo" width="120" />
                   </div>
                   <div class="content">
                     <h1>Thank You ${formData.name}!</h1>
@@ -260,13 +279,18 @@ function ContactForm() {
                       <li><strong>Phone:</strong> ${formData.phoneCode} ${formData.phone}</li>
                       ${formData.properties ? `<li><strong>Property Details:</strong> ${formData.properties}</li>` : ''}
                     </ul>
+                    <p>Here are our panel estimates:</p>
+                    <ul>
+                      <li><strong>Your monthly usage:</strong> ${formData.kwh} kWh</li>
+                      <li><strong>Panel Count:</strong> ${formData.panels}</li>
+                      <li><strong>Estimated Cost:</strong> $${formData.cost}</li>
+                    </ul>
                     <p>Our team will review your information and contact you shortly to discuss how we can assist you.</p>
                     <p>If you have any immediate questions, please don't hesitate to contact us.</p>
                     <a href="https://renrg.io/contact" class="button">Visit Our Website</a>
                   </div>
                   <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} Your Company Name. All rights reserved.</p>
-                    <p>123 Company Street, City, Country</p>
+                    <p>&copy; ${new Date().getFullYear()} Renrg. All rights reserved.</p>
                   </div>
                 </div>
               </body>
