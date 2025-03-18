@@ -172,6 +172,7 @@ function ElectricityEstimateForm() {
             >
               <p className="text-sm mb-6 text-white font-inter">
                 Want to skip the estimate?{" "}
+                <br className="md:hidden" />
                 <a
                   href="#"
                   onClick={(e) => {
@@ -189,7 +190,7 @@ function ElectricityEstimateForm() {
       </Card>
       <div className="absolute bottom-6 text-sm text-white">
             Are you a business? <a href="#" className="text-[#E9423A] hover:underline">Switch to Business Profile</a>
-          </div>
+      </div>
           
     </FormContainer>
   );

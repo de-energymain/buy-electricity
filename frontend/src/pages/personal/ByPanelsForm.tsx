@@ -19,17 +19,19 @@ function ByPanelsForm() {
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [usageInput, setUsageInput] = useState(0); 
 
   useEffect(() => {
     // Extract monthly usage from query params
     const queryParams = new URLSearchParams(location.search);
-    const usageInput = parseFloat(queryParams.get("kwh") || "0");
+    const usage = parseFloat(queryParams.get("kwh") || "0");
+    setUsageInput(usage);
 
     // Show a loading state while calculating
     setIsLoading(true);
 
     setTimeout(() => {
-      if (usageInput > 0) {
+      if (usage> 0) {
         /*
           Calculation using the formula:
           - 3.75 kWh per kW per day × 80% = 3.0 kWh per day per kW
@@ -38,13 +40,13 @@ function ByPanelsForm() {
           - For simplicity, 1 kW = 1 "panel"
         */
         const effectiveMonthlyProduction = 3.75 * 0.8 * 30; // = 90
-        const requiredCapacity = usageInput / effectiveMonthlyProduction;
+        const requiredCapacity = usage / effectiveMonthlyProduction;
         const requiredPanels = Math.ceil(requiredCapacity);
         setPanelCount(requiredPanels);
 
         // Cost = Panels × $525
         const totalCost = requiredPanels * 525;
-        setEstimatedCost(totalCost);
+        setEstimatedCost(totalCost);      
       }
       setIsLoading(false);
     }, 1000); // Slight delay for loading effect
@@ -53,7 +55,13 @@ function ByPanelsForm() {
   const handleBuyPanels = () => {
     setIsNavigating(true);
     setTimeout(() => {
-      navigate("/contact");
+      const queryParams = new URLSearchParams({
+        kwh: usageInput.toString(), // Use the state value
+        panels: panelCount.toString(),
+        cost: estimatedCost.toString(),
+      });
+      console.log("Navigating with query params:", queryParams.toString());
+      navigate(`/contact?${queryParams.toString()}`);
     }, 800);
   };
 
