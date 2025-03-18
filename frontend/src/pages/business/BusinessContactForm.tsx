@@ -204,7 +204,7 @@ function BusinessContactForm() {
               <body>
                 <div class="container">
                   <div class="header">
-                    <img src="YOUR_LOGO_URL" alt="Logo" width="120" />
+                    <img src="https://pbs.twimg.com/profile_images/1819274578092339200/y18Mi81U_400x400.jpg" alt="Logo" width="120" />
                   </div>
                   <div class="content">
                     <h1>Thank You ${formData.name}!</h1>

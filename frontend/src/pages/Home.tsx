@@ -3,8 +3,8 @@ import Image from "./personal/Image";
 
 function Home() {
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
-      <Image />
+    <div className="flex flex-col md:flex-col min-h-screen">
+      <Image/>
       <ElectricityEstimateForm />
     </div>
   );
