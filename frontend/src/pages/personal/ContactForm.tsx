@@ -9,8 +9,8 @@ import {
   Spinner,
   Textarea
 } from "@nextui-org/react";
-import { ArrowLeft, CheckCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, CheckCircle, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/logo.svg";
 import { 
@@ -23,51 +23,23 @@ import {
 } from "../../shared/styles";
 
 // Simple email validation
-const isValidEmail = (email: string) =>
+const isValidEmail = (email) =>
   /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/.test(email);
 
 // Brevo API configuration
-const BREVO_API_KEY = "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"; // Replace with your actual API key
+const BREVO_API_KEY =
+  "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"; // Replace with your actual API key
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
-type ContactFormData = {
-  name: string;
-  email: string;
-  country: string;
-  state: string;
-  city: string;
-  phoneCode: string;
-  phone: string;
-  properties?: string; // Optional field
-  kwh?: string;
-  panels?: string;
-  cost?: string;
-};
-
-// Add a matching error type
-type ContactFormErrors = {
-  name?: string;
-  email?: string;
-  country?: string;
-  state?: string;
-  city?: string;
-  phoneCode?: string;
-  phone?: string;
-  properties?: string;
-};
-
-// Country type
-type Country = {
-  name: string;
-  flag: string;
-  callingCode: string;
-};
-
-type FormState = "idle" | "loading" | "success";
-type EmailStatus = null | "sending" | "sent" | "failed";
-
 function ContactForm() {
-  const [formData, setFormData] = useState<ContactFormData>({
+  // Phone code state declared only once
+  const [phoneCodeInput, setPhoneCodeInput] = useState("");
+  const [showPhoneDropdown, setShowPhoneDropdown] = useState(false);
+
+  // Create a ref for the phone code container
+  const phoneContainerRef = useRef(null);
+
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     country: "",
@@ -78,14 +50,31 @@ function ContactForm() {
     properties: "",
   });
 
-  const [errors, setErrors] = useState<ContactFormErrors>({});
-  const [formState, setFormState] = useState<FormState>("idle");
-  const [emailStatus, setEmailStatus] = useState<EmailStatus>(null);
+  const [errors, setErrors] = useState({});
+  const [formState, setFormState] = useState("idle");
+  const [emailStatus, setEmailStatus] = useState(null);
 
   // Data from APIs
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [states, setStates] = useState<string[]>([]);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
   const [isFetchingStates, setIsFetchingStates] = useState(false);
+
+  // Ensure dropdown is closed on initial mount
+  useEffect(() => {
+    setShowPhoneDropdown(false);
+  }, []);
+
+  // Click-outside handler for phone code dropdown
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (phoneContainerRef.current && !phoneContainerRef.current.contains(e.target)) {
+        setShowPhoneDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // 1) Fetch countries on mount
   useEffect(() => {
@@ -95,7 +84,7 @@ function ContactForm() {
         const data = await res.json();
         // Sort by country name
         const countryList = data
-          .map((country: any) => ({
+          .map((country) => ({
             name: country.name.common,
             flag: country.flags.svg,
             callingCode:
@@ -103,7 +92,7 @@ function ContactForm() {
                 ? `${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ""}`
                 : "",
           }))
-          .sort((a: Country, b: Country) => a.name.localeCompare(b.name));
+          .sort((a, b) => a.name.localeCompare(b.name));
         setCountries(countryList);
       } catch (error) {
         console.error("Error fetching countries:", error);
@@ -125,7 +114,7 @@ function ContactForm() {
           });
           const data = await res.json();
           if (!data.error && data.data && data.data.states) {
-            setStates(data.data.states.map((s: any) => s.name));
+            setStates(data.data.states.map((s) => s.name));
           } else {
             setStates([]);
           }
@@ -139,8 +128,31 @@ function ContactForm() {
     }
   }, [formData.country]);
 
+  // Prepare calling codes for searching
+  const callingCodes = countries
+    .filter(c => c.callingCode)
+    .map(country => ({
+      value: country.callingCode,
+      flag: country.flag,
+      country: country.name,
+      searchText: `${country.callingCode} ${country.name}`.toLowerCase()
+    }))
+    .sort((a, b) => {
+      const numA = parseInt(a.value.replace(/[^\d]/g, ''), 10);
+      const numB = parseInt(b.value.replace(/[^\d]/g, ''), 10);
+      return numA - numB;
+    });
+    
+  // Filter phone codes based on input (compare both country and code in lower case)
+  const filteredCodes = phoneCodeInput.trim() === ""
+    ? callingCodes
+    : callingCodes.filter(code => 
+        code.country.toLowerCase().includes(phoneCodeInput.toLowerCase()) ||
+        code.value.toLowerCase().includes(phoneCodeInput.toLowerCase())
+      );
+
   // Validate a single field
-  const validateField = (field: keyof ContactFormData, value: string): string | undefined => {
+  const validateField = (field, value) => {
     switch (field) {
       case "name":
         return !value.trim() ? "Name is required" : undefined;
@@ -166,13 +178,9 @@ function ContactForm() {
   };
 
   // Helper to update formData with real-time validation
-  const handleInputChange = (field: keyof ContactFormData, value: string) => {
-    // Update form data
+  const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    
-    // Validate the field and update errors
     const errorMessage = validateField(field, value);
-    
     setErrors((prev) => {
       const newErrors = { ...prev };
       if (errorMessage) {
@@ -185,25 +193,19 @@ function ContactForm() {
   };
 
   // Validate all form fields
-  const validateForm = (): ContactFormErrors => {
-    const newErrors: ContactFormErrors = {};
-    
-    // Check each required field
+  const validateForm = () => {
+    const newErrors = {};
     Object.keys(formData).forEach((key) => {
-      const field = key as keyof ContactFormData;
-      // Skip optional fields
-      if (field === 'properties') return;
-      
-      const error = validateField(field, formData[field]);
+      if (key === "properties") return;
+      const error = validateField(key, formData[key]);
       if (error) {
-        newErrors[field] = error;
+        newErrors[key] = error;
       }
     });
-    
     return newErrors;
   };
 
-  // Add monthly usage, calculated panel count and cost to e-mail
+  // Add monthly usage, panel count, and cost to form data from query parameters
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const usageInput = parseFloat(queryParams.get("kwh") || "0");
@@ -217,12 +219,10 @@ function ContactForm() {
       cost: totalCost.toString(),
     }));
   }, [location.search]);
-  
 
   // Send confirmation email with Brevo API
   const sendConfirmationEmail = async () => {
     setEmailStatus("sending");
-    
     try {
       const response = await fetch(BREVO_API_URL, {
         method: "POST",
@@ -277,7 +277,7 @@ function ContactForm() {
                       <li><strong>Email:</strong> ${formData.email}</li>
                       <li><strong>Location:</strong> ${formData.city}, ${formData.state}, ${formData.country}</li>
                       <li><strong>Phone:</strong> ${formData.phoneCode} ${formData.phone}</li>
-                      ${formData.properties ? `<li><strong>Property Details:</strong> ${formData.properties}</li>` : ''}
+                      ${formData.properties ? `<li><strong>Property Details:</strong> ${formData.properties}</li>` : ""}
                     </ul>
                     <p>Here are our panel estimates:</p>
                     <ul>
@@ -320,21 +320,15 @@ function ContactForm() {
   };
 
   // On form submit
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = validateForm();
     setErrors(newErrors);
-
     if (Object.keys(newErrors).length === 0) {
       setFormState("loading");
-      
-      // Simulate API call for form submission
       setTimeout(() => {
         console.log("Form submitted:", formData);
-        
-        // After form is submitted, send confirmation email
         sendConfirmationEmail();
-        
         setFormState("success");
       }, 1500);
     }
@@ -345,12 +339,12 @@ function ContactForm() {
     window.history.back();
   };
 
+  // Country and state search management
   const [searchCountryQuery, setSearchCountryQuery] = useState("");
   const [searchStateQuery, setSearchStatesQuery] = useState("");
   const [filteredCountries, setFilteredCountries] = useState(countries);
   const [filteredStates, setFilteredStates] = useState(states);
 
-  // Filter countries based on search query
   useEffect(() => {
     const filtered = countries.filter((country) =>
       country.name.toLowerCase().startsWith(searchCountryQuery.toLowerCase())
@@ -358,15 +352,14 @@ function ContactForm() {
     setFilteredCountries(filtered);
   }, [searchCountryQuery, countries]);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDownCountry = (e) => {
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       setSearchCountryQuery((prev) => prev + e.key);
     } else if (e.key === "Backspace") {
-       setSearchCountryQuery("");
+      setSearchCountryQuery("");
     }
   };
 
-  // Filter states based on search query
   useEffect(() => {
     const filtered = states.filter((state) =>
       state.toLowerCase().startsWith(searchStateQuery.toLowerCase())
@@ -378,20 +371,17 @@ function ContactForm() {
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       setSearchStatesQuery((prev) => prev + e.key);
     } else if (e.key === "Backspace") {
-       setSearchStatesQuery("");
+      setSearchStatesQuery("");
     }
   };
 
   return (
     <FormContainer>
-      {/* Logo - reduced vertical space */}
       <div className="flex justify-center relative z-10 mb-2">
         <div className="w-24">
           <img src={logo} alt="logo" />
         </div>
       </div>
-
-      {/* Back Button - reduced vertical space */}
       <div className="max-w-md mx-auto w-full mb-3 relative z-10">
         <Button
           className={`mb-2 ${secondaryButtonClasses}`}
@@ -402,8 +392,6 @@ function ContactForm() {
           Back to Estimate
         </Button>
       </div>
-
-      {/* Card */}
       <Card className={cardClasses}>
         <CardHeader className="flex justify-center items-center flex-col -mb-4">
           <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner w-full text-center">
@@ -415,11 +403,9 @@ function ContactForm() {
             </p>
           </div>
         </CardHeader>
-
         <CardBody className="p-6">
           <AnimatePresence mode="wait">
             {formState === "success" ? (
-              // Success Screen
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -446,7 +432,6 @@ function ContactForm() {
                 <Button 
                   className="bg-[#E9423A] text-white"
                   onPress={() => {
-                    // Reset to initial
                     setFormState("idle");
                     setEmailStatus(null);
                     setFormData({
@@ -466,22 +451,18 @@ function ContactForm() {
                 </Button>
               </motion.div>
             ) : (
-              // Form Screen
               <motion.form 
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onSubmit={handleSubmit}
                 className="font-electrolize relative flex flex-col space-y-6"
               >
-                {/* Loading overlay */}
                 {formState === "loading" && (
                   <div className="absolute inset-0 bg-[#202020] bg-opacity-80 flex flex-col items-center justify-center z-20 rounded-lg">
                     <Spinner size="lg" color="danger" className="mb-4" />
                     <p className="text-white">Submitting your request...</p>
                   </div>
                 )}
-
-                {/* Row 1: Name & Email */}
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex-1">
                     <Input
@@ -514,72 +495,61 @@ function ContactForm() {
                     />
                   </div>
                 </div>
-
-                {/* Row 2: Country, State & City */}
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1" onKeyDown={handleKeyDown}>
-      <Select
-        placeholder="Country *"
-        variant="faded"
-        size="lg"
-        isDisabled={formState === "loading"}
-        classNames={selectClasses}
-        selectedKeys={formData.country ? [formData.country] : []}
-        onSelectionChange={(keys) => {
-          const selected = Array.from(keys)[0]?.toString() || "";
-          handleInputChange("country", selected);
-          if (selected !== formData.country) {
-            handleInputChange("state", "");
-          }
-        }}
-        isInvalid={!!errors.country}
-        errorMessage={errors.country}
-      >
-        {filteredCountries.map((country) => (
-          <SelectItem key={country.name} textValue={country.name}>
-            <div className="flex items-center gap-2">
-              <img src={country.flag} alt={country.name} className="w-5 h-5" />
-              <span>{country.name}</span>
-            </div>
-          </SelectItem>
-        ))}
-      </Select>
-    </div>
-
-    <div className="flex-1" onKeyDown={handleKeyDownStates}>
-      <Select
-        placeholder={isFetchingStates ? "Loading states..." : "State *"}
-        variant="faded"
-        size="lg"
-        isDisabled={formState === "loading" || isFetchingStates || !formData.country}
-        classNames={selectClasses}
-        selectedKeys={formData.state ? [formData.state] : []}
-        onSelectionChange={(keys) => {
-          const selected = Array.from(keys)[0]?.toString() || "";
-          handleInputChange("state", selected);
-        }}
-        isInvalid={!!errors.state}
-        errorMessage={errors.state}
-      >
-        {filteredStates.length > 0 ? (
+                  <div className="flex-1" onKeyDown={handleKeyDownCountry}>
+                    <Select
+                      placeholder="Country *"
+                      variant="faded"
+                      size="lg"
+                      isDisabled={formState === "loading"}
+                      classNames={selectClasses}
+                      selectedKeys={formData.country ? [formData.country] : []}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0]?.toString() || "";
+                        handleInputChange("country", selected);
+                        if (selected !== formData.country) {
+                          handleInputChange("state", "");
+                        }
+                      }}
+                      isInvalid={!!errors.country}
+                      errorMessage={errors.country}
+                    >
+                      {filteredCountries.map((country) => (
+                        <SelectItem key={country.name} textValue={country.name}>
+                          <div className="flex items-center gap-2">
+                            <img src={country.flag} alt={country.name} className="w-5 h-5" />
+                            <span>{country.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="flex-1" onKeyDown={handleKeyDownStates}>
+                    <Select
+                      placeholder={isFetchingStates ? "Loading states..." : "State *"}
+                      variant="faded"
+                      size="lg"
+                      isDisabled={formState === "loading" || isFetchingStates || !formData.country}
+                      classNames={selectClasses}
+                      selectedKeys={formData.state ? [formData.state] : []}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0]?.toString() || "";
+                        handleInputChange("state", selected);
+                      }}
+                      isInvalid={!!errors.state}
+                      errorMessage={errors.state}
+                    >
+                      {filteredStates.length > 0 ? (
                         filteredStates.map((state) => (
                           <SelectItem key={state}>{state}</SelectItem>
                         ))
                       ) : (
                         <SelectItem key="none">
-                          {isFetchingStates
-                            ? "Loading states..."
-                            : "No states available"}
+                          {isFetchingStates ? "Loading states..." : "No states available"}
                         </SelectItem>
                       )}
-      </Select>
-    </div>
-
-
-             
-
-                  
-                  
+                    </Select>
+                  </div>
                   <div className="flex-1">
                     <Input
                       type="text"
@@ -596,42 +566,52 @@ function ContactForm() {
                     />
                   </div>
                 </div>
-
-                {/* Row 3: Phone Code & Phone */}
                 <div className="flex flex-col md:flex-row gap-6">
-                  {/* Phone code */}
-                  <div className="md:w-1/3">
-                    <Select
-                      placeholder="Phone Code *"
-                      variant="faded"
+                  <div className="md:w-1/3 relative" ref={phoneContainerRef}>
+                    <Input
+                      id="phone-code-input"
+                      type="text"
                       size="lg"
-                      isDisabled={formState === "loading"}
-                      classNames={selectClasses}
-                      selectedKeys={formData.phoneCode ? [formData.phoneCode] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0]?.toString() || "";
-                        handleInputChange("phoneCode", selected);
+                      placeholder="Code *"
+                      variant="faded"
+                      value={phoneCodeInput}
+                      onChange={(e) => {
+                        setPhoneCodeInput(e.target.value);
+                        setShowPhoneDropdown(true);
                       }}
+                      onClick={() => setShowPhoneDropdown(true)}
+                      classNames={inputClasses}
                       isInvalid={!!errors.phoneCode}
                       errorMessage={errors.phoneCode}
-                    >
-                      {countries
-                        .filter((c) => c.callingCode)
-                        .map((country) => (
-                          <SelectItem key={country.callingCode} textValue={country.callingCode}>
-                            <div className="flex items-center gap-2">
-                              <img
-                                src={country.flag}
-                                alt={country.name}
-                                className="w-5 h-5"
-                              />
-                              <span>{country.callingCode}</span>
+                      isDisabled={formState === "loading"}
+                    />
+                    {showPhoneDropdown && (
+                      <div 
+                        id="phone-code-dropdown"
+                        className="absolute z-50 w-full mt-1 bg-[#333] border border-[#444] rounded-lg shadow-lg max-h-[200px] overflow-y-auto"
+                      >
+                        {filteredCodes.length > 0 ? (
+                          filteredCodes.map((code) => (
+                            <div 
+                              key={code.value}
+                              className="flex items-center gap-2 p-2 hover:bg-[#444] cursor-pointer"
+                              onClick={() => {
+                                handleInputChange("phoneCode", code.value);
+                                setPhoneCodeInput(code.value);
+                                setShowPhoneDropdown(false);
+                              }}
+                            >
+                              <img src={code.flag} alt={code.country} className="w-5 h-5" />
+                              <span className="font-medium">{code.value}</span>
+                              <span className="text-xs text-gray-400">({code.country})</span>
                             </div>
-                          </SelectItem>
-                        ))}
-                    </Select>
+                          ))
+                        ) : (
+                          <div className="p-2 text-gray-400">No results found</div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {/* Phone number */}
                   <div className="md:w-2/3">
                     <Input
                       type="tel"
@@ -648,8 +628,6 @@ function ContactForm() {
                     />
                   </div>
                 </div>
-
-                {/* Row 4: Property Details (Optional) - Now using Textarea instead of Input */}
                 <div>
                   <Textarea
                     size="lg"
@@ -666,11 +644,9 @@ function ContactForm() {
                     maxRows={4}
                   />
                 </div>
-
-                {/* Submit Button */}
                 <motion.div
                   {...formElementTransition}
-                  style={{ pointerEvents: formState === "loading" ? 'none' : 'auto' }}
+                  style={{ pointerEvents: formState === "loading" ? "none" : "auto" }}
                 >
                   <Button 
                     type="submit" 

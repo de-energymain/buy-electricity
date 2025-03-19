@@ -10,7 +10,7 @@ import {
   Textarea,
 } from "@nextui-org/react";
 import { CheckCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/logo.svg";
 import { 
@@ -86,6 +86,38 @@ function BusinessContactForm() {
   const [states, setStates] = useState<string[]>([]);
   const [isFetchingStates, setIsFetchingStates] = useState(false);
 
+  // Simplified phone code state
+  const [phoneCodeInput, setPhoneCodeInput] = useState("");
+  const [showPhoneDropdown, setShowPhoneDropdown] = useState(false);
+
+  // Create a ref for the phone code container
+  const phoneCodeRef = useRef<HTMLDivElement>(null);
+
+  // Ensure dropdown is reset on initial mount
+  useEffect(() => {
+    setShowPhoneDropdown(false);
+  }, []);
+
+  // Click outside handler for phone code dropdown using the ref
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (phoneCodeRef.current && !phoneCodeRef.current.contains(e.target as Node)) {
+        setShowPhoneDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Update phone code input when form data changes
+  useEffect(() => {
+    if (formData.phoneCode) {
+      setPhoneCodeInput(formData.phoneCode);
+    }
+  }, [formData.phoneCode]);
+
   // 1) Fetch countries on mount
   useEffect(() => {
     const fetchCountries = async () => {
@@ -138,7 +170,20 @@ function BusinessContactForm() {
     }
   }, [formData.country]);
 
-  // Not needed anymore since validation happens in handleInputChange
+  // Prepare a list of calling codes with flags and countries
+  const phoneCodesList = countries
+    .filter(c => c.callingCode)
+    .map(country => ({
+      value: country.callingCode,
+      flag: country.flag,
+      country: country.name,
+    }))
+    .sort((a, b) => {
+      // Sort by numeric value
+      const numA = parseInt(a.value.replace(/\D/g, ''), 10) || 0;
+      const numB = parseInt(b.value.replace(/\D/g, ''), 10) || 0;
+      return numA - numB;
+    });
 
   // Validate form fields
   const validateForm = () => {
@@ -151,7 +196,7 @@ function BusinessContactForm() {
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.country) newErrors.country = "Country is required";
     if (!formData.state) newErrors.state = "State is required";
-    if (!formData.city) newErrors.city = "City is required";
+    if (!formData.city.trim()) newErrors.city = "City is required";
     if (!formData.phoneCode) newErrors.phoneCode = "Code is required";
     if (!formData.phone.trim()) newErrors.phone = "Phone is required";
     return newErrors;
@@ -160,24 +205,23 @@ function BusinessContactForm() {
   // Send confirmation email with Brevo API
   const sendConfirmationEmail = async () => {
     setEmailStatus("sending");
-    
     try {
       const response = await fetch(BREVO_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "api-key": BREVO_API_KEY
+          "api-key": BREVO_API_KEY,
         },
         body: JSON.stringify({
           sender: {
             name: "Renrg",
-            email: "contact@renrg.io"
+            email: "contact@renrg.io",
           },
           to: [
             {
               email: formData.email,
-              name: formData.name
-            }
+              name: formData.name,
+            },
           ],
           subject: "Thank you for your business inquiry",
           htmlContent: `
@@ -234,13 +278,11 @@ function BusinessContactForm() {
                 </div>
               </body>
             </html>
-          `
+          `,
         })
       });
-      
       const result = await response.json();
       console.log("Email sent result:", result);
-      
       if (response.ok) {
         setEmailStatus("sent");
       } else {
@@ -258,10 +300,8 @@ function BusinessContactForm() {
     e.preventDefault();
     const newErrors = validateForm();
     setErrors(newErrors);
-
     if (Object.keys(newErrors).length === 0) {
       setFormState("loading");
-      
       setTimeout(() => {
         console.log("Form submitted:", formData);
         sendConfirmationEmail();
@@ -270,14 +310,10 @@ function BusinessContactForm() {
     }
   };
 
-  // Helper to update formData with real-time validation
+  // Helper to update formData with immediate validation on change
   const handleInputChange = (field: keyof FormData, value: string) => {
-    // Update form data
     setFormData((prev) => ({ ...prev, [field]: value }));
-    
-    // Validate the field immediately
     const newErrors = { ...errors };
-    
     switch (field) {
       case "name":
         if (!value.trim()) {
@@ -345,32 +381,28 @@ function BusinessContactForm() {
         }
         break;
       default:
-        // No validation needed for properties field
         break;
     }
-    
     setErrors(newErrors);
   };
 
-    const [searchQuery, setSearchQuery] = useState("");
-    const [filteredCountries, setFilteredCountries] = useState(countries);
-  
-    // Filter countries based on search query
-    useEffect(() => {
-      const filtered = countries.filter((country) =>
-        country.name.toLowerCase().startsWith(searchQuery.toLowerCase())
-      );
-      setFilteredCountries(filtered);
-    }, [searchQuery, countries]);
-  
-    const handleKeyDown = (e) => {
-      if (/^[a-zA-Z0-9]$/.test(e.key)) {
-        setSearchQuery((prev) => prev + e.key);
-      } else if (e.key === "Backspace") {
-         setSearchQuery("");
-      }
-    };
-  
+  // For Country dropdown filtering
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredCountries, setFilteredCountries] = useState(countries);
+  useEffect(() => {
+    const filtered = countries.filter((country) =>
+      country.name.toLowerCase().startsWith(searchQuery.toLowerCase())
+    );
+    setFilteredCountries(filtered);
+  }, [searchQuery, countries]);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (/^[a-zA-Z0-9]$/.test(e.key)) {
+      setSearchQuery((prev) => prev + e.key);
+    } else if (e.key === "Backspace") {
+      setSearchQuery("");
+    }
+  };
 
   return (
     <FormContainer>
@@ -397,7 +429,6 @@ function BusinessContactForm() {
         <CardBody className="p-6">
           <AnimatePresence mode="wait">
             {formState === "success" ? (
-              // Success Screen
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -424,7 +455,6 @@ function BusinessContactForm() {
                 <Button 
                   className="bg-[#E9423A] text-white"
                   onPress={() => {
-                    // Reset to initial
                     setFormState("idle");
                     setEmailStatus(null);
                     setFormData({
@@ -446,7 +476,6 @@ function BusinessContactForm() {
                 </Button>
               </motion.div>
             ) : (
-              // Form Screen - REORGANIZED LAYOUT
               <motion.form 
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -527,34 +556,34 @@ function BusinessContactForm() {
 
                 {/* Row 3: Country, State & City */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex-1" onKeyDown={handleKeyDown}>
-                        <Select
-                          placeholder="Country *"
-                          variant="faded"
-                          size="lg"
-                          isDisabled={formState === "loading"}
-                          classNames={selectClasses}
-                          selectedKeys={formData.country ? [formData.country] : []}
-                          onSelectionChange={(keys) => {
-                            const selected = Array.from(keys)[0]?.toString() || "";
-                            handleInputChange("country", selected);
-                            if (selected !== formData.country) {
-                              handleInputChange("state", "");
-                            }
-                          }}
-                          isInvalid={!!errors.country}
-                          errorMessage={errors.country}
-                        >
-                          {filteredCountries.map((country) => (
-                            <SelectItem key={country.name} textValue={country.name}>
-                              <div className="flex items-center gap-2">
-                                <img src={country.flag} alt={country.name} className="w-5 h-5" />
-                                <span>{country.name}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      </div>
+                  <div onKeyDown={handleKeyDown}>
+                    <Select
+                      placeholder="Country *"
+                      variant="faded"
+                      size="lg"
+                      isDisabled={formState === "loading"}
+                      classNames={selectClasses}
+                      selectedKeys={formData.country ? [formData.country] : []}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0]?.toString() || "";
+                        handleInputChange("country", selected);
+                        if (selected !== formData.country) {
+                          handleInputChange("state", "");
+                        }
+                      }}
+                      isInvalid={!!errors.country}
+                      errorMessage={errors.country}
+                    >
+                      {filteredCountries.map((country) => (
+                        <SelectItem key={country.name} textValue={country.name}>
+                          <div className="flex items-center gap-2">
+                            <img src={country.flag} alt={country.name} className="w-5 h-5" />
+                            <span>{country.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
                   <div>
                     <Select
                       placeholder={isFetchingStates ? "Loading states..." : "State *"}
@@ -576,9 +605,7 @@ function BusinessContactForm() {
                         ))
                       ) : (
                         <SelectItem key="none">
-                          {isFetchingStates
-                            ? "Loading states..."
-                            : "No states available"}
+                          {isFetchingStates ? "Loading states..." : "No states available"}
                         </SelectItem>
                       )}
                     </Select>
@@ -601,36 +628,60 @@ function BusinessContactForm() {
 
                 {/* Row 4: Phone Code & Phone */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Select
-                      placeholder="Phone Code *"
-                      variant="faded"
+                  <div className="relative" ref={phoneCodeRef}>
+                    <Input
+                      type="text"
                       size="lg"
-                      isDisabled={formState === "loading"}
-                      classNames={selectClasses}
-                      selectedKeys={formData.phoneCode ? [formData.phoneCode] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string || "";
-                        handleInputChange("phoneCode", selected);
+                      placeholder="Code *"
+                      variant="faded"
+                      value={phoneCodeInput}
+                      onChange={(e) => {
+                        setPhoneCodeInput(e.target.value);
+                        setShowPhoneDropdown(true);
                       }}
+                      onClick={() => setShowPhoneDropdown(true)}
+                      classNames={inputClasses}
                       isInvalid={!!errors.phoneCode}
                       errorMessage={errors.phoneCode}
-                    >
-                      {countries
-                        .filter((c) => c.callingCode)
-                        .map((country) => (
-                          <SelectItem key={country.callingCode} textValue={country.callingCode}>
-                            <div className="flex items-center gap-2">
-                              <img
-                                src={country.flag}
-                                alt={country.name}
-                                className="w-5 h-5"
-                              />
-                              <span>{country.callingCode}</span>
+                      isDisabled={formState === "loading"}
+                    />
+                    
+                    {showPhoneDropdown && (
+                      <div 
+                        className="absolute z-50 w-full mt-1 bg-[#333] border border-[#444] rounded-lg shadow-lg max-h-[200px] overflow-y-auto"
+                      >
+                        {phoneCodesList
+                          .filter(code => {
+                            const input = phoneCodeInput.trim().toLowerCase();
+                            return input === "" || 
+                                   code.country.toLowerCase().includes(input) ||
+                                   code.value.toLowerCase().includes(input);
+                          })
+                          .map(code => (
+                            <div 
+                              key={code.value}
+                              className="flex items-center gap-2 p-2 hover:bg-[#444] cursor-pointer"
+                              onClick={() => {
+                                handleInputChange("phoneCode", code.value);
+                                setPhoneCodeInput(code.value);
+                                setShowPhoneDropdown(false);
+                              }}
+                            >
+                              <img src={code.flag} alt={code.country} className="w-5 h-5" />
+                              <span className="font-medium">{code.value}</span>
+                              <span className="text-xs text-gray-400">({code.country})</span>
                             </div>
-                          </SelectItem>
-                        ))}
-                    </Select>
+                          ))}
+                        {phoneCodesList.filter(code => {
+                          const input = phoneCodeInput.trim().toLowerCase();
+                          return input === "" || 
+                                 code.country.toLowerCase().includes(input) ||
+                                 code.value.toLowerCase().includes(input);
+                        }).length === 0 && (
+                          <div className="p-2 text-gray-400">No results found</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Input
