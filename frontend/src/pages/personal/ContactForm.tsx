@@ -291,6 +291,11 @@ function ContactForm() {
                   </div>
                   <div class="footer">
                     <p>&copy; ${new Date().getFullYear()} Renrg. All rights reserved.</p>
+                    <p>NRG DE Ltd. <br>
+                    Aegis Chambers, 1st Floor, Ellen Skelton Building, <br>
+                    3076 Sir Francis Drake's Highway, Road Town, Tortola, VG1110,<br>
+                    British Virgin Islands
+                    </p>
                   </div>
                 </div>
               </body>
