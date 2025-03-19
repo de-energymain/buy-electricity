@@ -12,6 +12,7 @@ import {
 import { CheckCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { KeyboardEvent as ReactKeyboardEvent } from "react";
 import logo from "../../assets/logo.svg";
 import { 
   FormContainer, 
