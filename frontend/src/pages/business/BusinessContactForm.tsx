@@ -396,7 +396,7 @@ function BusinessContactForm() {
     setFilteredCountries(filtered);
   }, [searchQuery, countries]);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       setSearchQuery((prev) => prev + e.key);
     } else if (e.key === "Backspace") {
