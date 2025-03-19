@@ -352,6 +352,26 @@ function BusinessContactForm() {
     setErrors(newErrors);
   };
 
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filteredCountries, setFilteredCountries] = useState(countries);
+  
+    // Filter countries based on search query
+    useEffect(() => {
+      const filtered = countries.filter((country) =>
+        country.name.toLowerCase().startsWith(searchQuery.toLowerCase())
+      );
+      setFilteredCountries(filtered);
+    }, [searchQuery, countries]);
+  
+    const handleKeyDown = (e) => {
+      if (/^[a-zA-Z0-9]$/.test(e.key)) {
+        setSearchQuery((prev) => prev + e.key);
+      } else if (e.key === "Backspace") {
+         setSearchQuery("");
+      }
+    };
+  
+
   return (
     <FormContainer>
       {/* Logo */}
@@ -507,38 +527,34 @@ function BusinessContactForm() {
 
                 {/* Row 3: Country, State & City */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Select
-                      placeholder="Country *"
-                      variant="faded"
-                      size="lg"
-                      isDisabled={formState === "loading"}
-                      classNames={selectClasses}
-                      selectedKeys={formData.country ? [formData.country] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string || "";
-                        handleInputChange("country", selected);
-                        if (selected !== formData.country) {
-                          handleInputChange("state", "");
-                        }
-                      }}
-                      isInvalid={!!errors.country}
-                      errorMessage={errors.country}
-                    >
-                      {countries.map((country) => (
-                        <SelectItem key={country.name} textValue={country.name}>
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={country.flag}
-                              alt={country.name}
-                              className="w-5 h-5"
-                            />
-                            <span>{country.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  </div>
+                  <div className="flex-1" onKeyDown={handleKeyDown}>
+                        <Select
+                          placeholder="Country *"
+                          variant="faded"
+                          size="lg"
+                          isDisabled={formState === "loading"}
+                          classNames={selectClasses}
+                          selectedKeys={formData.country ? [formData.country] : []}
+                          onSelectionChange={(keys) => {
+                            const selected = Array.from(keys)[0]?.toString() || "";
+                            handleInputChange("country", selected);
+                            if (selected !== formData.country) {
+                              handleInputChange("state", "");
+                            }
+                          }}
+                          isInvalid={!!errors.country}
+                          errorMessage={errors.country}
+                        >
+                          {filteredCountries.map((country) => (
+                            <SelectItem key={country.name} textValue={country.name}>
+                              <div className="flex items-center gap-2">
+                                <img src={country.flag} alt={country.name} className="w-5 h-5" />
+                                <span>{country.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      </div>
                   <div>
                     <Select
                       placeholder={isFetchingStates ? "Loading states..." : "State *"}

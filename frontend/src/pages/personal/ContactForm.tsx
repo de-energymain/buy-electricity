@@ -345,6 +345,43 @@ function ContactForm() {
     window.history.back();
   };
 
+  const [searchCountryQuery, setSearchCountryQuery] = useState("");
+  const [searchStateQuery, setSearchStatesQuery] = useState("");
+  const [filteredCountries, setFilteredCountries] = useState(countries);
+  const [filteredStates, setFilteredStates] = useState(states);
+
+  // Filter countries based on search query
+  useEffect(() => {
+    const filtered = countries.filter((country) =>
+      country.name.toLowerCase().startsWith(searchCountryQuery.toLowerCase())
+    );
+    setFilteredCountries(filtered);
+  }, [searchCountryQuery, countries]);
+
+  const handleKeyDown = (e) => {
+    if (/^[a-zA-Z0-9]$/.test(e.key)) {
+      setSearchCountryQuery((prev) => prev + e.key);
+    } else if (e.key === "Backspace") {
+       setSearchCountryQuery("");
+    }
+  };
+
+  // Filter states based on search query
+  useEffect(() => {
+    const filtered = states.filter((state) =>
+      state.toLowerCase().startsWith(searchStateQuery.toLowerCase())
+    );
+    setFilteredStates(filtered);
+  }, [searchStateQuery, states]);
+
+  const handleKeyDownStates = (e) => {
+    if (/^[a-zA-Z0-9]$/.test(e.key)) {
+      setSearchStatesQuery((prev) => prev + e.key);
+    } else if (e.key === "Backspace") {
+       setSearchStatesQuery("");
+    }
+  };
+
   return (
     <FormContainer>
       {/* Logo - reduced vertical space */}
@@ -480,57 +517,52 @@ function ContactForm() {
 
                 {/* Row 2: Country, State & City */}
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1">
-                    <Select
-                      placeholder="Country *"
-                      variant="faded"
-                      size="lg"
-                      isDisabled={formState === "loading"}
-                      classNames={selectClasses}
-                      selectedKeys={formData.country ? [formData.country] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0]?.toString() || "";
-                        handleInputChange("country", selected);
-                        // Clear state when country changes
-                        if (selected !== formData.country) {
-                          handleInputChange("state", "");
-                        }
-                      }}
-                      isInvalid={!!errors.country}
-                      errorMessage={errors.country}
-                    >
-                      {countries.map((country) => (
-                        <SelectItem key={country.name} textValue={country.name}>
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={country.flag}
-                              alt={country.name}
-                              className="w-5 h-5"
-                            />
-                            <span>{country.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  </div>
+                  <div className="flex-1" onKeyDown={handleKeyDown}>
+      <Select
+        placeholder="Country *"
+        variant="faded"
+        size="lg"
+        isDisabled={formState === "loading"}
+        classNames={selectClasses}
+        selectedKeys={formData.country ? [formData.country] : []}
+        onSelectionChange={(keys) => {
+          const selected = Array.from(keys)[0]?.toString() || "";
+          handleInputChange("country", selected);
+          if (selected !== formData.country) {
+            handleInputChange("state", "");
+          }
+        }}
+        isInvalid={!!errors.country}
+        errorMessage={errors.country}
+      >
+        {filteredCountries.map((country) => (
+          <SelectItem key={country.name} textValue={country.name}>
+            <div className="flex items-center gap-2">
+              <img src={country.flag} alt={country.name} className="w-5 h-5" />
+              <span>{country.name}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </Select>
+    </div>
 
-                  <div className="flex-1">
-                    <Select
-                      placeholder={isFetchingStates ? "Loading states..." : "State *"}
-                      variant="faded"
-                      size="lg"
-                      isDisabled={formState === "loading" || isFetchingStates || !formData.country}
-                      classNames={selectClasses}
-                      selectedKeys={formData.state ? [formData.state] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0]?.toString() || "";
-                        handleInputChange("state", selected);
-                      }}
-                      isInvalid={!!errors.state}
-                      errorMessage={errors.state}
-                    >
-                      {states.length > 0 ? (
-                        states.map((state) => (
+    <div className="flex-1" onKeyDown={handleKeyDownStates}>
+      <Select
+        placeholder={isFetchingStates ? "Loading states..." : "State *"}
+        variant="faded"
+        size="lg"
+        isDisabled={formState === "loading" || isFetchingStates || !formData.country}
+        classNames={selectClasses}
+        selectedKeys={formData.state ? [formData.state] : []}
+        onSelectionChange={(keys) => {
+          const selected = Array.from(keys)[0]?.toString() || "";
+          handleInputChange("state", selected);
+        }}
+        isInvalid={!!errors.state}
+        errorMessage={errors.state}
+      >
+        {filteredStates.length > 0 ? (
+                        filteredStates.map((state) => (
                           <SelectItem key={state}>{state}</SelectItem>
                         ))
                       ) : (
@@ -540,8 +572,13 @@ function ContactForm() {
                             : "No states available"}
                         </SelectItem>
                       )}
-                    </Select>
-                  </div>
+      </Select>
+    </div>
+
+
+             
+
+                  
                   
                   <div className="flex-1">
                     <Input
