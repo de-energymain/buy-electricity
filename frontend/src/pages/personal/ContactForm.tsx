@@ -345,6 +345,25 @@ function ContactForm() {
     window.history.back();
   };
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredCountries, setFilteredCountries] = useState(countries);
+
+  // Filter countries based on search query
+  useEffect(() => {
+    const filtered = countries.filter((country) =>
+      country.name.toLowerCase().startsWith(searchQuery.toLowerCase())
+    );
+    setFilteredCountries(filtered);
+  }, [searchQuery, countries]);
+
+  const handleKeyDown = (e) => {
+    if (/^[a-zA-Z0-9]$/.test(e.key)) {
+      setSearchQuery((prev) => prev + e.key);
+    } else if (e.key === "Backspace") {
+       setSearchQuery("");
+    }
+  };
+
   return (
     <FormContainer>
       {/* Logo - reduced vertical space */}
@@ -480,39 +499,36 @@ function ContactForm() {
 
                 {/* Row 2: Country, State & City */}
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1">
-                    <Select
-                      placeholder="Country *"
-                      variant="faded"
-                      size="lg"
-                      isDisabled={formState === "loading"}
-                      classNames={selectClasses}
-                      selectedKeys={formData.country ? [formData.country] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0]?.toString() || "";
-                        handleInputChange("country", selected);
-                        // Clear state when country changes
-                        if (selected !== formData.country) {
-                          handleInputChange("state", "");
-                        }
-                      }}
-                      isInvalid={!!errors.country}
-                      errorMessage={errors.country}
-                    >
-                      {countries.map((country) => (
-                        <SelectItem key={country.name} textValue={country.name}>
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={country.flag}
-                              alt={country.name}
-                              className="w-5 h-5"
-                            />
-                            <span>{country.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  </div>
+                  <div className="flex-1" onKeyDown={handleKeyDown}>
+      <Select
+        placeholder="Country *"
+        variant="faded"
+        size="lg"
+        isDisabled={formState === "loading"}
+        classNames={selectClasses}
+        selectedKeys={formData.country ? [formData.country] : []}
+        onSelectionChange={(keys) => {
+          const selected = Array.from(keys)[0]?.toString() || "";
+          handleInputChange("country", selected);
+          if (selected !== formData.country) {
+            handleInputChange("state", "");
+          }
+        }}
+        isInvalid={!!errors.country}
+        errorMessage={errors.country}
+      >
+        {filteredCountries.map((country) => (
+          <SelectItem key={country.name} textValue={country.name}>
+            <div className="flex items-center gap-2">
+              <img src={country.flag} alt={country.name} className="w-5 h-5" />
+              <span>{country.name}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </Select>
+    </div>
+
+             
 
                   <div className="flex-1">
                     <Select
