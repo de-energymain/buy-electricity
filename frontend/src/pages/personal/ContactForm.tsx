@@ -9,7 +9,7 @@ import {
   Spinner,
   Textarea
 } from "@nextui-org/react";
-import { ArrowLeft, CheckCircle, Search } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/logo.svg";
@@ -21,9 +21,42 @@ import {
   secondaryButtonClasses,
   formElementTransition
 } from "../../shared/styles";
+import { KeyboardEvent as ReactKeyboardEvent } from "react";
+
+// Define interfaces for type safety
+interface FormDataType {
+  name: string;
+  email: string;
+  country: string;
+  state: string;
+  city: string;
+  phoneCode: string;
+  phone: string;
+  properties: string;
+  kwh?: string;
+  panels?: string;
+  cost?: string;
+}
+
+interface ErrorsType {
+  [key: string]: string;
+}
+
+interface CountryType {
+  name: string;
+  flag: string;
+  callingCode: string;
+}
+
+interface CallingCodeType {
+  value: string;
+  flag: string;
+  country: string;
+  searchText: string;
+}
 
 // Simple email validation
-const isValidEmail = (email) =>
+const isValidEmail = (email: string): boolean =>
   /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/.test(email);
 
 // Brevo API configuration
@@ -37,9 +70,9 @@ function ContactForm() {
   const [showPhoneDropdown, setShowPhoneDropdown] = useState(false);
 
   // Create a ref for the phone code container
-  const phoneContainerRef = useRef(null);
+  const phoneContainerRef = useRef<HTMLDivElement>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataType>({
     name: "",
     email: "",
     country: "",
@@ -50,13 +83,13 @@ function ContactForm() {
     properties: "",
   });
 
-  const [errors, setErrors] = useState({});
-  const [formState, setFormState] = useState("idle");
-  const [emailStatus, setEmailStatus] = useState(null);
+  const [errors, setErrors] = useState<ErrorsType>({});
+  const [formState, setFormState] = useState<"idle" | "loading" | "success">("idle");
+  const [emailStatus, setEmailStatus] = useState<null | "sending" | "sent" | "failed">(null);
 
   // Data from APIs
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState<CountryType[]>([]);
+  const [states, setStates] = useState<string[]>([]);
   const [isFetchingStates, setIsFetchingStates] = useState(false);
 
   // Ensure dropdown is closed on initial mount
@@ -66,8 +99,8 @@ function ContactForm() {
 
   // Click-outside handler for phone code dropdown
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (phoneContainerRef.current && !phoneContainerRef.current.contains(e.target)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (phoneContainerRef.current && !phoneContainerRef.current.contains(e.target as Node)) {
         setShowPhoneDropdown(false);
       }
     };
@@ -84,7 +117,7 @@ function ContactForm() {
         const data = await res.json();
         // Sort by country name
         const countryList = data
-          .map((country) => ({
+          .map((country: any) => ({
             name: country.name.common,
             flag: country.flags.svg,
             callingCode:
@@ -92,7 +125,7 @@ function ContactForm() {
                 ? `${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ""}`
                 : "",
           }))
-          .sort((a, b) => a.name.localeCompare(b.name));
+          .sort((a: CountryType, b: CountryType) => a.name.localeCompare(b.name));
         setCountries(countryList);
       } catch (error) {
         console.error("Error fetching countries:", error);
@@ -114,7 +147,7 @@ function ContactForm() {
           });
           const data = await res.json();
           if (!data.error && data.data && data.data.states) {
-            setStates(data.data.states.map((s) => s.name));
+            setStates(data.data.states.map((s: any) => s.name));
           } else {
             setStates([]);
           }
@@ -129,7 +162,7 @@ function ContactForm() {
   }, [formData.country]);
 
   // Prepare calling codes for searching
-  const callingCodes = countries
+  const callingCodes: CallingCodeType[] = countries
     .filter(c => c.callingCode)
     .map(country => ({
       value: country.callingCode,
@@ -152,7 +185,7 @@ function ContactForm() {
       );
 
   // Validate a single field
-  const validateField = (field, value) => {
+  const validateField = (field: keyof FormDataType, value: string): string | undefined => {
     switch (field) {
       case "name":
         return !value.trim() ? "Name is required" : undefined;
@@ -178,7 +211,7 @@ function ContactForm() {
   };
 
   // Helper to update formData with real-time validation
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: keyof FormDataType, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     const errorMessage = validateField(field, value);
     setErrors((prev) => {
@@ -193,11 +226,12 @@ function ContactForm() {
   };
 
   // Validate all form fields
-  const validateForm = () => {
-    const newErrors = {};
+  const validateForm = (): ErrorsType => {
+    const newErrors: ErrorsType = {};
     Object.keys(formData).forEach((key) => {
       if (key === "properties") return;
-      const error = validateField(key, formData[key]);
+      if (key === "kwh" || key === "panels" || key === "cost") return;
+      const error = validateField(key as keyof FormDataType, formData[key as keyof FormDataType]);
       if (error) {
         newErrors[key] = error;
       }
@@ -207,7 +241,7 @@ function ContactForm() {
 
   // Add monthly usage, panel count, and cost to form data from query parameters
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
+    const queryParams = new URLSearchParams(window.location.search);
     const usageInput = parseFloat(queryParams.get("kwh") || "0");
     const panelCount = parseInt(queryParams.get("panels") || "0", 10);
     const totalCost = parseFloat(queryParams.get("cost") || "0");
@@ -218,7 +252,7 @@ function ContactForm() {
       panels: panelCount.toString(),
       cost: totalCost.toString(),
     }));
-  }, [location.search]);
+  }, [window.location.search]);
 
   // Send confirmation email with Brevo API
   const sendConfirmationEmail = async () => {
@@ -320,7 +354,7 @@ function ContactForm() {
   };
 
   // On form submit
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors = validateForm();
     setErrors(newErrors);
@@ -342,8 +376,8 @@ function ContactForm() {
   // Country and state search management
   const [searchCountryQuery, setSearchCountryQuery] = useState("");
   const [searchStateQuery, setSearchStatesQuery] = useState("");
-  const [filteredCountries, setFilteredCountries] = useState(countries);
-  const [filteredStates, setFilteredStates] = useState(states);
+  const [filteredCountries, setFilteredCountries] = useState<CountryType[]>(countries);
+  const [filteredStates, setFilteredStates] = useState<string[]>(states);
 
   useEffect(() => {
     const filtered = countries.filter((country) =>
@@ -352,7 +386,7 @@ function ContactForm() {
     setFilteredCountries(filtered);
   }, [searchCountryQuery, countries]);
 
-  const handleKeyDownCountry = (e) => {
+  const handleKeyDownCountry = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       setSearchCountryQuery((prev) => prev + e.key);
     } else if (e.key === "Backspace") {
@@ -367,7 +401,7 @@ function ContactForm() {
     setFilteredStates(filtered);
   }, [searchStateQuery, states]);
 
-  const handleKeyDownStates = (e) => {
+  const handleKeyDownStates = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (/^[a-zA-Z0-9]$/.test(e.key)) {
       setSearchStatesQuery((prev) => prev + e.key);
     } else if (e.key === "Backspace") {
