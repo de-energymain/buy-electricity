@@ -430,7 +430,7 @@ function ContactForm() {
         <CardHeader className="flex justify-center items-center flex-col -mb-4">
           <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner w-full text-center">
             <h2 className="text-3xl font-bold text-white mb-2 font-electrolize">
-              Get in Touch
+              Join Waitlist
             </h2>
             <p className="text-sm text-white font-inter">
               Fill out this quick form and our team will be in touch.
