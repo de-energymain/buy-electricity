@@ -530,7 +530,7 @@ function ContactForm() {
                   </div>
                 </div>
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1" onKeyDown={handleKeyDownCountry}>
+                  <div className="flex-1" style={{ maxWidth: "125px" }} onKeyDown={handleKeyDownCountry}>
                     <Select
                       placeholder="Country *"
                       variant="faded"
@@ -558,7 +558,7 @@ function ContactForm() {
                       ))}
                     </Select>
                   </div>
-                  <div className="flex-1" onKeyDown={handleKeyDownStates}>
+                  <div className="flex-1" style={{maxWidth: "125px" }} onKeyDown={handleKeyDownStates}>
                     <Select
                       placeholder={isFetchingStates ? "Loading states..." : "State *"}
                       variant="faded"
@@ -584,7 +584,7 @@ function ContactForm() {
                       )}
                     </Select>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1" style={{ maxWidth: "125px", flex: "1 1 0" }}>
                     <Input
                       type="text"
                       size="lg"
