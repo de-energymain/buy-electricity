@@ -430,7 +430,7 @@ function ContactForm() {
         <CardHeader className="flex justify-center items-center flex-col -mb-4">
           <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner w-full text-center">
             <h2 className="text-3xl font-bold text-white mb-2 font-electrolize">
-              Get in Touch
+              Join Waitlist
             </h2>
             <p className="text-sm text-white font-inter">
               Fill out this quick form and our team will be in touch.
@@ -530,7 +530,7 @@ function ContactForm() {
                   </div>
                 </div>
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1" onKeyDown={handleKeyDownCountry}>
+                  <div className="flex-1 min-w-0"  onKeyDown={handleKeyDownCountry}>
                     <Select
                       placeholder="Country *"
                       variant="faded"
@@ -558,7 +558,7 @@ function ContactForm() {
                       ))}
                     </Select>
                   </div>
-                  <div className="flex-1" onKeyDown={handleKeyDownStates}>
+                  <div className="flex-1 min-w-0" onKeyDown={handleKeyDownStates}>
                     <Select
                       placeholder={isFetchingStates ? "Loading states..." : "State *"}
                       variant="faded"
@@ -584,7 +584,7 @@ function ContactForm() {
                       )}
                     </Select>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <Input
                       type="text"
                       size="lg"
