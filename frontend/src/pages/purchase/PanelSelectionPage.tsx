@@ -19,7 +19,7 @@ import {
 
 // Placeholder for solar farm image
 // Replace this with actual image in production
-const solarFarmPlaceholder = "https://via.placeholder.com/400x160";
+const solarFarmPlaceholder = "https://de.energy/wp-content/uploads/2024/07/Tea-manufacturer.jpeg";
 
 function PanelSelectionPage() {
   const navigate = useNavigate();
