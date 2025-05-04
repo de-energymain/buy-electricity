@@ -56,12 +56,14 @@ function ByPanelsForm() {
     setIsNavigating(true);
     setTimeout(() => {
       const queryParams = new URLSearchParams({
-        kwh: usageInput.toString(), // Use the state value
+        kwh: usageInput.toString(), 
         panels: panelCount.toString(),
         cost: estimatedCost.toString(),
       });
       console.log("Navigating with query params:", queryParams.toString());
-      navigate(`/contact?${queryParams.toString()}`);
+      
+      // UPDATED HERE - Navigate to the panel selection page instead of contact page
+      navigate(`/panel-selection?${queryParams.toString()}`);
     }, 800);
   };
 
