@@ -11,10 +11,8 @@ import {
   BarChart3, 
   Home, 
   PieChart, 
-  LineChart, 
   Settings, 
   HelpCircle, 
-  RefreshCw, 
   History, 
   Wallet, 
   ShoppingBag, 
@@ -43,7 +41,7 @@ function DashboardPage() {
   const [activeTab, setActiveTab] = useState("week");
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     energyGenerated: 900,
     energyChange: 12,
     nrgEarnings: 613,
@@ -105,7 +103,7 @@ function DashboardPage() {
       
       case "week":
         // Daily data for a week
-        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        // const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         data = [
           { day: "Mon", value: 20 },
           { day: "Tue", value: 30 },

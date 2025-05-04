@@ -4,7 +4,6 @@ import {
   Button, 
   Card, 
   CardBody,
-  useDisclosure,
   Spinner
 } from "@nextui-org/react";
 import { ArrowLeft, Clock } from "lucide-react";
@@ -34,7 +33,6 @@ export default function PaymentMethodPage() {
   const { connection } = useConnection();
   const { publicKey, connected, disconnect, signTransaction, select, wallet, wallets } = useWallet();
   const { setVisible } = useWalletModal();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   // Toast state
   const [toasts, setToasts] = useState<any[]>([]);
@@ -62,12 +60,12 @@ export default function PaymentMethodPage() {
     const params = new URLSearchParams(location.search);
     if (params.get("farm")) {
       setOrderDetails({
-        farm: params.get("farm") || "Jaipur Solar Farm",
-        location: params.get("location") || "Jaipur, Rajasthan, India",
-        panels: parseInt(params.get("panels") || "29"),
-        capacity: parseFloat(params.get("capacity") || "13.05"),
-        output: parseInt(params.get("output") || "0"),
-        cost: parseFloat(params.get("cost") || "15225.00")
+        farm: params.get("farm") || orderDetails.farm,
+        location: params.get("location") || orderDetails.location,
+        panels: parseInt(params.get("panels") || `${orderDetails.panels}`),
+        capacity: parseFloat(params.get("capacity") || `${orderDetails.capacity}`),
+        output: parseInt(params.get("output") || `${orderDetails.output}`),
+        cost: parseFloat(params.get("cost") || `${orderDetails.cost}`)
       });
     }
   }, [location.search]);
@@ -98,52 +96,35 @@ export default function PaymentMethodPage() {
     return () => clearInterval(timer);
   }, [lockMinutes, lockSeconds]);
 
-  // Toast helpers
+  // Toast helper
   const showToast = (title: string, description: string, type = "success", duration = 3000) => {
     const newToast = { id: toastKey, title, description, type, duration };
     setToasts(prev => [...prev, newToast]);
     setToastKey(prev => prev + 1);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== newToast.id));
-    }, duration);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== newToast.id)), duration);
   };
 
   useEffect(() => {
     if (connected && publicKey && wallet) {
-      showToast(
-        "Wallet Connected",
-        `Connected to ${wallet.adapter.name}`,
-        "success"
-      );
+      showToast("Wallet Connected", `Connected to ${wallet.adapter.name}`, "success");
     }
   }, [connected, publicKey, wallet]);
 
   const handleSelectPayment = (method: PaymentMethod) => setSelectedPayment(method);
   const handleSelectWallet = () => wallets.length > 0 && select?.(wallets[0].adapter.name);
 
-  // Open wallet selector on change
   const handleChangeWallet = async () => {
-    if (disconnect) {
-      await disconnect();
-    }
+    await disconnect?.();
     setVisible(true);
   };
 
-  // Truncate address
-  const truncateAddress = (address: string) => {
-    return address.length <= 8 ? address : `${address.substring(0, 4)}...${address.substring(address.length - 4)}`;
-  };
+  const truncateAddress = (address: string) =>
+    address.length <= 8 ? address : `${address.slice(0, 4)}...${address.slice(-4)}`;
 
-  // Process payment
   const handleProceedToPayment = async () => {
     setIsProcessingPayment(true);
     const processingId = toastKey;
-    showToast(
-      "Processing Payment",
-      `Sending ${tokenAmount.toFixed(2)} ${selectedPayment}...`,
-      "primary",
-      100000
-    );
+    showToast("Processing Payment", `Sending ${tokenAmount.toFixed(2)} ${selectedPayment}...`, "primary", 100000);
     try {
       if (connected && publicKey && signTransaction) {
         const lamports = Math.floor(tokenAmount * LAMPORTS_PER_SOL);
@@ -160,13 +141,7 @@ export default function PaymentMethodPage() {
         setToasts(prev => prev.filter(t => t.id !== processingId));
         showToast("Payment Successful", "Your transaction was completed successfully", "success", 3000);
         navigate("/payment-success", {
-          state: {
-            ...orderDetails,
-            paymentMethod: selectedPayment,
-            tokenAmount,
-            wallet: wallet?.adapter.name || "Unknown",
-            signature
-          }
+          state: { ...orderDetails, paymentMethod: selectedPayment, tokenAmount, wallet: wallet?.adapter.name ?? "Unknown", signature }
         });
       } else {
         handleSelectWallet();
@@ -190,184 +165,86 @@ export default function PaymentMethodPage() {
           onPress={handleBack}
           startContent={<ArrowLeft size={20} />}
           disabled={isProcessingPayment}
-        >
-          Back
-        </Button>
+        >Back</Button>
 
         <Card className={`${cardClasses} w-full overflow-hidden`}>
-          {/* Header */}
           <div className="p-4 bg-[#000000]">
             <h2 className="text-2xl font-bold text-white mb-1 font-electrolize">Payment</h2>
             <p className="text-sm text-gray-300 font-inter">Choose your payment method</p>
           </div>
 
           <CardBody className="p-0 space-y-0 divide-y divide-gray-800">
-            {/* Order Summary */}
             <div className="p-4 bg-[#111111]">
               <h3 className="text-xl font-bold text-white mb-2">{orderDetails.farm}</h3>
-              <p className="text-sm text-gray-300 mb-4 flex items-center">
-                <span className="mr-1">📍</span> {orderDetails.location}
-              </p>
-              <div className="flex justify-between mb-3">
-                <span className="text-gray-400 text-sm">Panels:</span>
-                <span className="text-white">{orderDetails.panels}</span>
-              </div>
-              <div className="flex justify-between mb-3">
-                <span className="text-gray-400 text-sm">Capacity:</span>
-                <span className="text-white">{orderDetails.capacity.toFixed(2)} kW</span>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-800">
-                <div className="flex justify-between items-center">
-                  <span className="text-white font-medium">Total:</span>
-                  <span className="text-white font-bold">${orderDetails.cost.toFixed(2)}</span>
-                </div>
-              </div>
+              <p className="text-sm text-gray-300 mb-4 flex items-center"><span className="mr-1">📍</span>{orderDetails.location}</p>
+              <div className="flex justify-between mb-3"><span className="text-gray-400 text-sm">Panels:</span><span className="text-white">{orderDetails.panels}</span></div>
+              <div className="flex justify-between mb-3"><span className="text-gray-400 text-sm">Capacity:</span><span className="text-white">{orderDetails.capacity.toFixed(2)} kW</span></div>
+              <div className="mt-4 pt-4 border-t border-gray-800"><div className="flex justify-between items-center"><span className="text-white font-medium">Total:</span><span className="text-white font-bold">${orderDetails.cost.toFixed(2)}</span></div></div>
             </div>
 
-            {/* Payment Method */}
             <div className="p-4 bg-[#111111]">
               <h3 className="text-xl font-bold text-white mb-4">Payment Method</h3>
               <div className="grid grid-cols-3 gap-3 mb-5">
-                {/* NRG Option */}
-                <div 
-                  className={`cursor-pointer transition-all border ${
-                    selectedPayment === "NRG" 
-                      ? "border-[#E9423A] bg-[#3A1A18]"
-                      : "border-gray-700 bg-[#252525]"
-                  }`}
-                  onClick={() => handleSelectPayment("NRG")}
-                >
-                  <div className="p-3 flex flex-col items-center justify-center h-full">
-                    <img src={nrgIcon} alt="NRG" className="w-8 h-8 mb-2" />
-                    <div className="text-sm font-bold text-white">NRG</div>
+                {[
+                  { method: 'NRG', icon: nrgIcon },
+                  { method: 'SOL', icon: solIcon },
+                  { method: 'USDC', icon: usdcIcon }
+                ].map(({ method, icon }) => (
+                  <div
+                    key={method}
+                    className={`cursor-pointer transition-all border ${selectedPayment===method ? 'border-[#E9423A] bg-[#3A1A18]' : 'border-gray-700 bg-[#252525]'}`}
+                    onClick={() => handleSelectPayment(method as PaymentMethod)}
+                  >
+                    <div className="p-3 flex flex-col items-center justify-center h-full">
+                      <img src={icon} alt={method} className="w-8 h-8 mb-2" />
+                      <div className="text-sm font-bold text-white">{method}</div>
+                    </div>
                   </div>
-                </div>
-                {/* SOL Option */}
-                <div 
-                  className={`cursor-pointer transition-all border ${
-                    selectedPayment === "SOL" 
-                      ? "border[#E9423A] bg[#3A1A18]"
-                      : "border-gray-700 bg-[#252525]"
-                  }`}
-                  onClick={() => handleSelectPayment("SOL")}
-                >
-                  <div className="p-3 flex flex-col items-center justify-center h-full">
-                    <img src={solIcon} alt="SOL" className="w-8 h-8 mb-2" />
-                    <div className="text-sm font-bold text-white">SOL</div>
-                  </div>
-                </div>
-                {/* USDC Option */}
-                <div 
-                  className={`cursor-pointer transition-all border ${
-                    selectedPayment === "USDC" 
-                      ? "border-[#E9423A] bg[#3A1A18]"
-                      : "border-gray-700 bg-[#252525]"
-                  }`}
-                  onClick={() => handleSelectPayment("USDC")}
-                >
-                  <div className="p-3 flex flex-col items-center justify-center h-full">
-                    <img src={usdcIcon} alt="USDC" className="w-8 h-8 mb-2" />
-                    <div className="text-sm font-bold text-white">USDC</div>
-                  </div>
-                </div>
+                ))}
               </div>
-
-              {/* Amount Display */}
               <div className="mb-3 text-center">
                 <p className="text-sm text-gray-300 mb-1">Amount Due in {selectedPayment}</p>
                 <p className="text-3xl font-bold text-white mb-1">{tokenAmount.toFixed(2)} {selectedPayment}</p>
                 <p className="text-sm text-gray-400 mb-2">≈ ${orderDetails.cost.toFixed(2)} USD</p>
                 <div className="inline-block px-2 py-1 bg-yellow-500 bg-opacity-20 rounded text-xs text-yellow-400">Devnet</div>
               </div>
-
-              {/* Timer */}
-              <div className="flex items-center justify-center text-sm text-[#E9423A]">
-                <Clock size={14} className="mr-1" />
-                <span>Price locked for {lockMinutes}:{lockSeconds < 10 ? `0${lockSeconds}` : lockSeconds}</span>
-              </div>
+              <div className="flex items-center justify-center text-sm text-[#E9423A]"><Clock size={14} className="mr-1" /><span>Price locked for {lockMinutes}:{lockSeconds<10?`0${lockSeconds}`:lockSeconds}</span></div>
             </div>
 
-            {/* Wallet & Action */}
             <div className="bg-[#111111] p-4">
               {connected && publicKey && (
                 <div className="px-4 py-2 text-center">
                   <p className="text-gray-400 text-xs">Connected to</p>
-                  <div className="flex items-center justify-center gap-1 text-sm text-white">
-                    <span>{wallet?.adapter.name || "Unknown Wallet"}</span>
-                    <span>•</span>
-                    <span className="font-mono">{truncateAddress(publicKey.toString())}</span>
-                  </div>
-                  <button 
-                    className="text-[#E9423A] text-xs mt-1 hover:underline"
-                    onClick={handleChangeWallet}
-                  >
-                    change wallet
-                  </button>
+                  <div className="flex items-center justify-center gap-1 text-sm text-white"><span>{wallet?.adapter.name||'Unknown Wallet'}</span><span>•</span><span className="font-mono">{truncateAddress(publicKey.toString())}</span></div>
+                  <button onClick={handleChangeWallet} className="text-[#E9423A] text-xs mt-1 hover:underline">change wallet</button>
                 </div>
               )}
-
-              <Button 
-                className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative"
-                onPress={connected ? handleProceedToPayment : handleSelectWallet}
-                disabled={isProcessingPayment}
-              >
+              <Button className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative" onPress={connected?handleProceedToPayment:handleSelectWallet} disabled={isProcessingPayment}>
                 {isProcessingPayment && (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1 }}
-                    className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                  >
-                    <Spinner size="sm" />
-                  </motion.div>
+                  <motion.div animate={{rotate:360}} transition={{repeat:Infinity,duration:1}} className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"><Spinner size="sm" /></motion.div>
                 )}
-                <span className={`${isProcessingPayment ? 'opacity-0' : 'opacity-100'}`}>
-                  {connected ? 'Complete Payment' : 'Select Wallet'}
-                </span>
+                <span className={`${isProcessingPayment?'opacity-0':'opacity-100'}`}>{connected?'Complete Payment':'Select Wallet'}</span>
               </Button>
             </div>
           </CardBody>
         </Card>
 
-        {/* Toasts */}
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-          {toasts.map(toast => (
-            <div 
-              key={toast.id}
-              className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${
-                toast.type === 'success' ? 'bg-green-500/90 text-white' :
-                toast.type === 'danger' ? 'bg-red-500/90 text-white' :
-                toast.type === 'primary' ? 'bg-blue-500/90 text-white' :
-                'bg-black/80 text-white'
-              }`}
-              style={{ animationDuration: '200ms' }}
-            >
-              <div className="flex-1">
-                {toast.title && (
-                  <h4 className="font-medium text-sm mb-1">{toast.title}</h4>
-                )}
-                {toast.description && (
-                  <p className="text-xs opacity-90">{toast.description}</p>
-                )}
-              </div>
-              <button 
-                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-                className="text-xs text-white/80 hover:text-white"
-              >
-                ✕
-              </button>
+          {toasts.map(toast=>(
+            <div key={toast.id} className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${toast.type==='success'?'bg-green-500/90 text-white':toast.type==='danger'?'bg-red-500/90 text-white':toast.type==='primary'?'bg-blue-500/90 text-white':'bg-black/80 text-white'}`} style={{animationDuration:'200ms'}}>
+              <div className="flex-1">{toast.title&&<h4 className="font-medium text-sm mb-1">{toast.title}</h4>}{toast.description&&<p className="text-xs opacity-90">{toast.description}</p>}</div>
+              <button onClick={()=>setToasts(prev=>prev.filter(t=>t.id!==toast.id))} className="text-xs text-white/80 hover:text-white">✕</button>
             </div>
           ))}
         </div>
-
       </div>
 
-      {/* Animation keyframes */}
-      <style jsx global>{`
+      <style>{`
         @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
+          from {transform: translateX(100%); opacity: 0;}
+          to {transform: translateX(0); opacity: 1;}
         }
-        .animate-slideIn { animation: slideIn 0.2s ease-out forwards; }
+        .animate-slideIn {animation: slideIn 0.2s ease-out forwards;}
       `}</style>
     </FormContainer>
   );

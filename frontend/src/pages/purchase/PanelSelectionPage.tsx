@@ -28,7 +28,7 @@ function PanelSelectionPage() {
 
   // Panel configuration and details
   const [panelQuantity, setPanelQuantity] = useState(17);
-  const [farmDetails, setFarmDetails] = useState({
+  const [farmDetails] = useState({
     name: "Jaipur Solar Farm",
     location: "Jaipur, Rajasthan, India",
     solarIndex: 4.8,
