@@ -43,7 +43,7 @@ export const FormContainer: React.FC<FormContainerProps> = ({ children }) => (
     animate="animate"
     exit="exit"
     variants={pageTransition}
-    className="w-full md:w-1/2 p-6 md:p-12 flex flex-col items-center relative flex-1"
+    className="w-full md:w-1/2 p-4 md:p-6 flex flex-col items-center relative h-screen overflow-hidden"
     style={{
       background: "linear-gradient(to bottom, #202020, #000000)",
     }}
@@ -52,7 +52,6 @@ export const FormContainer: React.FC<FormContainerProps> = ({ children }) => (
     {children}
   </motion.div>
 );
-
 // Common input styling
 export const inputClasses = {
   input: "bg-[#3A3A3A] text-white placeholder:text-[#E2E2E2] rounded-none",
