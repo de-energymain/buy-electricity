@@ -16,7 +16,9 @@ import {
   History, 
   Wallet, 
   ShoppingBag, 
-  LogOut
+  LogOut,
+  RefreshCcw,
+  Clock10
 } from "lucide-react";
 import logo from "../../assets/logo.svg";
 
@@ -155,10 +157,12 @@ function DashboardPage() {
     navigate("/");
   };
 
+  const maxValue = Math.max(...chartData.map(item => item.value));
+
   return (
-    <div className="flex h-screen bg-black text-white">
+    <div className="flex w-full h-screen bg-black text-white">
       {/* Sidebar */}
-      <div className="w-64 bg-[#0F0F0F] flex flex-col h-full border-r border-gray-800">
+      <div className="hidden md:flex w-64 bg-[#0F0F0F] flex flex-col h-full border-r border-gray-800">
         {/* Logo */}
         <div className="p-4 flex justify-center border-b border-gray-800">
           <div className="w-10 h-10 flex items-center justify-center">
@@ -173,7 +177,7 @@ function DashboardPage() {
             <ul className="space-y-1">
               <li>
                 <Button 
-                  className="w-full justify-start bg-[#1A1A1A] text-white"
+                  className="w-full justify-start bg-red-500 text-white"
                   startContent={<Home size={18} />}
                 >
                   Dashboard
@@ -274,7 +278,23 @@ function DashboardPage() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-6 bg-[#0A0A0A]">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">Dashboard</h1>  
+              <div className="flex space-x-2">
+                <Button 
+                  isIconOnly 
+                  className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center"
+                >
+                  <RefreshCcw className="w-4 h-4 text-[#E9423A]" />
+                </Button>
+                <Button 
+                  isIconOnly
+                  className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center"
+                >
+                  <Clock10 className="w-4 h-4 text-[#E9423A]" />
+                </Button>
+              </div>
+          </div>
           
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -283,12 +303,12 @@ function DashboardPage() {
               <CardBody className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="text-sm text-gray-400">Energy Generated</div>
-                  <div className="w-6 h-6 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A]">
+                  <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-[#E9423A]">
                     ⚡
                   </div>
                 </div>
-                <div className="flex items-baseline">
-                  <div className="text-2xl font-bold">{stats.energyGenerated} kWh</div>
+                <div className="flex flex-col items-baseline">
+                  <div className="text-2xl text-white font-bold">{stats.energyGenerated} kWh</div>
                   <div className="ml-2 text-xs text-green-500">+{stats.energyChange}% from last month</div>
                 </div>
               </CardBody>
@@ -299,12 +319,12 @@ function DashboardPage() {
               <CardBody className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="text-sm text-gray-400">NRG Earnings</div>
-                  <div className="w-6 h-6 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A]">
+                  <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-[#E9423A]">
                     💰
                   </div>
                 </div>
-                <div className="flex items-baseline">
-                  <div className="text-2xl font-bold">{stats.nrgEarnings} NRG</div>
+                <div className="flex flex-col items-baseline">
+                  <div className="text-2xl text-white font-bold">{stats.nrgEarnings} NRG</div>
                   <div className="ml-2 text-xs text-green-500">+{stats.earningsChange}% from last month</div>
                 </div>
               </CardBody>
@@ -315,12 +335,12 @@ function DashboardPage() {
               <CardBody className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="text-sm text-gray-400">Carbon Impact</div>
-                  <div className="w-6 h-6 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A]">
+                  <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-[#E9423A]">
                     🌱
                   </div>
                 </div>
-                <div className="flex items-baseline">
-                  <div className="text-2xl font-bold">{stats.carbonImpact} tons</div>
+                <div className="flex flex-col items-baseline">
+                  <div className="text-2xl text-white font-bold">{stats.carbonImpact} tons</div>
                   <div className="ml-2 text-xs text-green-500">+{stats.carbonChange}% from last month</div>
                 </div>
               </CardBody>
@@ -331,12 +351,12 @@ function DashboardPage() {
               <CardBody className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="text-sm text-gray-400">Clean Points</div>
-                  <div className="w-6 h-6 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A]">
+                  <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-[#E9423A]">
                     ✨
                   </div>
                 </div>
-                <div className="flex items-baseline">
-                  <div className="text-2xl font-bold">{stats.cleanPoints}</div>
+                <div className="flex flex-col items-baseline">
+                  <div className="text-2xl text-white font-bold">{stats.cleanPoints}</div>
                   <div className="ml-2 text-xs text-green-500">+{stats.pointsChange}% from last month</div>
                 </div>
               </CardBody>
@@ -346,7 +366,7 @@ function DashboardPage() {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Energy Production Chart */}
-            <Card className="bg-[#1A1A1A] border-none lg:col-span-2">
+            <Card className="bg-[#1A1A1A] border-none lg:col-span-2 text-white">
               <CardBody className="p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium">Energy Production</h3>
@@ -366,13 +386,13 @@ function DashboardPage() {
                 </div>
                 
                 {/* Bar Chart */}
-                <div className="h-[200px] relative">
+                <div className="h-64 relative">
                   <div className="absolute inset-0 flex items-end">
                     {chartData.map((item, index) => (
                       <div key={index} className="flex-1 flex flex-col items-center space-y-2">
                         <div 
-                          className="w-6 bg-[#E9423A] rounded-sm"
-                          style={{ height: `${(item.value / 50) * 100}%`, maxHeight: '100%' }}
+                          className="w-6 bg-gradient-to-t from-red-800 to-[#E9423A] rounded-sm"
+                          style={{  height: `${(item.value / maxValue) * 180}px` }}
                         ></div>
                         <div className="text-xs text-gray-400">{item.day}</div>
                       </div>
@@ -400,22 +420,39 @@ function DashboardPage() {
             
             {/* Efficiency Gauge */}
             <Card className="bg-[#1A1A1A] border-none">
-              <CardBody className="p-6">
+              <CardBody className="p-6 text-white">
                 <h3 className="text-lg font-medium mb-4">Efficiency</h3>
                 
                 {/* Circular Gauge */}
                 <div className="relative flex items-center justify-center my-4">
-                  <div className="w-40 h-40 rounded-full border-8 border-gray-700"></div>
-                  <div 
-                    className="absolute top-0 left-0 w-40 h-40 rounded-full border-8 border-transparent"
-                    style={{ 
-                      clipPath: 'polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 0 100%, 0 0, 50% 0)',
-                      borderRightColor: '#E9423A',
-                      borderTopColor: '#E9423A',
-                      borderLeftColor: '#E9423A',
-                      transform: `rotate(${(stats.efficiency / 100) * 360}deg)`
-                    }}
-                  ></div>
+                  <svg width="160" height="160" viewBox="0 0 160 160" className="transform -rotate-90">
+                    <defs>
+                      <linearGradient id="efficiencyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#E9423A" />
+                        <stop offset="100%" stopColor="#c62828" /> 
+                      </linearGradient>
+                     </defs>
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="70"
+                      stroke="#333"
+                      strokeWidth="12"
+                      fill="none"
+                    />
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="70"
+                      stroke="url(#efficiencyGradient)"
+                      strokeWidth="12"
+                      fill="none"
+                      strokeDasharray={2 * Math.PI * 70}
+                      strokeDashoffset={(1 - stats.efficiency / 100) * 2 * Math.PI * 70}
+                      strokeLinecap="round"
+                      transform="rotate (75, 80, 80) scale(-1, 1) translate(-160, 0)"
+                    />
+                  </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="text-3xl font-bold">{stats.efficiency}%</div>
                     <div className="text-xs text-gray-400">Current</div>
@@ -443,7 +480,7 @@ function DashboardPage() {
           
           {/* Solar Nodes Table */}
           <Card className="bg-[#1A1A1A] border-none">
-            <CardBody className="p-6">
+            <CardBody className="p-6 text-white">
               <h3 className="text-lg font-medium mb-4">Your Solar Nodes</h3>
               
               <div className="overflow-x-auto">
