@@ -15,7 +15,7 @@ import DashboardPage from "./pages/dashboard/DashboardPage";
 
 function App() {
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
+    <div className="flex flex-col md:flex-row min-h-screen w-full">
       <SolanaWalletProvider>
       <Router>
         <Routes>

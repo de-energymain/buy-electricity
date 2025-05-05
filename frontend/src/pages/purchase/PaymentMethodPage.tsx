@@ -166,14 +166,12 @@ export default function PaymentMethodPage() {
           startContent={<ArrowLeft size={20} />}
           disabled={isProcessingPayment}
         >Back</Button>
-
         <Card className={`${cardClasses} w-full overflow-hidden`}>
           <div className="p-4 bg-[#000000]">
             <h2 className="text-2xl font-bold text-white mb-1 font-electrolize">Payment</h2>
             <p className="text-sm text-gray-300 font-inter">Choose your payment method</p>
           </div>
-
-          <CardBody className="p-0 space-y-0 divide-y divide-gray-800">
+          <CardBody className="p-0 space-y-0 divide-y divide-gray-800 no-scrollbar">
             <div className="p-4 bg-[#111111]">
               <h3 className="text-xl font-bold text-white mb-2">{orderDetails.farm}</h3>
               <p className="text-sm text-gray-300 mb-4 flex items-center"><span className="mr-1">📍</span>{orderDetails.location}</p>
@@ -181,7 +179,6 @@ export default function PaymentMethodPage() {
               <div className="flex justify-between mb-3"><span className="text-gray-400 text-sm">Capacity:</span><span className="text-white">{orderDetails.capacity.toFixed(2)} kW</span></div>
               <div className="mt-4 pt-4 border-t border-gray-800"><div className="flex justify-between items-center"><span className="text-white font-medium">Total:</span><span className="text-white font-bold">${orderDetails.cost.toFixed(2)}</span></div></div>
             </div>
-
             <div className="p-4 bg-[#111111]">
               <h3 className="text-xl font-bold text-white mb-4">Payment Method</h3>
               <div className="grid grid-cols-3 gap-3 mb-5">
@@ -210,7 +207,6 @@ export default function PaymentMethodPage() {
               </div>
               <div className="flex items-center justify-center text-sm text-[#E9423A]"><Clock size={14} className="mr-1" /><span>Price locked for {lockMinutes}:{lockSeconds<10?`0${lockSeconds}`:lockSeconds}</span></div>
             </div>
-
             <div className="bg-[#111111] p-4">
               {connected && publicKey && (
                 <div className="px-4 py-2 text-center">
@@ -228,7 +224,6 @@ export default function PaymentMethodPage() {
             </div>
           </CardBody>
         </Card>
-
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
           {toasts.map(toast=>(
             <div key={toast.id} className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${toast.type==='success'?'bg-green-500/90 text-white':toast.type==='danger'?'bg-red-500/90 text-white':toast.type==='primary'?'bg-blue-500/90 text-white':'bg-black/80 text-white'}`} style={{animationDuration:'200ms'}}>
@@ -238,13 +233,24 @@ export default function PaymentMethodPage() {
           ))}
         </div>
       </div>
-
       <style>{`
         @keyframes slideIn {
           from {transform: translateX(100%); opacity: 0;}
           to {transform: translateX(0); opacity: 1;}
         }
         .animate-slideIn {animation: slideIn 0.2s ease-out forwards;}
+        
+        /* hides scrollbar */
+        .no-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+          overflow-y: auto;
+        }
+        
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
     </FormContainer>
   );
