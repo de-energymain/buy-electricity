@@ -43,7 +43,7 @@ export const FormContainer: React.FC<FormContainerProps> = ({ children }) => (
     animate="animate"
     exit="exit"
     variants={pageTransition}
-    className="w-full md:w-1/2 p-4 md:p-6 flex flex-col items-center relative h-screen overflow-hidden"
+    className="w-full md:w-1/2 p-4 md:p-6 flex flex-col items-center relative h-screen overflow-y-auto"
     style={{
       background: "linear-gradient(to bottom, #202020, #000000)",
     }}
