@@ -177,7 +177,11 @@ function PanelSelectionPage() {
               <div className="text-xs text-gray-400">Efficiency</div>
             </div>
           </div>
+        </Card>       
 
+        <div className="h-4 m-2"></div>
+        
+        <Card className={cardClasses}>
           <CardBody className="bg-[#2F2F2F] p-6">
             <div className="space-y-6">
               <div>
