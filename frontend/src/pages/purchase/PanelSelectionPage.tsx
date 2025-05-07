@@ -5,7 +5,6 @@ import {
   Card, 
   CardBody, 
   Spinner,
-  Image
 } from "@nextui-org/react";
 import { ArrowLeft, Plus, Minus } from "lucide-react";
 import { motion } from "framer-motion";
@@ -19,7 +18,7 @@ import {
 
 // Placeholder for solar farm image
 // Replace this with actual image in production
-const solarFarmPlaceholder = "https://de.energy/wp-content/uploads/2024/07/Tea-manufacturer.jpeg";
+//const solarFarmPlaceholder = "https://de.energy/wp-content/uploads/2024/07/Tea-manufacturer.jpeg";
 
 function PanelSelectionPage() {
   const navigate = useNavigate();
