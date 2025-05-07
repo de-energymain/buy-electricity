@@ -50,7 +50,7 @@ export default function PaymentMethodPage() {
 
   // Payment selection
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("SOL");
-  const [tokenAmount, setTokenAmount] = useState(761.25);
+  const [tokenAmount, setTokenAmount] = useState(0.05);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [lockMinutes, setLockMinutes] = useState(13);
   const [lockSeconds, setLockSeconds] = useState(22);
@@ -70,13 +70,16 @@ export default function PaymentMethodPage() {
     }
   }, [location.search]);
 
-  // Update token amount
+  // Update token amount based on current cost
   useEffect(() => {
     if (selectedPayment === "SOL") {
-      setTokenAmount(761.25);
+      // Use a reasonable SOL to USD conversion rate (example: 1 SOL = $20)
+      setTokenAmount(orderDetails.cost / 20);
     } else if (selectedPayment === "USDC") {
+      // USDC is pegged to USD (1:1)
       setTokenAmount(orderDetails.cost);
     } else {
+      // NRG token conversion
       setTokenAmount(orderDetails.cost * 10);
     }
   }, [selectedPayment, orderDetails.cost]);
@@ -173,8 +176,6 @@ export default function PaymentMethodPage() {
           </div>
           <CardBody className="p-0 space-y-0 divide-y divide-gray-800 no-scrollbar">
             <div className="p-4 bg-[#111111]">
-              <h3 className="text-xl font-bold text-white mb-2">{orderDetails.farm}</h3>
-              <p className="text-sm text-gray-300 mb-4 flex items-center"><span className="mr-1">📍</span>{orderDetails.location}</p>
               <div className="flex justify-between mb-3"><span className="text-gray-400 text-sm">Panels:</span><span className="text-white">{orderDetails.panels}</span></div>
               <div className="flex justify-between mb-3"><span className="text-gray-400 text-sm">Capacity:</span><span className="text-white">{orderDetails.capacity.toFixed(2)} kW</span></div>
               <div className="mt-4 pt-4 border-t border-gray-800"><div className="flex justify-between items-center"><span className="text-white font-medium">Total:</span><span className="text-white font-bold">${orderDetails.cost.toFixed(2)}</span></div></div>
