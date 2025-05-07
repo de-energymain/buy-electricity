@@ -34,7 +34,7 @@ function PanelSelectionPage() {
     solarIndex: 4.8,
     panelPower: 450, // Watts
     efficiency: 98, // Percentage
-    pricePerPanel: 525, // USD
+    pricePerPanel: 1, // USD (changed from 525 to 1)
     networkFee: 0 // USD
   });
 
@@ -142,40 +142,6 @@ function PanelSelectionPage() {
             <p className="text-sm text-gray-300 text-center font-inter">
               Review and confirm your selection
             </p>
-          </div>
-
-          {/* Farm Info Card with Image */}
-          <div className="relative overflow-hidden">
-            <Image
-              src={solarFarmPlaceholder}
-              alt="Solar Farm"
-              classNames={{
-                wrapper: "w-full h-40 brightness-50",
-                img: "object-cover"
-              }}
-            />
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-              <h3 className="text-xl font-bold text-white font-electrolize">{farmDetails.name}</h3>
-              <p className="text-sm text-gray-300">
-                <span className="inline-block mr-1">📍</span> {farmDetails.location}
-              </p>
-            </div>
-          </div>
-
-          {/* Solar Metrics */}
-          <div className="flex justify-between bg-[#1A1A1A] p-4">
-            <div className="text-center">
-              <div className="text-xl text-white font-bold">{farmDetails.solarIndex}</div>
-              <div className="text-xs text-gray-400">Solar Index</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl text-white font-bold">{farmDetails.panelPower}W</div>
-              <div className="text-xs text-gray-400">Panel Power</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl text-white font-bold">{farmDetails.efficiency}%</div>
-              <div className="text-xs text-gray-400">Efficiency</div>
-            </div>
           </div>
         </Card>       
 
