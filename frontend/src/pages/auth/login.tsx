@@ -42,21 +42,12 @@ import {
     </svg>
   );
   
-  interface TorusInstance {
-    init: (config: any) => Promise<void>;
-    login: (options: { verifier: string }) => Promise<void>;
-    getUserInfo: () => Promise<any>;
-    getPublicKey: () => Promise<any>;
-    getProvider: () => Promise<any>;
-    cleanUp: () => void;
-  }
-  
   function Login() {
     const navigate = useNavigate();
     const { connected, connecting, disconnect, wallet } = useWallet();
     const { setVisible } = useWalletModal();
     
-    const [torusInstance, setTorusInstance] = useState<TorusInstance | null>(null);
+    const [torusInstance, setTorusInstance] = useState<any>(null);
     const [isTorusInitializing, setIsTorusInitializing] = useState(true);
     const [isTorusLoggingIn, setIsTorusLoggingIn] = useState(false);
     const [torusError, setTorusError] = useState<string | null>(null);
@@ -89,7 +80,7 @@ import {
           setIsTorusInitializing(true);
           
           // Create new Torus instance
-          const torus = new Torus() as TorusInstance;
+          const torus = new Torus();
           
           // Initialize Torus with Solana devnet
           await torus.init({
@@ -98,7 +89,7 @@ import {
             network: {
               //host: clusterApiUrl("devnet"), // Use mainnet in production
               chainId: "devnet", // Use "mainnet" in production
-              networkName: "Solana Devnet",
+              //networkName: "Solana Devnet",
             },
             showTorusButton: false, // Don't show the Torus button
             useWalletConnect: true,

@@ -1,6 +1,6 @@
 import "./App.css";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, FC, ComponentType } from "react";
 import Image from "./pages/personal/Image";
 import ElectricityEstimateForm from "./pages/personal/ElectricityEstimateForm";
 import ByPanelsForm from "./pages/personal/ByPanelsForm";
@@ -14,7 +14,7 @@ import PaymentMethodPage from "./pages/purchase/PaymentMethodPage";
 import PaymentSuccessPage from "./pages/purchase/PaymentSuccessPage";
 
 // Import auth pages
-import Login from "./pages/auth/Login";
+import Login from "./pages/auth/login";
 
 // Import dashboard pages
 import DashboardPage from "./pages/dashboard/DashboardPage";
@@ -39,8 +39,12 @@ const isAuthenticated = () => {
   return walletConnected || !!torusSession;
 };
 
+interface RouteProps {
+  component: ComponentType;
+}
+
 // Auth Route component - redirects to dashboard if already logged in
-const AuthRoute = ({ component: Component }) => {
+const AuthRoute: FC<RouteProps> = ({ component: Component }) => {
   // Use state to track auth status and avoid redirecting during render
   const [auth, setAuth] = useState({
     checked: false,
@@ -81,7 +85,7 @@ const AuthRoute = ({ component: Component }) => {
 };
 
 // Protected Route component - requires authentication
-const ProtectedRoute = ({ component: Component }) => {
+const ProtectedRoute: FC<RouteProps> = ({ component: Component }) => {
   // Use state to track auth status and avoid redirecting during render
   const [auth, setAuth] = useState({
     checked: false,
