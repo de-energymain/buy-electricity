@@ -13,6 +13,7 @@ import { ArrowLeft, CheckCircle, LogIn } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/logo.svg";
+import { useNavigate } from "react-router-dom";
 import { 
   FormContainer, 
   inputClasses, 

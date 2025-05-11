@@ -7,7 +7,6 @@ import {
   Select,
   SelectItem,
   Spinner,
-  Checkbox,
   Textarea,
 } from "@nextui-org/react";
 import { CheckCircle, LogIn } from "lucide-react";

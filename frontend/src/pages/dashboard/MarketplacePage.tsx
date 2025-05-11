@@ -28,9 +28,7 @@ import {
   Droplets,
   Zap,
   Globe,
-  ArrowRight,
   Info,
-  Eye
 } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
@@ -345,7 +343,7 @@ const MarketplacePage: React.FC = () => {
                   selectedKeys={energyTypeFilter}
                   selectionMode="multiple"
                   onSelectionChange={(keys) => {
-                    if (keys.has("all")) {
+                    if (keys.size === 0) {
                       setEnergyTypeFilter(new Set(["all"]));
                     } else {
                       setEnergyTypeFilter(keys as Set<string>);

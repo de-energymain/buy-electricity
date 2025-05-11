@@ -64,7 +64,7 @@ const TransactionsPage: React.FC = () => {
     ];
     
     const tokens = ["NRG", "SOL", "USDC"];
-    const statuses: ("confirmed" | "pending" | "failed")[] = ["confirmed", "pending", "failed"];
+   // const statuses: ("confirmed" | "pending" | "failed")[] = ["confirmed", "pending", "failed"];
     
     // Generate 50 random transactions
     const now = Date.now();

@@ -44,7 +44,7 @@ import {
   
   function Login() {
     const navigate = useNavigate();
-    const { connected, connecting, select, disconnect, wallet, wallets } = useWallet();
+    const { connected, connecting, disconnect, wallet } = useWallet();
     const { setVisible } = useWalletModal();
     
     const [torusInstance, setTorusInstance] = useState(null);
@@ -87,7 +87,7 @@ import {
             buildEnv: "production", // can be "production", "development", "staging", "testing"
             enableLogging: false,
             network: {
-              host: clusterApiUrl("devnet"), // Use mainnet in production
+              //host: clusterApiUrl("devnet"), // Use mainnet in production
               chainId: "devnet", // Use "mainnet" in production
               networkName: "Solana Devnet",
             },
