@@ -64,7 +64,7 @@ const MarketplacePage: React.FC = () => {
   const [farms, setFarms] = useState<Farm[]>([]);
   const [filteredFarms, setFilteredFarms] = useState<Farm[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [energyTypeFilter, setEnergyTypeFilter] = useState<Set<string>>(new Set(["all"]));
+  const [energyTypeFilter, setEnergyTypeFilter] = useState<string[]>(["all"]);
   const [sortOption, setSortOption] = useState<string>("roi-desc");
   const [activeTab, setActiveTab] = useState<string>("buy");
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -197,8 +197,8 @@ const MarketplacePage: React.FC = () => {
     }
     
     // Apply energy type filter
-    if (!energyTypeFilter.has("all")) {
-      filtered = filtered.filter(farm => energyTypeFilter.has(farm.type));
+    if (!energyTypeFilter.includes("all")) {
+      filtered = filtered.filter(farm => energyTypeFilter.includes(farm.type));
     }
     
     // Apply sorting
@@ -334,19 +334,20 @@ const MarketplacePage: React.FC = () => {
                     className="bg-[#1A1A1A] text-white border-1 border-gray-700"
                     startContent={<Filter size={16} />}
                   >
-                    Energy Type: {energyTypeFilter.has("all") ? "All" : Array.from(energyTypeFilter).map(formatEnergyType).join(", ")}
+                    Energy Type: {energyTypeFilter.includes("all") ? "All" : energyTypeFilter.map(formatEnergyType).join(", ")}
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu 
                   aria-label="Energy Type Filter"
                   closeOnSelect={false}
-                  selectedKeys={energyTypeFilter}
+                  selectedKeys={new Set(energyTypeFilter)}
                   selectionMode="multiple"
                   onSelectionChange={(keys) => {
-                    if (keys.size === 0) {
-                      setEnergyTypeFilter(new Set(["all"]));
+                    const selectedKeys = Array.from(keys as Set<string>);
+                    if (selectedKeys.length === 0) {
+                      setEnergyTypeFilter(["all"]);
                     } else {
-                      setEnergyTypeFilter(keys as Set<string>);
+                      setEnergyTypeFilter(selectedKeys);
                     }
                   }}
                   className="bg-[#1A1A1A] text-white border border-gray-700"
@@ -376,7 +377,7 @@ const MarketplacePage: React.FC = () => {
                 </DropdownTrigger>
                 <DropdownMenu 
                   aria-label="Sort Options"
-                  selectedKeys={[sortOption]}
+                  selectedKeys={new Set([sortOption])}
                   selectionMode="single"
                   onSelectionChange={(keys) => {
                     const selected = Array.from(keys)[0];
