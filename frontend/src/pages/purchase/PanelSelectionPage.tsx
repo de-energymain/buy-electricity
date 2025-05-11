@@ -6,8 +6,9 @@ import {
   CardBody, 
   Spinner,
 } from "@nextui-org/react";
-import { ArrowLeft, Plus, Minus } from "lucide-react";
+import { ArrowLeft, Plus, Minus, LogIn, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
+import { useWallet } from "@solana/wallet-adapter-react"; // Import wallet hook
 import logo from "../../assets/logo.svg";
 import { 
   FormContainer, 
@@ -16,18 +17,32 @@ import {
   formElementTransition
 } from "../../shared/styles";
 
-// Placeholder for solar farm image
-// Replace this with actual image in production
-//const solarFarmPlaceholder = "https://de.energy/wp-content/uploads/2024/07/Tea-manufacturer.jpeg";
+interface FarmDetails {
+  name: string;
+  location: string;
+  solarIndex: number;
+  panelPower: number;
+  efficiency: number;
+  pricePerPanel: number;
+  networkFee: number;
+}
 
-function PanelSelectionPage() {
+interface Calculations {
+  totalCapacity: number;
+  dailyOutput: number;
+  totalCost: number;
+}
+
+const PanelSelectionPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
+  const { connected } = useWallet(); // Get wallet connection status
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Panel configuration and details
-  const [panelQuantity, setPanelQuantity] = useState(17);
-  const [farmDetails] = useState({
+  const [panelQuantity, setPanelQuantity] = useState<number>(17);
+  const [farmDetails] = useState<FarmDetails>({
     name: "Jaipur Solar Farm",
     location: "Jaipur, Rajasthan, India",
     solarIndex: 4.8,
@@ -38,11 +53,33 @@ function PanelSelectionPage() {
   });
 
   // Calculated values
-  const [calculations, setCalculations] = useState({
+  const [calculations, setCalculations] = useState<Calculations>({
     totalCapacity: 0,
     dailyOutput: 0,
     totalCost: 0
   });
+
+  // Check authentication status when component mounts and when wallet connection changes
+  useEffect(() => {
+    const checkAuth = (): void => {
+      // Check for wallet connection
+      if (connected) {
+        setIsAuthenticated(true);
+        return;
+      }
+      
+      // Check for Torus session
+      const torusSession = localStorage.getItem("torusSession");
+      if (torusSession) {
+        setIsAuthenticated(true);
+        return;
+      }
+      
+      setIsAuthenticated(false);
+    };
+    
+    checkAuth();
+  }, [connected]);
 
   // Extract kwh from query params if available
   useEffect(() => {
@@ -80,17 +117,17 @@ function PanelSelectionPage() {
     });
   }, [panelQuantity, farmDetails]);
 
-  const handleDecreaseQuantity = () => {
+  const handleDecreaseQuantity = (): void => {
     if (panelQuantity > 1) {
       setPanelQuantity(prev => prev - 1);
     }
   };
 
-  const handleIncreaseQuantity = () => {
+  const handleIncreaseQuantity = (): void => {
     setPanelQuantity(prev => prev + 1);
   };
 
-  const handleContinueToPayment = () => {
+  const handleContinueToPayment = (): void => {
     setIsLoading(true);
     
     // Create query params with all the necessary data
@@ -109,8 +146,13 @@ function PanelSelectionPage() {
     }, 500);
   };
 
-  const handleBack = () => {
+  const handleBack = (): void => {
     navigate(-1);
+  };
+
+  const handleAuthButtonClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+    e.preventDefault();
+    navigate(isAuthenticated ? "/dashboard" : "/login");
   };
 
   return (
@@ -122,16 +164,37 @@ function PanelSelectionPage() {
         </div>
       </div>
 
-      {/* Back Button */}
+      {/* Navigation Bar with Back button and Login/Dashboard link side by side */}
       <div className="max-w-md mx-auto w-full relative z-10">
-        <Button
-          className={`mb-4 ${secondaryButtonClasses}`}
-          onPress={handleBack}
-          startContent={<ArrowLeft size={20} />}
-          disabled={isLoading}
-        >
-          Back
-        </Button>
+        <div className="flex justify-between items-center mb-4">
+          <Button
+            className={secondaryButtonClasses}
+            onPress={handleBack}
+            startContent={<ArrowLeft size={20} />}
+            disabled={isLoading}
+          >
+            Back
+          </Button>
+          
+          {/* Conditional Login/Dashboard link aligned to the right */}
+          <a 
+            href={isAuthenticated ? "/dashboard" : "/login"}
+            onClick={handleAuthButtonClick}
+            className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"
+          >
+            {isAuthenticated ? (
+              <>
+                <LayoutDashboard size={18} />
+                <span>Dashboard</span>
+              </>
+            ) : (
+              <>
+                <LogIn size={18} />
+                <span>Login</span>
+              </>
+            )}
+          </a>
+        </div>
 
         <Card className={cardClasses}>
           <div className="p-4 bg-[#2F2F2F]">
@@ -226,8 +289,10 @@ function PanelSelectionPage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* No business profile text as requested */}
     </FormContainer>
   );
-}
+};
 
 export default PanelSelectionPage;

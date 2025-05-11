@@ -6,7 +6,7 @@ import {
   CardBody,
   Spinner
 } from "@nextui-org/react";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, LogIn, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { 
   FormContainer, 
@@ -27,6 +27,23 @@ import usdcIcon from "../../assets/crypto/usdc-icon.svg";
 // Payment method types
 type PaymentMethod = "NRG" | "SOL" | "USDC";
 
+interface OrderDetails {
+  farm: string;
+  location: string;
+  panels: number;
+  capacity: number;
+  output: number;
+  cost: number;
+}
+
+interface Toast {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  duration: number;
+}
+
 export default function PaymentMethodPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,12 +51,15 @@ export default function PaymentMethodPage() {
   const { publicKey, connected, disconnect, signTransaction, select, wallet, wallets } = useWallet();
   const { setVisible } = useWalletModal();
 
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
   // Toast state
-  const [toasts, setToasts] = useState<any[]>([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastKey, setToastKey] = useState(0);
 
   // Order details
-  const [orderDetails, setOrderDetails] = useState({
+  const [orderDetails, setOrderDetails] = useState<OrderDetails>({
     farm: "Jaipur Solar Farm",
     location: "Jaipur, Rajasthan, India",
     panels: 29,
@@ -54,6 +74,28 @@ export default function PaymentMethodPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [lockMinutes, setLockMinutes] = useState(13);
   const [lockSeconds, setLockSeconds] = useState(22);
+
+  // Check authentication status when component mounts and when wallet connection changes
+  useEffect(() => {
+    const checkAuth = (): void => {
+      // If wallet is connected, user is authenticated via wallet
+      if (connected) {
+        setIsAuthenticated(true);
+        return;
+      }
+      
+      // Check for Torus session
+      const torusSession = localStorage.getItem("torusSession");
+      if (torusSession) {
+        setIsAuthenticated(true);
+        return;
+      }
+      
+      setIsAuthenticated(false);
+    };
+    
+    checkAuth();
+  }, [connected]);
 
   // Parse query params
   useEffect(() => {
@@ -160,15 +202,46 @@ export default function PaymentMethodPage() {
 
   const handleBack = () => navigate(-1);
 
+  // Handler for login/dashboard button click
+  const handleAuthButtonClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+    e.preventDefault();
+    navigate(isAuthenticated ? "/dashboard" : "/login");
+  };
+
   return (
     <FormContainer>
       <div className="w-full max-w-[420px] mx-auto relative z-10 h-full flex flex-col">
-        <Button
-          className="mb-4 bg-transparent text-white px-0 min-w-0 h-8 justify-start"
-          onPress={handleBack}
-          startContent={<ArrowLeft size={20} />}
-          disabled={isProcessingPayment}
-        >Back</Button>
+        {/* Navigation Bar with Back button and Login/Dashboard link side by side */}
+        <div className="flex justify-between items-center mb-4">
+          <Button
+            className="bg-transparent text-white px-0 min-w-0 h-8 justify-start"
+            onPress={handleBack}
+            startContent={<ArrowLeft size={20} />}
+            disabled={isProcessingPayment}
+          >
+            Back
+          </Button>
+          
+          {/* Conditional Login/Dashboard link aligned to the right */}
+          <a 
+            href={isAuthenticated ? "/dashboard" : "/login"}
+            onClick={handleAuthButtonClick}
+            className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"
+          >
+            {isAuthenticated ? (
+              <>
+                <LayoutDashboard size={18} />
+                <span>Dashboard</span>
+              </>
+            ) : (
+              <>
+                <LogIn size={18} />
+                <span>Login</span>
+              </>
+            )}
+          </a>
+        </div>
+
         <Card className={`${cardClasses} w-full overflow-hidden`}>
           <div className="p-4 bg-[#000000]">
             <h2 className="text-2xl font-bold text-white mb-1 font-electrolize">Payment</h2>
@@ -225,6 +298,7 @@ export default function PaymentMethodPage() {
             </div>
           </CardBody>
         </Card>
+
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
           {toasts.map(toast=>(
             <div key={toast.id} className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${toast.type==='success'?'bg-green-500/90 text-white':toast.type==='danger'?'bg-red-500/90 text-white':toast.type==='primary'?'bg-blue-500/90 text-white':'bg-black/80 text-white'}`} style={{animationDuration:'200ms'}}>
@@ -234,6 +308,7 @@ export default function PaymentMethodPage() {
           ))}
         </div>
       </div>
+      
       <style>{`
         @keyframes slideIn {
           from {transform: translateX(100%); opacity: 0;}
