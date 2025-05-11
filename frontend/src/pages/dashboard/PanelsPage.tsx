@@ -13,7 +13,6 @@ import {
   Activity,
   Zap,
   Sun,
-  Battery,
   AlertTriangle,
   CheckCircle2,
   ChevronRight
@@ -121,10 +120,10 @@ const PanelsPage: React.FC = () => {
   };
 
   // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  };
+//   const formatDate = (dateString: string) => {
+//     const date = new Date(dateString);
+//     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+//   };
 
   return (
     <DashboardTemplate title="Solar Panels" activePage="panels">

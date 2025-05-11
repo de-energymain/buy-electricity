@@ -114,7 +114,6 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                 <Button 
                   className={`w-full justify-start ${activePage === 'wallet' ? 'bg-red-500 text-white' : 'bg-transparent text-gray-400 hover:text-white'}`}
                   startContent={<WalletIcon size={18} />}
-                  onPress={() => navigate("/dashboard/wallet")}
                 >
                   Wallet
                 </Button>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardBody, Switch, Input, Button, Divider, Tabs, Tab } from "@nextui-org/react";
-import { Bell, Lock, Globe, User, Mail, Shield, Check, Eye, EyeOff } from "lucide-react";
+import { Bell, Lock, Globe, User, Shield, Check, Eye, EyeOff } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
 const SettingsPage: React.FC = () => {
