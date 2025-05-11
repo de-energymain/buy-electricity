@@ -51,8 +51,8 @@ const TransactionsPage: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set(["all"]));
-  const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set(["all"]));
+  const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
+  const [typeFilter, setTypeFilter] = useState<string[]>(["all"]);
   const [timeFilter, setTimeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
@@ -113,13 +113,13 @@ const TransactionsPage: React.FC = () => {
     }
     
     // Apply status filter
-    if (!statusFilter.has("all")) {
-      filtered = filtered.filter(tx => statusFilter.has(tx.status));
+    if (!statusFilter.includes("all")) {
+      filtered = filtered.filter(tx => statusFilter.includes(tx.status));
     }
     
     // Apply type filter
-    if (!typeFilter.has("all")) {
-      filtered = filtered.filter(tx => typeFilter.has(tx.type));
+    if (!typeFilter.includes("all")) {
+      filtered = filtered.filter(tx => typeFilter.includes(tx.type));
     }
     
     // Apply time filter
@@ -246,19 +246,20 @@ const TransactionsPage: React.FC = () => {
                 className="bg-[#1A1A1A] text-white border-1 border-gray-700"
                 startContent={<Filter size={16} />}
               >
-                Status: {statusFilter.has("all") ? "All" : Array.from(statusFilter).join(", ")}
+                Status: {statusFilter.includes("all") ? "All" : statusFilter.join(", ")}
               </Button>
             </DropdownTrigger>
             <DropdownMenu 
               aria-label="Status Filter"
               closeOnSelect={false}
-              selectedKeys={statusFilter}
+              selectedKeys={new Set(statusFilter)}
               selectionMode="multiple"
               onSelectionChange={(keys) => {
-                if (keys.has("all")) {
-                  setStatusFilter(new Set(["all"]));
+                const selectedKeys = Array.from(keys as Set<string>);
+                if (selectedKeys.includes("all")) {
+                  setStatusFilter(["all"]);
                 } else {
-                  setStatusFilter(keys as Set<string>);
+                  setStatusFilter(selectedKeys);
                 }
               }}
               className="bg-[#1A1A1A] text-white border border-gray-700"
@@ -276,19 +277,20 @@ const TransactionsPage: React.FC = () => {
                 className="bg-[#1A1A1A] text-white border-1 border-gray-700"
                 startContent={<Filter size={16} />}
               >
-                Type: {typeFilter.has("all") ? "All" : Array.from(typeFilter).join(", ")}
+                Type: {typeFilter.includes("all") ? "All" : typeFilter.join(", ")}
               </Button>
             </DropdownTrigger>
             <DropdownMenu 
               aria-label="Type Filter"
               closeOnSelect={false}
-              selectedKeys={typeFilter}
+              selectedKeys={new Set(typeFilter)}
               selectionMode="multiple"
               onSelectionChange={(keys) => {
-                if (keys.has("all")) {
-                  setTypeFilter(new Set(["all"]));
+                const selectedKeys = Array.from(keys as Set<string>);
+                if (selectedKeys.includes("all")) {
+                  setTypeFilter(["all"]);
                 } else {
-                  setTypeFilter(keys as Set<string>);
+                  setTypeFilter(selectedKeys);
                 }
               }}
               className="bg-[#1A1A1A] text-white border border-gray-700"
@@ -316,7 +318,7 @@ const TransactionsPage: React.FC = () => {
             </DropdownTrigger>
             <DropdownMenu 
               aria-label="Time Filter"
-              selectedKeys={[timeFilter]}
+              selectedKeys={new Set([timeFilter])}
               selectionMode="single"
               onSelectionChange={(keys) => {
                 const selected = Array.from(keys)[0];

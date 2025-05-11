@@ -42,15 +42,24 @@ import {
     </svg>
   );
   
+  interface TorusInstance {
+    init: (config: any) => Promise<void>;
+    login: (options: { verifier: string }) => Promise<void>;
+    getUserInfo: () => Promise<any>;
+    getPublicKey: () => Promise<any>;
+    getProvider: () => Promise<any>;
+    cleanUp: () => void;
+  }
+  
   function Login() {
     const navigate = useNavigate();
     const { connected, connecting, disconnect, wallet } = useWallet();
     const { setVisible } = useWalletModal();
     
-    const [torusInstance, setTorusInstance] = useState(null);
+    const [torusInstance, setTorusInstance] = useState<TorusInstance | null>(null);
     const [isTorusInitializing, setIsTorusInitializing] = useState(true);
     const [isTorusLoggingIn, setIsTorusLoggingIn] = useState(false);
-    const [torusError, setTorusError] = useState(null);
+    const [torusError, setTorusError] = useState<string | null>(null);
     const [redirecting, setRedirecting] = useState(false);
     const [checkingAuth, setCheckingAuth] = useState(true);
   
@@ -80,7 +89,7 @@ import {
           setIsTorusInitializing(true);
           
           // Create new Torus instance
-          const torus = new Torus();
+          const torus = new Torus() as TorusInstance;
           
           // Initialize Torus with Solana devnet
           await torus.init({
@@ -106,7 +115,7 @@ import {
           setTorusError(null);
         } catch (error) {
           console.error("Failed to initialize Torus:", error);
-          setTorusError("Failed to initialize Google login: " + error.message);
+          setTorusError(`Failed to initialize Google login: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
           setIsTorusInitializing(false);
         }
@@ -180,7 +189,7 @@ import {
         navigate("/dashboard");
       } catch (error) {
         console.error("Torus Google login failed:", error);
-        setTorusError("Google login failed: " + error.message);
+        setTorusError(`Google login failed: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         setIsTorusLoggingIn(false);
       }
