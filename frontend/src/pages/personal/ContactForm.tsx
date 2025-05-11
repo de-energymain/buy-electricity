@@ -9,7 +9,7 @@ import {
   Spinner,
   Textarea
 } from "@nextui-org/react";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, LogIn } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/logo.svg";
@@ -91,6 +91,8 @@ function ContactForm() {
   const [countries, setCountries] = useState<CountryType[]>([]);
   const [states, setStates] = useState<string[]>([]);
   const [isFetchingStates, setIsFetchingStates] = useState(false);
+
+  const navigate = useNavigate();
 
   // Ensure dropdown is closed on initial mount
   useEffect(() => {
@@ -699,6 +701,27 @@ function ContactForm() {
           </AnimatePresence>
         </CardBody>
       </Card>
+      
+      {/* Login icon with text - Same as ElectricityEstimateForm */}
+      <div className="flex justify-center w-full mt-10" style={{ position: "relative", zIndex: 10 }}>
+        <a 
+          href="/login"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate("/login");
+          }}
+          className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"
+          style={{ width: "fit-content" }}
+        >
+          <LogIn size={18} />
+          <span>Login</span>
+        </a>
+      </div>
+
+      {/* Business profile text */}
+      <div className="absolute bottom-6 text-sm text-white w-full text-center">
+        Are you a business? <a href="/business-contact" className="text-[#E9423A] hover:underline">Switch to Business Profile</a>
+      </div>
     </FormContainer>
   );
 }

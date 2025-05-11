@@ -1,8 +1,10 @@
+// src/components/ByPanelsForm.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Card, CardBody, CardHeader, Input, Spinner } from "@nextui-org/react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LogIn, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
+import { useWallet } from "@solana/wallet-adapter-react"; // Import wallet hook
 import logo from "../../assets/logo.svg";
 import { 
   FormContainer, 
@@ -12,14 +14,39 @@ import {
   formElementTransition
 } from "../../shared/styles";
 
-function ByPanelsForm() {
+const ByPanelsForm: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [panelCount, setPanelCount] = useState(0);
-  const [estimatedCost, setEstimatedCost] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [usageInput, setUsageInput] = useState(0); 
+  const { connected } = useWallet(); // Get wallet connection status
+  
+  const [panelCount, setPanelCount] = useState<number>(0);
+  const [estimatedCost, setEstimatedCost] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isNavigating, setIsNavigating] = useState<boolean>(false);
+  const [usageInput, setUsageInput] = useState<number>(0);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Check authentication status when component mounts and when wallet connection changes
+  useEffect(() => {
+    const checkAuth = (): void => {
+      // Check for wallet connection
+      if (connected) {
+        setIsAuthenticated(true);
+        return;
+      }
+      
+      // Check for Torus session
+      const torusSession = localStorage.getItem("torusSession");
+      if (torusSession) {
+        setIsAuthenticated(true);
+        return;
+      }
+      
+      setIsAuthenticated(false);
+    };
+    
+    checkAuth();
+  }, [connected]);
 
   useEffect(() => {
     // Extract monthly usage from query params
@@ -31,7 +58,7 @@ function ByPanelsForm() {
     setIsLoading(true);
 
     setTimeout(() => {
-      if (usage> 0) {
+      if (usage > 0) {
         /*
           Calculation using the formula:
           - 3.75 kWh per kW per day × 80% = 3.0 kWh per day per kW
@@ -52,7 +79,7 @@ function ByPanelsForm() {
     }, 1000); // Slight delay for loading effect
   }, [location.search]);
 
-  const handleBuyPanels = () => {
+  const handleBuyPanels = (): void => {
     setIsNavigating(true);
     setTimeout(() => {
       const queryParams = new URLSearchParams({
@@ -62,9 +89,14 @@ function ByPanelsForm() {
       });
       console.log("Navigating with query params:", queryParams.toString());
       
-      // UPDATED HERE - Navigate to the panel selection page instead of contact page
+      // Navigate to the panel selection page instead of contact page
       navigate(`/panel-selection?${queryParams.toString()}`);
     }, 800);
+  };
+
+  const handleAuthButtonClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+    e.preventDefault();
+    navigate(isAuthenticated ? "/dashboard" : "/login");
   };
 
   return (
@@ -175,8 +207,35 @@ function ByPanelsForm() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Conditional Login or Dashboard button */}
+      <div className="flex justify-center w-full mt-10" style={{ position: "relative", zIndex: 10 }}>
+        <a 
+          href={isAuthenticated ? "/dashboard" : "/login"}
+          onClick={handleAuthButtonClick}
+          className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"
+          style={{ width: "fit-content" }}
+        >
+          {isAuthenticated ? (
+            <>
+              <LayoutDashboard size={18} />
+              <span>Dashboard</span>
+            </>
+          ) : (
+            <>
+              <LogIn size={18} />
+              <span>Login</span>
+            </>
+          )}
+        </a>
+      </div>
+
+      {/* Business profile text */}
+      <div className="absolute bottom-6 text-sm text-white w-full text-center">
+        Are you a business? <a href="/business-contact" className="text-[#E9423A] hover:underline">Switch to Business Profile</a>
+      </div>
     </FormContainer>
   );
-}
+};
 
 export default ByPanelsForm;

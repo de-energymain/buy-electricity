@@ -5,7 +5,7 @@ import {
   Card, 
   CardBody
 } from "@nextui-org/react";
-import { Check } from "lucide-react";
+import { Check, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.svg";
 import { 
@@ -82,7 +82,23 @@ function PaymentSuccessPage() {
         </div>
       </div>
 
+      {/* Navigation Bar with Login link aligned to the right */}
       <div className="max-w-md mx-auto w-full relative z-10">
+        <div className="flex justify-end items-center mb-4">
+          {/* No back button on success page, just the login link aligned right */}
+          <a 
+            href="/login"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/login");
+            }}
+            className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"
+          >
+            <LogIn size={18} />
+            <span>Login</span>
+          </a>
+        </div>
+
         <Card className={cardClasses}>
           <CardBody className="p-6 bg-[#1A1A1A] flex flex-col items-center">
             {/* Success Icon */}
@@ -171,6 +187,8 @@ function PaymentSuccessPage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* No business profile text as requested */}
     </FormContainer>
   );
 }

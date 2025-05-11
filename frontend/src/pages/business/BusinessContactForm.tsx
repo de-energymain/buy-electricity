@@ -7,12 +7,14 @@ import {
   Select,
   SelectItem,
   Spinner,
+  Checkbox,
   Textarea,
 } from "@nextui-org/react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, LogIn } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
 import { 
   FormContainer, 
@@ -77,6 +79,8 @@ function BusinessContactForm() {
     phone: "",
     properties: "",
   });
+  
+  const navigate = useNavigate();
 
   const [errors, setErrors] = useState<ErrorState>({});
   const [formState, setFormState] = useState<FormState>("idle");
@@ -741,6 +745,24 @@ function BusinessContactForm() {
           </AnimatePresence>
         </CardBody>
       </Card>
+
+      {/* Login icon with text - Same as ElectricityEstimateForm */}
+      <div className="flex justify-center w-full mt-10" style={{ position: "relative", zIndex: 10 }}>
+        <a 
+          href="/login"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate("/login");
+          }}
+          className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"
+          style={{ width: "fit-content" }}
+        >
+          <LogIn size={18} />
+          <span>Login</span>
+        </a>
+      </div>
+      
+      {/* No business profile text since this is already the business form */}
     </FormContainer>
   );
 }

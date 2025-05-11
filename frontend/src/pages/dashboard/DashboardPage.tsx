@@ -5,7 +5,8 @@ import {
   CardBody, 
   Button, 
   Tabs, 
-  Tab 
+  Tab,
+  Tooltip
 } from "@nextui-org/react";
 import { 
   BarChart3, 
@@ -17,9 +18,10 @@ import {
   Wallet, 
   ShoppingBag, 
   LogOut,
-  RefreshCcw,
-  Clock10
+  ExternalLink,
+  Plus
 } from "lucide-react";
+import { useWallet } from '@solana/wallet-adapter-react'; // Import wallet hook
 import logo from "../../assets/logo.svg";
 
 interface NodeData {
@@ -40,6 +42,7 @@ interface ChartData {
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const { publicKey, wallet, disconnect, connected } = useWallet(); // Get wallet info
   const [activeTab, setActiveTab] = useState("week");
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -57,6 +60,14 @@ function DashboardPage() {
     lowest: 59,
     highest: 72
   });
+
+  // Update authentication status when wallet connection changes
+  useEffect(() => {
+    // When wallet is connected, set the flag in localStorage
+    if (connected) {
+      localStorage.setItem("walletConnected", "true");
+    }
+  }, [connected]);
 
   // Generate mock data on component mount
   useEffect(() => {
@@ -148,13 +159,32 @@ function DashboardPage() {
   // Navigate to node details
   const handleNodeDetails = (nodeId: string) => {
     console.log(`View details for node: ${nodeId}`);
-    // This would typically navigate to a node details page
-    // navigate(`/node/${nodeId}`);
+    navigate(`/dashboard/node/${nodeId}`);
   };
 
-  const handleLogout = () => {
-    // In a real app, clear authentication and redirect to login
+  // Navigate to buy panels page
+  const handleBuyPanels = () => {
     navigate("/");
+  };
+
+  const handleLogout = async () => {
+    // Disconnect wallet if connected
+    if (disconnect) {
+      await disconnect();
+    }
+    
+    // Clear authentication state in localStorage
+    localStorage.removeItem("torusSession");
+    localStorage.setItem("walletConnected", "false");
+    
+    // Redirect to home page
+    navigate("/");
+  };
+
+  // Truncate wallet address for display
+  const truncateAddress = (address: string) => {
+    if (!address) return "";
+    return address.length <= 8 ? address : `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   const maxValue = Math.max(...chartData.map(item => item.value));
@@ -187,6 +217,7 @@ function DashboardPage() {
                 <Button 
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<BarChart3 size={18} />}
+                  onPress={() => navigate("/dashboard/analytics")}
                 >
                   Analytics
                 </Button>
@@ -195,6 +226,7 @@ function DashboardPage() {
                 <Button 
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<PieChart size={18} />}
+                  onPress={() => navigate("/dashboard/panels")}
                 >
                   Panels
                 </Button>
@@ -209,6 +241,7 @@ function DashboardPage() {
                 <Button 
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<History size={18} />}
+                  onPress={() => navigate("/dashboard/transactions")}
                 >
                   Transactions
                 </Button>
@@ -217,6 +250,7 @@ function DashboardPage() {
                 <Button 
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<Wallet size={18} />}
+                  onPress={() => navigate("/dashboard/wallet")}
                 >
                   Wallet
                 </Button>
@@ -225,6 +259,7 @@ function DashboardPage() {
                 <Button 
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<ShoppingBag size={18} />}
+                  onPress={() => navigate("/dashboard/marketplace")}
                 >
                   Marketplace
                 </Button>
@@ -239,6 +274,7 @@ function DashboardPage() {
                 <Button 
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<Settings size={18} />}
+                  onPress={() => navigate("/dashboard/settings")}
                 >
                   Settings
                 </Button>
@@ -247,6 +283,7 @@ function DashboardPage() {
                 <Button 
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<HelpCircle size={18} />}
+                  onPress={() => navigate("/dashboard/help")}
                 >
                   Help
                 </Button>
@@ -279,21 +316,44 @@ function DashboardPage() {
       <div className="flex-1 overflow-auto p-6 bg-[#0A0A0A]">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Dashboard</h1>  
-              <div className="flex space-x-2">
-                <Button 
-                  isIconOnly 
-                  className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center"
-                >
-                  <RefreshCcw className="w-4 h-4 text-[#E9423A]" />
-                </Button>
-                <Button 
-                  isIconOnly
-                  className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center"
-                >
-                  <Clock10 className="w-4 h-4 text-[#E9423A]" />
-                </Button>
-              </div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            
+            {/* Wallet & Buy Panels Section - UPDATED */}
+            <div className="flex items-center space-x-4">
+              {/* Connected Wallet Display */}
+              {publicKey && (
+                <div className="flex items-center bg-[#1A1A1A] rounded-lg p-2 pr-3">
+                  <div className="w-8 h-8 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A] mr-2">
+                    <Wallet size={16} />
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="text-xs text-gray-400">{wallet?.adapter.name || "Wallet"}</div>
+                    <div className="flex items-center">
+                      <span className="text-sm font-mono">{truncateAddress(publicKey.toString())}</span>
+                      <Tooltip content="View on Explorer">
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          className="ml-1 bg-transparent min-w-0 w-5 h-5 p-0"
+                          onPress={() => window.open(`https://explorer.solana.com/address/${publicKey.toString()}?cluster=devnet`, '_blank')}
+                        >
+                          <ExternalLink size={12} className="text-gray-400" />
+                        </Button>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Buy Panels Button */}
+              <Button 
+                className="bg-[#E9423A] text-white"
+                startContent={<Plus size={18} />}
+                onPress={handleBuyPanels}
+              >
+                Buy Panels
+              </Button>
+            </div>
           </div>
           
           {/* Summary Stats */}
