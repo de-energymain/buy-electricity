@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardBody, Switch, Input, Button, Divider, Tabs, Tab } from "@nextui-org/react";
 import { Bell, Lock, Globe, User, Shield, Check, Eye, EyeOff } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
+import { inputClasses } from "../../shared/styles";
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("account");
@@ -12,41 +13,41 @@ const SettingsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
           <Card className="bg-[#1A1A1A] border-none h-min sticky top-6">
-            <CardBody className="p-0">
+            <CardBody className="p-0 text-white">
               <div className="p-4 border-b border-gray-800">
                 <h3 className="text-lg font-medium">Settings</h3>
               </div>
               <div className="p-0">
                 <Button 
-                  className={`w-full justify-start rounded-none p-4 ${activeTab === 'account' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
+                  className={`w-full justify-start rounded-none p-4 text-white ${activeTab === 'account' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
                   onPress={() => setActiveTab("account")}
                   startContent={<User size={16} />}
                 >
                   Account
                 </Button>
                 <Button 
-                  className={`w-full justify-start rounded-none p-4 ${activeTab === 'notifications' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
+                  className={`w-full justify-start rounded-none p-4 text-white ${activeTab === 'notifications' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
                   onPress={() => setActiveTab("notifications")}
                   startContent={<Bell size={16} />}
                 >
                   Notifications
                 </Button>
                 <Button 
-                  className={`w-full justify-start rounded-none p-4 ${activeTab === 'security' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
+                  className={`w-full justify-start rounded-none p-4 text-white ${activeTab === 'security' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
                   onPress={() => setActiveTab("security")}
                   startContent={<Lock size={16} />}
                 >
                   Security
                 </Button>
                 <Button 
-                  className={`w-full justify-start rounded-none p-4 ${activeTab === 'language' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
+                  className={`w-full justify-start rounded-none p-4 text-white ${activeTab === 'language' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
                   onPress={() => setActiveTab("language")}
                   startContent={<Globe size={16} />}
                 >
                   Language
                 </Button>
                 <Button 
-                  className={`w-full justify-start rounded-none p-4 ${activeTab === 'privacy' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
+                  className={`w-full justify-start rounded-none p-4 text-white ${activeTab === 'privacy' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
                   onPress={() => setActiveTab("privacy")}
                   startContent={<Shield size={16} />}
                 >
@@ -62,18 +63,14 @@ const SettingsPage: React.FC = () => {
           {activeTab === "account" && (
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <h3 className="text-xl font-medium mb-4">Account Information</h3>
+                <h3 className="text-xl font-medium mb-4 text-white">Account Information</h3>
                 
                 <div className="space-y-4 mb-6">
                   <div>
                     <div className="text-sm text-gray-400 mb-1">Name</div>
                     <Input
                       defaultValue="John Doe"
-                      classNames={{
-                        base: "bg-[#1A1A1A]",
-                        inputWrapper: "bg-[#2A1A1A] border-1 border-gray-700 hover:border-white focus-within:border-[#E9423A]",
-                        input: "text-white"
-                      }}
+                      classNames={inputClasses}
                     />
                   </div>
                   
@@ -81,11 +78,7 @@ const SettingsPage: React.FC = () => {
                     <div className="text-sm text-gray-400 mb-1">Email</div>
                     <Input
                       defaultValue="john.doe@example.com"
-                      classNames={{
-                        base: "bg-[#1A1A1A]",
-                        inputWrapper: "bg-[#2A1A1A] border-1 border-gray-700 hover:border-white focus-within:border-[#E9423A]",
-                        input: "text-white"
-                      }}
+                      classNames={inputClasses}
                     />
                   </div>
                   
@@ -93,11 +86,7 @@ const SettingsPage: React.FC = () => {
                     <div className="text-sm text-gray-400 mb-1">Username</div>
                     <Input
                       defaultValue="johndoe"
-                      classNames={{
-                        base: "bg-[#1A1A1A]",
-                        inputWrapper: "bg-[#2A1A1A] border-1 border-gray-700 hover:border-white focus-within:border-[#E9423A]",
-                        input: "text-white"
-                      }}
+                      classNames={inputClasses}
                     />
                   </div>
                   
@@ -108,13 +97,13 @@ const SettingsPage: React.FC = () => {
                 
                 <Divider className="my-6 bg-gray-800" />
                 
-                <h3 className="text-xl font-medium mb-4">Wallet Information</h3>
+                <h3 className="text-xl font-medium mb-4 text-white">Wallet Information</h3>
                 
                 <div className="p-4 bg-[#2A1A1A] rounded-lg mb-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm text-gray-400">Connected Wallet</div>
-                      <div className="font-medium">Phantom Wallet</div>
+                      <div className="font-medium text-slate-500">Phantom Wallet</div>
                     </div>
                     <Button 
                       className="text-white bg-[#3A1A1A] border border-[#E9423A]"
@@ -129,7 +118,7 @@ const SettingsPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm text-gray-400">Google Account</div>
-                      <div className="font-medium">john.doe@gmail.com</div>
+                      <div className="font-medium text-slate-500">john.doe@gmail.com</div>
                     </div>
                     <Button 
                       className="text-white bg-[#3A1A1A] border border-[#E9423A]"
@@ -147,12 +136,12 @@ const SettingsPage: React.FC = () => {
           {activeTab === "notifications" && (
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <h3 className="text-xl font-medium mb-4">Notification Preferences</h3>
+                <h3 className="text-xl font-medium mb-4 text-white">Notification Preferences</h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
                     <div>
-                      <div className="font-medium">Email Notifications</div>
+                      <div className="font-medium text-white">Email Notifications</div>
                       <div className="text-sm text-gray-400">Receive notifications via email</div>
                     </div>
                     <Switch defaultSelected color="danger" />
@@ -160,7 +149,7 @@ const SettingsPage: React.FC = () => {
                   
                   <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
                     <div>
-                      <div className="font-medium">Transaction Updates</div>
+                      <div className="font-medium text-white">Transaction Updates</div>
                       <div className="text-sm text-gray-400">Get notified about transaction status changes</div>
                     </div>
                     <Switch defaultSelected color="danger" />
@@ -168,7 +157,7 @@ const SettingsPage: React.FC = () => {
                   
                   <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
                     <div>
-                      <div className="font-medium">Performance Alerts</div>
+                      <div className="font-medium text-white">Performance Alerts</div>
                       <div className="text-sm text-gray-400">Receive alerts about panel performance</div>
                     </div>
                     <Switch defaultSelected color="danger" />
@@ -176,7 +165,7 @@ const SettingsPage: React.FC = () => {
                   
                   <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
                     <div>
-                      <div className="font-medium">Marketing Communications</div>
+                      <div className="font-medium text-white">Marketing Communications</div>
                       <div className="text-sm text-gray-400">Receive news, offers and updates</div>
                     </div>
                     <Switch color="danger" />
@@ -194,7 +183,7 @@ const SettingsPage: React.FC = () => {
           {activeTab === "security" && (
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <h3 className="text-xl font-medium mb-4">Security Settings</h3>
+                <h3 className="text-xl font-medium mb-4 text-white">Security Settings</h3>
                 
                 <div className="space-y-4 mb-6">
                   <div>
@@ -270,12 +259,12 @@ const SettingsPage: React.FC = () => {
                 
                 <Divider className="my-6 bg-gray-800" />
                 
-                <h3 className="text-xl font-medium mb-4">Two-Factor Authentication</h3>
+                <h3 className="text-xl font-medium mb-4 text-white">Two-Factor Authentication</h3>
                 
                 <div className="p-4 bg-[#2A1A1A] rounded-lg mb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium">2FA Status</div>
+                      <div className="font-medium text-white">2FA Status</div>
                       <div className="text-sm text-gray-400">Add an extra layer of security</div>
                     </div>
                     <Switch color="danger" />
@@ -289,7 +278,7 @@ const SettingsPage: React.FC = () => {
           {activeTab === "language" && (
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <h3 className="text-xl font-medium mb-4">Language Settings</h3>
+                <h3 className="text-xl font-medium mb-4 text-white">Language Settings</h3>
                 
                 <div className="space-y-4">
                   <Tabs 
@@ -304,7 +293,7 @@ const SettingsPage: React.FC = () => {
                   
                   <div className="p-4 bg-[#2A1A1A] rounded-lg flex items-center">
                     <Check size={16} className="text-green-500 mr-2" />
-                    <div className="text-sm">English is currently selected as your display language</div>
+                    <div className="text-sm text-gray-400">English is currently selected as your display language</div>
                   </div>
                   
                   <Button className="bg-[#E9423A] text-white">
@@ -319,12 +308,12 @@ const SettingsPage: React.FC = () => {
           {activeTab === "privacy" && (
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <h3 className="text-xl font-medium mb-4">Privacy Settings</h3>
+                <h3 className="text-xl font-medium mb-4 text-white">Privacy Settings</h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
                     <div>
-                      <div className="font-medium">Activity Tracking</div>
+                      <div className="font-medium text-white">Activity Tracking</div>
                       <div className="text-sm text-gray-400">Allow us to track your activity for better recommendations</div>
                     </div>
                     <Switch defaultSelected color="danger" />
@@ -332,7 +321,7 @@ const SettingsPage: React.FC = () => {
                   
                   <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
                     <div>
-                      <div className="font-medium">Data Sharing</div>
+                      <div className="font-medium text-white">Data Sharing</div>
                       <div className="text-sm text-gray-400">Share anonymized data to improve our services</div>
                     </div>
                     <Switch defaultSelected color="danger" />
@@ -340,7 +329,7 @@ const SettingsPage: React.FC = () => {
                   
                   <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
                     <div>
-                      <div className="font-medium">Profile Visibility</div>
+                      <div className="font-medium text-white">Profile Visibility</div>
                       <div className="text-sm text-gray-400">Make your profile visible to other users</div>
                     </div>
                     <Switch color="danger" />

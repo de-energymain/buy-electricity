@@ -205,15 +205,15 @@ const AnalyticsPage: React.FC = () => {
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="bg-[#2A2A2A] p-4 rounded-lg">
                 <div className="text-sm text-gray-400">Total Energy</div>
-                <div className="text-2xl font-bold">{totalStats.totalEnergy} kWh</div>
+                <div className="text-2xl text-white font-bold">{totalStats.totalEnergy} kWh</div>
               </div>
               <div className="bg-[#2A2A2A] p-4 rounded-lg">
                 <div className="text-sm text-gray-400">Total Earnings</div>
-                <div className="text-2xl font-bold">${totalStats.totalEarnings.toFixed(2)}</div>
+                <div className="text-2xl text-white font-bold">${totalStats.totalEarnings.toFixed(2)}</div>
               </div>
               <div className="bg-[#2A2A2A] p-4 rounded-lg">
                 <div className="text-sm text-gray-400">Avg. Efficiency</div>
-                <div className="text-2xl font-bold">{totalStats.averageEfficiency}%</div>
+                <div className="text-2xl text-white font-bold">{totalStats.averageEfficiency}%</div>
               </div>
             </div>
           </CardBody>
