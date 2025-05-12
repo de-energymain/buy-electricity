@@ -1,3 +1,4 @@
+// No need for manual buffer polyfills when using the plugin
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
