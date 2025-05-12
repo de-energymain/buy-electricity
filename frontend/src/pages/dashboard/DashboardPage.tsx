@@ -174,7 +174,7 @@ function DashboardPage() {
     }
     
     // Clear authentication state in localStorage
-    localStorage.removeItem("torusSession");
+    localStorage.removeItem("web3AuthSession");
     localStorage.setItem("walletConnected", "false");
     
     // Redirect to home page

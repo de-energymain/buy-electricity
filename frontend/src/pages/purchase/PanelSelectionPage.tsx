@@ -69,8 +69,8 @@ const PanelSelectionPage: React.FC = () => {
       }
       
       // Check for Torus session
-      const torusSession = localStorage.getItem("torusSession");
-      if (torusSession) {
+      const web3AuthSession = localStorage.getItem("web3AuthSession");
+      if (web3AuthSession) {
         setIsAuthenticated(true);
         return;
       }

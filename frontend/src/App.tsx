@@ -33,10 +33,10 @@ const isAuthenticated = () => {
   const walletConnected = localStorage.getItem("walletConnected") === "true";
   
   // Check for Torus session
-  const torusSession = localStorage.getItem("torusSession");
+  const web3AuthSession = localStorage.getItem("web3AuthSession");
   
   // Return true if either is present
-  return walletConnected || !!torusSession;
+  return walletConnected || !!web3AuthSession;
 };
 
 interface RouteProps {

@@ -17,7 +17,7 @@ import {
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram, Keypair } from '@solana/web3.js';
 
 // Import crypto icons from assets
 import nrgIcon from "../../assets/crypto/nrg-icon.svg";
@@ -44,6 +44,12 @@ interface Toast {
   duration: number;
 }
 
+interface Web3AuthWalletInfo {
+  provider: string;
+  publicKey: string | null;
+  email: string | null;
+}
+
 export default function PaymentMethodPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,6 +59,7 @@ export default function PaymentMethodPage() {
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [web3AuthWalletInfo, setWeb3AuthWalletInfo] = useState<Web3AuthWalletInfo | null>(null);
 
   // Toast state
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -75,23 +82,96 @@ export default function PaymentMethodPage() {
   const [lockMinutes, setLockMinutes] = useState(13);
   const [lockSeconds, setLockSeconds] = useState(22);
 
+  // Helper function to extract Web3Auth wallet info
+  const getWeb3AuthWalletInfo = (): Web3AuthWalletInfo | null => {
+    try {
+      const session = localStorage.getItem("web3AuthSession");
+      if (session) {
+        const data = JSON.parse(session);
+        return {
+          provider: "Google",
+          publicKey: data.publicKey || null,
+          email: data.userInfo?.email || null
+        };
+      }
+      return null;
+    } catch (e) {
+      console.error("Error reading Web3Auth session", e);
+      return null;
+    }
+  };
+
+  // Show a debug dialog for Web3Auth session
+  const debugWeb3Auth = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const session = localStorage.getItem("web3AuthSession");
+    try {
+      if (session) {
+        const data = JSON.parse(session);
+        console.log("Web3Auth Session Data:", data);
+        
+        // Show private key info (format, type, length)
+        if (data.privateKey) {
+          const privateKeyType = typeof data.privateKey;
+          const privateKeyLength = 
+            privateKeyType === 'string' 
+              ? data.privateKey.length 
+              : Array.isArray(data.privateKey) 
+                ? data.privateKey.length 
+                : Object.keys(data.privateKey).length;
+                
+          console.log("Private Key Type:", privateKeyType);
+          console.log("Private Key Length:", privateKeyLength);
+          
+          // If it's an object, show a sample of the values
+          if (privateKeyType === 'object' && !Array.isArray(data.privateKey)) {
+            const keys = Object.keys(data.privateKey);
+            const sampleKeys = keys.slice(0, 5);
+            console.log("First 5 keys:", sampleKeys);
+            const sampleValues = sampleKeys.map(k => data.privateKey[k]);
+            console.log("First 5 values:", sampleValues);
+          }
+        } else {
+          console.log("No privateKey in session data");
+        }
+        
+        // Show a toast with basic info
+        showToast(
+          "Web3Auth Session Info", 
+          `User: ${data.userInfo?.email || 'Unknown'}\nPublic Key: ${data.publicKey ? truncateAddress(data.publicKey) : 'None'}\nPrivate Key: ${data.privateKey ? 'Present' : 'Missing'}`, 
+          "primary", 
+          5000
+        );
+      } else {
+        console.log("No Web3Auth session found");
+        showToast("No Session", "No Web3Auth session found", "danger", 3000);
+      }
+    } catch (e) {
+      console.error("Error parsing session:", e);
+      showToast("Error", `Failed to parse session: ${e instanceof Error ? e.message : String(e)}`, "danger", 3000);
+    }
+  };
+
   // Check authentication status when component mounts and when wallet connection changes
   useEffect(() => {
     const checkAuth = (): void => {
       // If wallet is connected, user is authenticated via wallet
       if (connected) {
         setIsAuthenticated(true);
+        setWeb3AuthWalletInfo(null);
         return;
       }
       
-      // Check for Torus session
-      const torusSession = localStorage.getItem("torusSession");
-      if (torusSession) {
+      // Check for Web3Auth session
+      const web3AuthInfo = getWeb3AuthWalletInfo();
+      if (web3AuthInfo) {
         setIsAuthenticated(true);
+        setWeb3AuthWalletInfo(web3AuthInfo);
         return;
       }
       
       setIsAuthenticated(false);
+      setWeb3AuthWalletInfo(null);
     };
     
     checkAuth();
@@ -166,11 +246,25 @@ export default function PaymentMethodPage() {
   const truncateAddress = (address: string) =>
     address.length <= 8 ? address : `${address.slice(0, 4)}...${address.slice(-4)}`;
 
+  // Handle action based on authentication state
+  const handlePaymentAction = () => {
+    // If using Solana wallet or Web3Auth
+    if (connected || web3AuthWalletInfo) {
+      handleProceedToPayment();
+    } 
+    // No authentication
+    else {
+      handleSelectWallet();
+    }
+  };
+
   const handleProceedToPayment = async () => {
     setIsProcessingPayment(true);
     const processingId = toastKey;
     showToast("Processing Payment", `Sending ${tokenAmount.toFixed(2)} ${selectedPayment}...`, "primary", 100000);
+    
     try {
+      // Handle payment via Solana wallet adapter
       if (connected && publicKey && signTransaction) {
         const lamports = Math.floor(tokenAmount * LAMPORTS_PER_SOL);
         const recipient = new PublicKey("7C4jsPZpht1JaRJB7u8QdXhfY2pFdh6fT2xatJhvLpzz");
@@ -183,13 +277,153 @@ export default function PaymentMethodPage() {
         const signedTx = await signTransaction(tx);
         const signature = await connection.sendRawTransaction(signedTx.serialize());
         await connection.confirmTransaction(signature, 'confirmed');
+        
+        // Complete transaction
         setToasts(prev => prev.filter(t => t.id !== processingId));
         showToast("Payment Successful", "Your transaction was completed successfully", "success", 3000);
         navigate("/payment-success", {
-          state: { ...orderDetails, paymentMethod: selectedPayment, tokenAmount, wallet: wallet?.adapter.name ?? "Unknown", signature }
+          state: { 
+            ...orderDetails, 
+            paymentMethod: selectedPayment, 
+            tokenAmount, 
+            wallet: wallet?.adapter.name ?? "Unknown", 
+            signature 
+          }
         });
+      } 
+      // Handle payment via Web3Auth/Google login
+      else if (web3AuthWalletInfo && web3AuthWalletInfo.publicKey) {
+        try {
+          // Get the session data which should contain the private key
+          const sessionStr = localStorage.getItem("web3AuthSession");
+          if (!sessionStr) {
+            throw new Error("Web3Auth session not found");
+          }
+          
+          const sessionData = JSON.parse(sessionStr);
+          
+          // Check if privateKey is available
+          if (!sessionData.privateKey) {
+            throw new Error("Private key not available in session");
+          }
+          
+          // Debug the private key format
+          console.log("Private key type:", typeof sessionData.privateKey);
+          console.log("Private key length:", 
+                     typeof sessionData.privateKey === 'string' 
+                     ? sessionData.privateKey.length 
+                     : Array.isArray(sessionData.privateKey) 
+                       ? sessionData.privateKey.length 
+                       : Object.keys(sessionData.privateKey).length);
+          
+          // Handle different private key formats
+          let privateKeyBytes;
+          
+          if (typeof sessionData.privateKey === 'string') {
+            // If it's a base58 encoded string
+            if (sessionData.privateKey.length === 88) {
+              // Decode base58 string to bytes - you might need bs58 library for this
+              // privateKeyBytes = bs58.decode(sessionData.privateKey);
+              throw new Error("Base58 decoding requires bs58 library");
+            } 
+            // If it's a hex string
+            else if (sessionData.privateKey.length === 128 || sessionData.privateKey.length === 64) {
+              privateKeyBytes = new Uint8Array(sessionData.privateKey.length / 2);
+              for (let i = 0; i < sessionData.privateKey.length; i += 2) {
+                privateKeyBytes[i/2] = parseInt(sessionData.privateKey.substr(i, 2), 16);
+              }
+            } 
+            // Attempt to parse as JSON if it's a stringified array
+            else {
+              try {
+                const parsed = JSON.parse(sessionData.privateKey);
+                privateKeyBytes = new Uint8Array(parsed);
+              } catch (e) {
+                throw new Error(`Unable to parse privateKey format: ${e.message}`);
+              }
+            }
+          } 
+          // If it's already an array
+          else if (Array.isArray(sessionData.privateKey)) {
+            privateKeyBytes = new Uint8Array(sessionData.privateKey);
+          }
+          // If it's an object with numeric keys (like what JSON.stringify does to Uint8Array)
+          else if (typeof sessionData.privateKey === 'object') {
+            privateKeyBytes = new Uint8Array(Object.values(sessionData.privateKey));
+          }
+          else {
+            throw new Error("Unsupported privateKey format");
+          }
+          
+          // Ensure the private key is the correct size for Solana (64 bytes)
+          if (privateKeyBytes.length !== 64) {
+            console.error("Invalid private key length:", privateKeyBytes.length);
+            throw new Error(`Bad secret key size: expected 64 bytes, got ${privateKeyBytes.length}`);
+          }
+          
+          // Create keypair from the processed private key
+          try {
+            const keyPair = Keypair.fromSecretKey(privateKeyBytes);
+            console.log("Successfully created keypair from private key");
+            console.log("Public key from keypair:", keyPair.publicKey.toString());
+            
+            // Verify the keypair's public key matches what we expect
+            if (keyPair.publicKey.toString() !== web3AuthWalletInfo.publicKey) {
+              console.warn(
+                "Warning: public key from keypair doesn't match stored public key.",
+                "Expected:", web3AuthWalletInfo.publicKey,
+                "Got:", keyPair.publicKey.toString()
+              );
+            }
+            
+            // Create and sign the transaction using the private key
+            const recipientPublicKey = new PublicKey("7C4jsPZpht1JaRJB7u8QdXhfY2pFdh6fT2xatJhvLpzz");
+            const senderPublicKey = keyPair.publicKey;
+            const lamports = Math.floor(tokenAmount * LAMPORTS_PER_SOL);
+            
+            // Create a transaction
+            const tx = new Transaction().add(
+              SystemProgram.transfer({
+                fromPubkey: senderPublicKey,
+                toPubkey: recipientPublicKey,
+                lamports
+              })
+            );
+            
+            // Get recent blockhash
+            const { blockhash } = await connection.getLatestBlockhash();
+            tx.recentBlockhash = blockhash;
+            tx.feePayer = senderPublicKey;
+            
+            // Sign transaction using the keypair
+            tx.sign(keyPair);
+            
+            // Send the signed transaction
+            const signature = await connection.sendRawTransaction(tx.serialize());
+            await connection.confirmTransaction(signature, 'confirmed');
+            
+            // Complete transaction
+            setToasts(prev => prev.filter(t => t.id !== processingId));
+            showToast("Payment Successful", "Your transaction was completed successfully", "success", 3000);
+            navigate("/payment-success", {
+              state: { 
+                ...orderDetails, 
+                paymentMethod: selectedPayment, 
+                tokenAmount, 
+                wallet: "Google Web3Auth", 
+                signature 
+              }
+            });
+          } catch (error) {
+            console.error("Error creating keypair or signing transaction:", error);
+            throw error;
+          }
+        } catch (error: any) {
+          console.error("Web3Auth transaction error:", error);
+          throw new Error(`Web3Auth transaction failed: ${error.message}`);
+        }
       } else {
-        handleSelectWallet();
+        throw new Error("No wallet connected");
       }
     } catch (error: any) {
       console.error(error);
@@ -282,18 +516,69 @@ export default function PaymentMethodPage() {
               <div className="flex items-center justify-center text-sm text-[#E9423A]"><Clock size={14} className="mr-1" /><span>Price locked for {lockMinutes}:{lockSeconds<10?`0${lockSeconds}`:lockSeconds}</span></div>
             </div>
             <div className="bg-[#111111] p-4">
-              {connected && publicKey && (
+              {/* Updated wallet information section */}
+              {(connected && publicKey) ? (
                 <div className="px-4 py-2 text-center">
                   <p className="text-gray-400 text-xs">Connected to</p>
-                  <div className="flex items-center justify-center gap-1 text-sm text-white"><span>{wallet?.adapter.name||'Unknown Wallet'}</span><span>•</span><span className="font-mono">{truncateAddress(publicKey.toString())}</span></div>
-                  <button onClick={handleChangeWallet} className="text-[#E9423A] text-xs mt-1 hover:underline">change wallet</button>
+                  <div className="flex items-center justify-center gap-1 text-sm text-white">
+                    <span>{wallet?.adapter.name || 'Unknown Wallet'}</span>
+                    <span>•</span>
+                    <span className="font-mono">{truncateAddress(publicKey.toString())}</span>
+                  </div>
+                  <button onClick={handleChangeWallet} className="text-[#E9423A] text-xs mt-1 hover:underline">
+                    change wallet
+                  </button>
                 </div>
+              ) : (
+                web3AuthWalletInfo && (
+                  <div className="px-4 py-2 text-center">
+                    <p className="text-gray-400 text-xs">Connected via</p>
+                    <div className="flex items-center justify-center gap-1 text-sm text-white">
+                      <span>{web3AuthWalletInfo.provider}</span>
+                      {web3AuthWalletInfo.publicKey && (
+                        <>
+                          <span>•</span>
+                          <span className="font-mono">{truncateAddress(web3AuthWalletInfo.publicKey)}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex justify-center">
+                      <button 
+                        onClick={() => navigate("/login")} 
+                        className="text-[#E9423A] text-xs mt-1 hover:underline"
+                      >
+                        change login
+                      </button>
+                      {/* <button 
+                        className="text-[#E9423A] text-xs mt-1 ml-2 hover:underline"
+                        onClick={debugWeb3Auth}
+                      >
+                        debug
+                      </button> */}
+                    </div>
+                  </div>
+                )
               )}
-              <Button className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative" onPress={connected?handleProceedToPayment:handleSelectWallet} disabled={isProcessingPayment}>
+              
+              <Button 
+                className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative" 
+                onPress={handlePaymentAction} 
+                disabled={isProcessingPayment}
+              >
                 {isProcessingPayment && (
-                  <motion.div animate={{rotate:360}} transition={{repeat:Infinity,duration:1}} className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"><Spinner size="sm" /></motion.div>
+                  <motion.div 
+                    animate={{rotate:360}} 
+                    transition={{repeat:Infinity,duration:1}} 
+                    className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                  >
+                    <Spinner size="sm" />
+                  </motion.div>
                 )}
-                <span className={`${isProcessingPayment?'opacity-0':'opacity-100'}`}>{connected?'Complete Payment':'Select Wallet'}</span>
+                <span className={`${isProcessingPayment ? 'opacity-0' : 'opacity-100'}`}>
+                  {connected ? 'Complete Payment with Wallet' : 
+                   web3AuthWalletInfo ? 'Complete Payment with Web3Auth' : 
+                   'Select Wallet'}
+                </span>
               </Button>
             </div>
           </CardBody>
@@ -301,9 +586,26 @@ export default function PaymentMethodPage() {
 
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
           {toasts.map(toast=>(
-            <div key={toast.id} className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${toast.type==='success'?'bg-green-500/90 text-white':toast.type==='danger'?'bg-red-500/90 text-white':toast.type==='primary'?'bg-blue-500/90 text-white':'bg-black/80 text-white'}`} style={{animationDuration:'200ms'}}>
-              <div className="flex-1">{toast.title&&<h4 className="font-medium text-sm mb-1">{toast.title}</h4>}{toast.description&&<p className="text-xs opacity-90">{toast.description}</p>}</div>
-              <button onClick={()=>setToasts(prev=>prev.filter(t=>t.id!==toast.id))} className="text-xs text-white/80 hover:text-white">✕</button>
+            <div 
+              key={toast.id} 
+              className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${
+                toast.type === 'success' ? 'bg-green-500/90 text-white' : 
+                toast.type === 'danger' ? 'bg-red-500/90 text-white' : 
+                toast.type === 'primary' ? 'bg-blue-500/90 text-white' : 
+                'bg-black/80 text-white'
+              }`} 
+              style={{animationDuration:'200ms'}}
+            >
+              <div className="flex-1">
+                {toast.title && <h4 className="font-medium text-sm mb-1">{toast.title}</h4>}
+                {toast.description && <p className="text-xs opacity-90">{toast.description}</p>}
+              </div>
+              <button 
+                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} 
+                className="text-xs text-white/80 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
           ))}
         </div>
