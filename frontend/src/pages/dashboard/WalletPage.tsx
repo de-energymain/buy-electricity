@@ -246,7 +246,7 @@ const WalletPage: React.FC = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <div className="text-sm text-gray-400 mb-1">Total Balance</div>
-              <div className="text-3xl font-bold">${totalBalance.toFixed(2)}</div>
+              <div className="text-3xl text-white font-bold">${totalBalance.toFixed(2)}</div>
             </div>
             <div className="flex gap-2">
               <Button 
@@ -432,21 +432,21 @@ const WalletPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-[#1A1A1A] border-none h-min">
             <CardHeader className="border-b border-gray-800">
-              <h3 className="text-lg font-medium">Active Stakes</h3>
+              <h3 className="text-lg text-white font-medium">Active Stakes</h3>
             </CardHeader>
             <CardBody className="p-6">
               <div className="space-y-6">
                 <div className="bg-[#2A1A1A] p-4 rounded-lg">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <div className="font-medium">NRG Staking Pool</div>
+                      <div className="font-medium text-white">NRG Staking Pool</div>
                       <div className="text-xs text-gray-400">Started 30 days ago</div>
                     </div>
                     <Chip color="success" size="sm">Active</Chip>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <div className="text-sm text-gray-400">Staked Amount</div>
-                    <div className="font-medium">100 NRG</div>
+                    <div className="font-medium text-white">100 NRG</div>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <div className="text-sm text-gray-400">Annual Yield</div>
@@ -458,7 +458,7 @@ const WalletPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <div className="text-sm text-gray-400">Unlock Date</div>
-                    <div className="font-medium">June 12, 2025</div>
+                    <div className="font-medium text-white">June 12, 2025</div>
                   </div>
                   <div className="flex gap-2 mt-4">
                     <Button className="flex-1 bg-[#E9423A] text-white">
@@ -483,13 +483,13 @@ const WalletPage: React.FC = () => {
           
           <Card className="bg-[#1A1A1A] border-none h-min">
             <CardHeader className="border-b border-gray-800">
-              <h3 className="text-lg font-medium">Staking Options</h3>
+              <h3 className="text-lg text-white font-medium">Staking Options</h3>
             </CardHeader>
             <CardBody className="p-6">
               <div className="space-y-4">
                 <div className="bg-[#2A1A1A] p-4 rounded-lg hover:bg-[#3A1A1A] cursor-pointer transition-colors">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="font-medium">Flexible Staking</div>
+                    <div className="font-medium text-white">Flexible Staking</div>
                     <div className="text-green-500 font-medium">8.5% APY</div>
                   </div>
                   <div className="text-sm text-gray-400 mb-3">Stake your NRG tokens with no lock-up period. Withdraw anytime.</div>
@@ -500,7 +500,7 @@ const WalletPage: React.FC = () => {
                 
                 <div className="bg-[#2A1A1A] p-4 rounded-lg hover:bg-[#3A1A1A] cursor-pointer transition-colors">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="font-medium">30-Day Lock</div>
+                    <div className="font-medium text-white">30-Day Lock</div>
                     <div className="text-green-500 font-medium">12.5% APY</div>
                   </div>
                   <div className="text-sm text-gray-400 mb-3">Lock your NRG tokens for 30 days to earn higher rewards.</div>
@@ -511,7 +511,7 @@ const WalletPage: React.FC = () => {
                 
                 <div className="bg-[#2A1A1A] p-4 rounded-lg hover:bg-[#3A1A1A] cursor-pointer transition-colors">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="font-medium">90-Day Lock</div>
+                    <div className="font-medium text-white">90-Day Lock</div>
                     <div className="text-green-500 font-medium">18.0% APY</div>
                   </div>
                   <div className="text-sm text-gray-400 mb-3">Lock your NRG tokens for 90 days to maximize your rewards.</div>

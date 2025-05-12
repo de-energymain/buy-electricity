@@ -250,6 +250,7 @@ function DashboardPage() {
                 <Button 
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<Wallet size={18} />}
+                  //onPress={() => navigate("/dashboard/wallet")}
                 >
                   Wallet
                 </Button>
