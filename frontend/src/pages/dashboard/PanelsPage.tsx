@@ -137,7 +137,7 @@ const PanelsPage: React.FC = () => {
                 <Sun size={16} />
               </div>
             </div>
-            <div className="text-2xl font-bold">{panels.length}</div>
+            <div className="text-2xl font-bold text-white">{panels.length}</div>
             <div className="text-xs text-gray-400">Total Power: {totalPower.toFixed(2)} kW</div>
           </CardBody>
         </Card>
@@ -150,7 +150,7 @@ const PanelsPage: React.FC = () => {
                 <CheckCircle2 size={16} />
               </div>
             </div>
-            <div className="text-2xl font-bold">{activeCount}</div>
+            <div className="text-2xl text-white font-bold">{activeCount}</div>
             <div className="text-xs text-green-500">{((activeCount / panels.length) * 100).toFixed(0)}% Online</div>
           </CardBody>
         </Card>
@@ -163,7 +163,7 @@ const PanelsPage: React.FC = () => {
                 <Activity size={16} />
               </div>
             </div>
-            <div className="text-2xl font-bold">{maintenanceCount}</div>
+            <div className="text-2xl text-white font-bold">{maintenanceCount}</div>
             <div className="text-xs text-yellow-500">{((maintenanceCount / panels.length) * 100).toFixed(0)}% In Maintenance</div>
           </CardBody>
         </Card>
@@ -176,7 +176,7 @@ const PanelsPage: React.FC = () => {
                 <AlertTriangle size={16} />
               </div>
             </div>
-            <div className="text-2xl font-bold">{offlineCount}</div>
+            <div className="text-2xl text-white font-bold">{offlineCount}</div>
             <div className="text-xs text-red-500">{((offlineCount / panels.length) * 100).toFixed(0)}% Offline</div>
           </CardBody>
         </Card>
@@ -220,7 +220,7 @@ const PanelsPage: React.FC = () => {
                       </div>
                       
                       <div>
-                        <div className="font-medium">{panel.name}</div>
+                        <div className="text-white font-medium">{panel.name}</div>
                         <div className="text-xs text-gray-400">{panel.farm} • {panel.location}</div>
                       </div>
                     </div>
@@ -282,12 +282,12 @@ const PanelsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-[#1A1A1A] border-none">
           <CardBody className="p-6">
-            <h3 className="text-lg font-medium mb-4">Performance by Location</h3>
+            <h3 className="text-lg text-white font-medium mb-4">Performance by Location</h3>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm">Jaipur Solar Farm</span>
-                  <span className="text-sm">78%</span>
+                  <span className="text-sm text-white">Jaipur Solar Farm</span>
+                  <span className="text-sm text-white">78%</span>
                 </div>
                 <Progress 
                   value={78} 
@@ -299,8 +299,8 @@ const PanelsPage: React.FC = () => {
               </div>
               <div>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm">Gujarat Solar Park</span>
-                  <span className="text-sm">72%</span>
+                  <span className="text-sm text-white">Gujarat Solar Park</span>
+                  <span className="text-sm text-white">72%</span>
                 </div>
                 <Progress 
                   value={72} 
@@ -312,8 +312,8 @@ const PanelsPage: React.FC = () => {
               </div>
               <div>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm">Maharashtra Array</span>
-                  <span className="text-sm">65%</span>
+                  <span className="text-sm text-white">Maharashtra Array</span>
+                  <span className="text-sm text-white">65%</span>
                 </div>
                 <Progress 
                   value={65} 
@@ -325,8 +325,8 @@ const PanelsPage: React.FC = () => {
               </div>
               <div>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm">Karnataka Plant</span>
-                  <span className="text-sm">81%</span>
+                  <span className="text-sm text-white">Karnataka Plant</span>
+                  <span className="text-sm text-white">81%</span>
                 </div>
                 <Progress 
                   value={81} 
@@ -342,7 +342,7 @@ const PanelsPage: React.FC = () => {
         
         <Card className="bg-[#1A1A1A] border-none">
           <CardBody className="p-6">
-            <h3 className="text-lg font-medium mb-4">Upcoming Maintenance</h3>
+            <h3 className="text-lg text-white font-medium mb-4">Upcoming Maintenance</h3>
             <div className="space-y-4">
               {[
                 { panel: "Solar Panel 3", date: "May 20, 2025", farm: "Jaipur Solar Farm", days: 8 },
@@ -352,11 +352,11 @@ const PanelsPage: React.FC = () => {
               ].map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium">{item.panel}</div>
+                    <div className="font-medium text-white">{item.panel}</div>
                     <div className="text-xs text-gray-400">{item.farm}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium">{item.date}</div>
+                    <div className="font-medium text-white">{item.date}</div>
                     <div className="text-xs text-yellow-400">In {item.days} days</div>
                   </div>
                 </div>

@@ -419,7 +419,7 @@ const MarketplacePage: React.FC = () => {
                     </div>
                   </div>
                   <CardBody className="p-4">
-                    <h3 className="text-lg font-bold mb-1">{farm.name}</h3>
+                    <h3 className="text-lg text-white font-bold mb-1">{farm.name}</h3>
                     <div className="flex items-center text-gray-400 text-sm mb-3">
                       <Globe className="mr-1" size={14} />
                       {farm.location}
@@ -428,7 +428,7 @@ const MarketplacePage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
                         <div className="text-xs text-gray-400">Panel Price</div>
-                        <div className="font-medium">${farm.panelPrice}</div>
+                        <div className="font-medium text-white">${farm.panelPrice}</div>
                       </div>
                       <div>
                         <div className="text-xs text-gray-400">Annual ROI</div>
@@ -436,11 +436,11 @@ const MarketplacePage: React.FC = () => {
                       </div>
                       <div>
                         <div className="text-xs text-gray-400">Energy per Panel</div>
-                        <div className="font-medium">{farm.energyPerPanel} kWh/day</div>
+                        <div className="font-medium text-white">{farm.energyPerPanel} kWh/day</div>
                       </div>
                       <div>
                         <div className="text-xs text-gray-400">Available</div>
-                        <div className="font-medium">{farm.panelsAvailable} panels</div>
+                        <div className="font-medium text-white">{farm.panelsAvailable} panels</div>
                       </div>
                     </div>
                   </CardBody>
@@ -466,34 +466,34 @@ const MarketplacePage: React.FC = () => {
       {activeTab === "checkout" && purchase && (
         <Card className="bg-[#1A1A1A] border-none">
           <CardBody className="p-6">
-            <h3 className="text-xl font-bold mb-6">Complete Your Purchase</h3>
+            <h3 className="text-xl text-white font-bold mb-6">Complete Your Purchase</h3>
             
             <div className="mb-6 p-4 bg-[#2A1A1A] rounded-lg">
-              <div className="text-lg font-medium mb-4">Order Summary</div>
+              <div className="text-lg text-white font-medium mb-4">Order Summary</div>
               
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
                   <div className="text-gray-400">Farm</div>
-                  <div>{purchase.farmName}</div>
+                  <div className="text-white">{purchase.farmName}</div>
                 </div>
                 <div className="flex justify-between">
                   <div className="text-gray-400">Number of Panels</div>
-                  <div>{purchase.panelCount}</div>
+                  <div className="text-white">{purchase.panelCount}</div>
                 </div>
                 <div className="flex justify-between">
                   <div className="text-gray-400">Price per Panel</div>
-                  <div>${purchase.pricePerPanel}</div>
+                  <div className="text-white">${purchase.pricePerPanel}</div>
                 </div>
               </div>
               
               <div className="flex justify-between pt-4 border-t border-gray-800">
-                <div className="text-lg font-medium">Total</div>
-                <div className="text-lg font-bold">${purchase.totalPrice}</div>
+                <div className="text-lg text-white font-medium">Total</div>
+                <div className="text-lg text-white font-bold">${purchase.totalPrice}</div>
               </div>
             </div>
             
             <div className="mb-6 p-4 bg-[#2A1A1A] rounded-lg">
-              <div className="text-lg font-medium mb-4">Payment Method</div>
+              <div className="text-lg text-white font-medium mb-4">Payment Method</div>
               
               <div className="flex flex-col md:flex-row gap-4">
                 <Card className="bg-[#3A1A1A] border-2 border-[#E9423A] flex-1">
@@ -502,7 +502,7 @@ const MarketplacePage: React.FC = () => {
                       <Zap size={20} />
                     </div>
                     <div>
-                      <div className="font-medium">Pay with NRG</div>
+                      <div className="font-medium text-white">Pay with NRG</div>
                       <div className="text-xs text-gray-400">Using wallet balance</div>
                     </div>
                   </CardBody>
@@ -514,7 +514,7 @@ const MarketplacePage: React.FC = () => {
                       <Globe size={20} />
                     </div>
                     <div>
-                      <div className="font-medium">Credit Card</div>
+                      <div className="font-medium text-slate-400">Credit Card</div>
                       <div className="text-xs text-gray-400">Coming soon</div>
                     </div>
                   </CardBody>
