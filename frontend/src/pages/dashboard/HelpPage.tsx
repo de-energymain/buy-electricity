@@ -61,7 +61,7 @@ const HelpPage: React.FC = () => {
         <div className="md:col-span-2">
           <Card className="bg-[#1A1A1A] border-none mb-6">
             <CardBody className="p-6">
-              <h3 className="text-xl font-medium mb-4">Frequently Asked Questions</h3>
+              <h3 className="text-xl text-white font-medium mb-4">Frequently Asked Questions</h3>
               
               <div className="mb-6">
                 <Input
@@ -105,18 +105,18 @@ const HelpPage: React.FC = () => {
           
           <Card className="bg-[#1A1A1A] border-none">
             <CardBody className="p-6">
-              <h3 className="text-xl font-medium mb-4">Video Tutorials</h3>
+              <h3 className="text-xl text-white font-medium mb-4">Video Tutorials</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-[#2A1A1A] border-none">
                   <div className="h-40 bg-[#3A1A1A] flex items-center justify-center relative">
                     <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
-                      <PlayCircle size={48} className="text-white opacity-80" />
+                      <PlayCircle size={48} className="text-white opacity-80 mb-4" />
                     </div>
-                    <div className="text-center text-white">Getting Started Tutorial</div>
+                    <div className="text-center text-white mt-20">Getting Started Tutorial</div>
                   </div>
                   <CardBody className="p-4">
-                    <h4 className="font-medium">Introduction to Solar Panels</h4>
+                    <h4 className="font-medium text-white">Introduction to Solar Panels</h4>
                     <div className="text-xs text-gray-400 mt-1">3:45 • Beginner</div>
                   </CardBody>
                 </Card>
@@ -124,12 +124,12 @@ const HelpPage: React.FC = () => {
                 <Card className="bg-[#2A1A1A] border-none">
                   <div className="h-40 bg-[#3A1A1A] flex items-center justify-center relative">
                     <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
-                      <PlayCircle size={48} className="text-white opacity-80" />
+                      <PlayCircle size={48} className="text-white opacity-80 mb-4" />
                     </div>
-                    <div className="text-center text-white">Dashboard Tutorial</div>
+                    <div className="text-center text-white mt-20">Dashboard Tutorial</div>
                   </div>
                   <CardBody className="p-4">
-                    <h4 className="font-medium">Understanding Your Dashboard</h4>
+                    <h4 className="font-medium text-white">Understanding Your Dashboard</h4>
                     <div className="text-xs text-gray-400 mt-1">5:12 • Beginner</div>
                   </CardBody>
                 </Card>
@@ -137,12 +137,12 @@ const HelpPage: React.FC = () => {
                 <Card className="bg-[#2A1A1A] border-none">
                 <div className="h-40 bg-[#3A1A1A] flex items-center justify-center relative">
                     <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
-                      <PlayCircle size={48} className="text-white opacity-80" />
+                      <PlayCircle size={48} className="text-white opacity-80 mb-4" />
                     </div>
-                    <div className="text-center text-white">Analytics Tutorial</div>
+                    <div className="text-center text-white mt-20">Analytics Tutorial</div>
                   </div>
                   <CardBody className="p-4">
-                    <h4 className="font-medium">Analyzing Your Performance</h4>
+                    <h4 className="font-medium text-white">Analyzing Your Performance</h4>
                     <div className="text-xs text-gray-400 mt-1">7:23 • Intermediate</div>
                   </CardBody>
                 </Card>
@@ -150,12 +150,12 @@ const HelpPage: React.FC = () => {
                 <Card className="bg-[#2A1A1A] border-none">
                   <div className="h-40 bg-[#3A1A1A] flex items-center justify-center relative">
                     <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
-                      <PlayCircle size={48} className="text-white opacity-80" />
+                      <PlayCircle size={48} className="text-white opacity-80 mb-4" />
                     </div>
-                    <div className="text-center text-white">NRG Token Tutorial</div>
+                    <div className="text-center text-white mt-20">NRG Token Tutorial</div>
                   </div>
                   <CardBody className="p-4">
-                    <h4 className="font-medium">Understanding NRG Tokens</h4>
+                    <h4 className="font-medium text-white">Understanding NRG Tokens</h4>
                     <div className="text-xs text-gray-400 mt-1">6:48 • Intermediate</div>
                   </CardBody>
                 </Card>
@@ -167,7 +167,7 @@ const HelpPage: React.FC = () => {
         <div className="md:col-span-1">
           <Card className="bg-[#1A1A1A] border-none mb-6">
             <CardBody className="p-6">
-              <h3 className="text-xl font-medium mb-4">Contact Support</h3>
+              <h3 className="text-xl text-white font-medium mb-4">Contact Support</h3>
               
               <div className="space-y-4">
                 <div className="bg-[#2A1A1A] p-4 rounded-lg flex items-center cursor-pointer hover:bg-[#3A1A1A] transition-colors">
@@ -175,7 +175,7 @@ const HelpPage: React.FC = () => {
                     <Mail size={18} />
                   </div>
                   <div>
-                    <div className="font-medium">Email Support</div>
+                    <div className="font-medium text-white">Email Support</div>
                     <div className="text-xs text-gray-400">Response within 24 hours</div>
                   </div>
                   <ChevronRight size={16} className="ml-auto text-gray-400" />
@@ -186,7 +186,7 @@ const HelpPage: React.FC = () => {
                     <MessageCircle size={18} />
                   </div>
                   <div>
-                    <div className="font-medium">Live Chat</div>
+                    <div className="font-medium text-white">Live Chat</div>
                     <div className="text-xs text-gray-400">Available 9am-5pm ET</div>
                   </div>
                   <ChevronRight size={16} className="ml-auto text-gray-400" />
@@ -197,7 +197,7 @@ const HelpPage: React.FC = () => {
           
           <Card className="bg-[#1A1A1A] border-none">
             <CardBody className="p-6">
-              <h3 className="text-xl font-medium mb-4">Documentation</h3>
+              <h3 className="text-xl text-white font-medium mb-4">Documentation</h3>
               
               <div className="space-y-4">
                 <div className="bg-[#2A1A1A] p-4 rounded-lg flex items-center cursor-pointer hover:bg-[#3A1A1A] transition-colors">
@@ -205,7 +205,7 @@ const HelpPage: React.FC = () => {
                     <FileText size={18} />
                   </div>
                   <div>
-                    <div className="font-medium">User Guide</div>
+                    <div className="font-medium text-white">User Guide</div>
                     <div className="text-xs text-gray-400">Complete platform documentation</div>
                   </div>
                   <ChevronRight size={16} className="ml-auto text-gray-400" />
@@ -216,7 +216,7 @@ const HelpPage: React.FC = () => {
                     <FileText size={18} />
                   </div>
                   <div>
-                    <div className="font-medium">API Documentation</div>
+                    <div className="font-medium text-white">API Documentation</div>
                     <div className="text-xs text-gray-400">For developers</div>
                   </div>
                   <ChevronRight size={16} className="ml-auto text-gray-400" />
@@ -227,7 +227,7 @@ const HelpPage: React.FC = () => {
                     <FileText size={18} />
                   </div>
                   <div>
-                    <div className="font-medium">Legal Documents</div>
+                    <div className="font-medium text-white">Legal Documents</div>
                     <div className="text-xs text-gray-400">Terms, privacy, and more</div>
                   </div>
                   <ChevronRight size={16} className="ml-auto text-gray-400" />
