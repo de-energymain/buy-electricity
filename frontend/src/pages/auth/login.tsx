@@ -19,7 +19,7 @@ import {
   // Import wallet components
   import { useWallet } from '@solana/wallet-adapter-react';
   import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-  import { PublicKey } from '@solana/web3.js';
+  //import { PublicKey } from '@solana/web3.js';
   
   // Import Torus
   import Torus from "@toruslabs/solana-embed";
