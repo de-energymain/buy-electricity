@@ -102,55 +102,55 @@ export default function PaymentMethodPage() {
   };
 
   // Show a debug dialog for Web3Auth session
-  const debugWeb3Auth = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    const session = localStorage.getItem("web3AuthSession");
-    try {
-      if (session) {
-        const data = JSON.parse(session);
-        console.log("Web3Auth Session Data:", data);
+  // const debugWeb3Auth = (e: React.MouseEvent<HTMLButtonElement>) => {
+  //   e.stopPropagation();
+  //   const session = localStorage.getItem("web3AuthSession");
+  //   try {
+  //     if (session) {
+  //       const data = JSON.parse(session);
+  //       console.log("Web3Auth Session Data:", data);
         
-        // Show private key info (format, type, length)
-        if (data.privateKey) {
-          const privateKeyType = typeof data.privateKey;
-          const privateKeyLength = 
-            privateKeyType === 'string' 
-              ? data.privateKey.length 
-              : Array.isArray(data.privateKey) 
-                ? data.privateKey.length 
-                : Object.keys(data.privateKey).length;
+  //       // Show private key info (format, type, length)
+  //       if (data.privateKey) {
+  //         const privateKeyType = typeof data.privateKey;
+  //         const privateKeyLength = 
+  //           privateKeyType === 'string' 
+  //             ? data.privateKey.length 
+  //             : Array.isArray(data.privateKey) 
+  //               ? data.privateKey.length 
+  //               : Object.keys(data.privateKey).length;
                 
-          console.log("Private Key Type:", privateKeyType);
-          console.log("Private Key Length:", privateKeyLength);
+  //         console.log("Private Key Type:", privateKeyType);
+  //         console.log("Private Key Length:", privateKeyLength);
           
-          // If it's an object, show a sample of the values
-          if (privateKeyType === 'object' && !Array.isArray(data.privateKey)) {
-            const keys = Object.keys(data.privateKey);
-            const sampleKeys = keys.slice(0, 5);
-            console.log("First 5 keys:", sampleKeys);
-            const sampleValues = sampleKeys.map(k => data.privateKey[k]);
-            console.log("First 5 values:", sampleValues);
-          }
-        } else {
-          console.log("No privateKey in session data");
-        }
+  //         // If it's an object, show a sample of the values
+  //         if (privateKeyType === 'object' && !Array.isArray(data.privateKey)) {
+  //           const keys = Object.keys(data.privateKey);
+  //           const sampleKeys = keys.slice(0, 5);
+  //           console.log("First 5 keys:", sampleKeys);
+  //           const sampleValues = sampleKeys.map(k => data.privateKey[k]);
+  //           console.log("First 5 values:", sampleValues);
+  //         }
+  //       } else {
+  //         console.log("No privateKey in session data");
+  //       }
         
-        // Show a toast with basic info
-        showToast(
-          "Web3Auth Session Info", 
-          `User: ${data.userInfo?.email || 'Unknown'}\nPublic Key: ${data.publicKey ? truncateAddress(data.publicKey) : 'None'}\nPrivate Key: ${data.privateKey ? 'Present' : 'Missing'}`, 
-          "primary", 
-          5000
-        );
-      } else {
-        console.log("No Web3Auth session found");
-        showToast("No Session", "No Web3Auth session found", "danger", 3000);
-      }
-    } catch (e) {
-      console.error("Error parsing session:", e);
-      showToast("Error", `Failed to parse session: ${e instanceof Error ? e.message : String(e)}`, "danger", 3000);
-    }
-  };
+  //       // Show a toast with basic info
+  //       showToast(
+  //         "Web3Auth Session Info", 
+  //         `User: ${data.userInfo?.email || 'Unknown'}\nPublic Key: ${data.publicKey ? truncateAddress(data.publicKey) : 'None'}\nPrivate Key: ${data.privateKey ? 'Present' : 'Missing'}`, 
+  //         "primary", 
+  //         5000
+  //       );
+  //     } else {
+  //       console.log("No Web3Auth session found");
+  //       showToast("No Session", "No Web3Auth session found", "danger", 3000);
+  //     }
+  //   } catch (e) {
+  //     console.error("Error parsing session:", e);
+  //     showToast("Error", `Failed to parse session: ${e instanceof Error ? e.message : String(e)}`, "danger", 3000);
+  //   }
+  // };
 
   // Check authentication status when component mounts and when wallet connection changes
   useEffect(() => {
