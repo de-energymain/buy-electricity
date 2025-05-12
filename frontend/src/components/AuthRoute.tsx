@@ -22,8 +22,8 @@ export const AuthRoute = ({ component: Component }: AuthRouteProps): ReactElemen
 
     // Check for Torus/Google login session
     // We can check localStorage or a session token set during Google login
-    const torusSession = localStorage.getItem("torusSession");
-    return !!torusSession;
+    const web3AuthSession = localStorage.getItem("web3AuthSession");
+    return !!web3AuthSession;
   };
 
   useEffect(() => {
