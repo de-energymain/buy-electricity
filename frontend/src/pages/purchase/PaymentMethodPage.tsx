@@ -50,6 +50,11 @@ interface Web3AuthWalletInfo {
   email: string | null;
 }
 
+interface ExchangeRates {
+  sol: number; 
+  usdc: number; 
+}
+
 export default function PaymentMethodPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,6 +86,10 @@ export default function PaymentMethodPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [lockMinutes, setLockMinutes] = useState(13);
   const [lockSeconds, setLockSeconds] = useState(22);
+
+  //Exchange rates
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ sol: 20, usdc: 1 });
+  const [isLoadingRates, setIsLoadingRates] = useState(true);
 
   const queryParams = new URLSearchParams(location.search);
   const panels = queryParams.get('panels');
@@ -194,6 +203,31 @@ export default function PaymentMethodPage() {
     checkAuth();
   }, [connected]);
 
+  //Fetch exchange rates
+  useEffect(() => {
+    const fetchExchangeRates = async () => {
+      try {
+        setIsLoadingRates(true);
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=solana,usd-coin&vs_currencies=usd'
+        );
+        const data = await response.json();
+        setExchangeRates({
+          sol: data.solana.usd,
+          usdc: data['usd-coin'].usd
+        });
+        //console.log("Conversion rates", data);
+      } catch (error) {
+        console.error('Error fetching exchange rates:', error);
+        showToast('Error', 'Failed to fetch exchange rates. Using default rates.', 'danger', 3000);
+      } finally {
+        setIsLoadingRates(false);
+      }
+    };
+
+    fetchExchangeRates();
+  }, []);
+
   // Parse query params
 useEffect(() => {
   const params = new URLSearchParams(location.search);
@@ -235,7 +269,7 @@ useEffect(() => {
   useEffect(() => {
     if (selectedPayment === "SOL") {
       // Use a reasonable SOL to USD conversion rate (example: 1 SOL = $20)
-      setTokenAmount(orderDetails.cost / 20);
+      setTokenAmount(orderDetails.cost / exchangeRates.sol);
     } else if (selectedPayment === "USDC") {
       // USDC is pegged to USD (1:1)
       setTokenAmount(orderDetails.cost);
@@ -258,7 +292,7 @@ useEffect(() => {
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [lockMinutes, lockSeconds]);
+  }, [lockMinutes, lockSeconds, exchangeRates, isLoadingRates]);
 
   // Toast helper
   const showToast = (title: string, description: string, type = "success", duration = 3000) => {
@@ -489,6 +523,7 @@ useEffect(() => {
     const encodedRedirect = encodeURIComponent(redirectUrl);
     navigate(`/login?redirect=${encodedRedirect}`);
   }
+
   }
 
   return (
@@ -613,7 +648,7 @@ useEffect(() => {
               <Button 
                 className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative" 
                 onPress={isAuthenticated ? handlePaymentAction : handleLoginButtonClick} 
-                disabled={isProcessingPayment}
+                disabled={isProcessingPayment || isLoadingRates}
               >
                 {isProcessingPayment && (
                   <motion.div 
