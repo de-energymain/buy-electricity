@@ -6,7 +6,12 @@ import {
   Button, 
   Tabs, 
   Tab,
-  Tooltip
+  Tooltip,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter
 } from "@nextui-org/react";
 import { 
   BarChart3, 
@@ -42,8 +47,9 @@ interface ChartData {
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { publicKey, wallet, disconnect, connected } = useWallet(); // Get wallet info
+  const { publicKey, wallet, disconnect, connected } = useWallet(); 
   const [activeTab, setActiveTab] = useState("week");
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [stats] = useState({
@@ -61,6 +67,10 @@ function DashboardPage() {
     highest: 72
   });
 
+  const [username, setUsername] = useState<string>("John Doe");
+  const [email, setEmail] = useState<string>("Personal Account");
+  const [web3AuthPublicKey, setWeb3AuthPublicKey] = useState<string | null>(null);
+
   // Update authentication status when wallet connection changes
   useEffect(() => {
     // When wallet is connected, set the flag in localStorage
@@ -68,6 +78,25 @@ function DashboardPage() {
       localStorage.setItem("walletConnected", "true");
     }
   }, [connected]);
+
+  useEffect(() => {
+    const session = localStorage.getItem("web3AuthSession");
+    if (session) {
+      try {
+        const data = JSON.parse(session);
+        if (data.userInfo && data.userInfo.email && data.userInfo.name) {
+          setUsername(data.userInfo.name);
+          setEmail(data.userInfo.email);
+          //console.log("Username:", data.userInfo.email);
+          if (data.publicKey) {
+          setWeb3AuthPublicKey(data.publicKey);
+        }
+        }
+      } catch (e) {
+        console.error("Error parsing Web3Auth session", e);
+      }
+    }
+  }, []);
 
   // Generate mock data on component mount
   useEffect(() => {
@@ -168,17 +197,23 @@ function DashboardPage() {
   };
 
   const handleLogout = async () => {
-    // Disconnect wallet if connected
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = async () => {
     if (disconnect) {
       await disconnect();
     }
     
-    // Clear authentication state in localStorage
     localStorage.removeItem("web3AuthSession");
     localStorage.setItem("walletConnected", "false");
     
-    // Redirect to home page
     navigate("/");
+    setIsLogoutModalOpen(false); // Close modal
+  };
+
+  const cancelLogout = () => {
+    setIsLogoutModalOpen(false); // Close modal without logging out
   };
 
   // Truncate wallet address for display
@@ -297,8 +332,8 @@ function DashboardPage() {
                 JD
               </div>
               <div>
-                <div className="text-sm font-medium">John Doe</div>
-                <div className="text-xs text-gray-500">Personal Account</div>
+                <div className="text-sm font-medium">{username}</div>
+                <div className="text-xs text-gray-500">{email}</div>
               </div>
               <Button 
                 isIconOnly
@@ -321,7 +356,7 @@ function DashboardPage() {
             {/* Wallet & Buy Panels Section - UPDATED */}
             <div className="flex items-center space-x-4">
               {/* Connected Wallet Display */}
-              {publicKey && (
+              {(publicKey || web3AuthPublicKey) && (
                 <div className="flex items-center bg-[#1A1A1A] rounded-lg p-2 pr-3">
                   <div className="w-8 h-8 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A] mr-2">
                     <Wallet size={16} />
@@ -329,13 +364,15 @@ function DashboardPage() {
                   <div className="flex flex-col">
                     <div className="text-xs text-gray-400">{wallet?.adapter.name || "Wallet"}</div>
                     <div className="flex items-center">
-                      <span className="text-sm font-mono">{truncateAddress(publicKey.toString())}</span>
+                      <span className="text-sm font-mono">
+                        {publicKey ? truncateAddress(publicKey.toString()) : truncateAddress(web3AuthPublicKey || "")}
+                      </span>
                       <Tooltip content="View on Explorer">
                         <Button
                           isIconOnly
                           size="sm"
                           className="ml-1 bg-transparent min-w-0 w-5 h-5 p-0"
-                          onPress={() => window.open(`https://explorer.solana.com/address/${publicKey.toString()}?cluster=devnet`, '_blank')}
+                          onPress={() => window.open(`https://explorer.solana.com/address/${publicKey || web3AuthPublicKey}?cluster=devnet`, '_blank')}
                         >
                           <ExternalLink size={12} className="text-gray-400" />
                         </Button>
@@ -591,6 +628,35 @@ function DashboardPage() {
           </Card>
         </div>
       </div>
+      {/* Logout Modal */}
+      <Modal 
+        isOpen={isLogoutModalOpen} 
+        onClose={cancelLogout}
+        className="bg-[#1A1A1A] text-white"
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            Confirm Logout
+          </ModalHeader>
+          <ModalBody>
+            <p>Are you sure do you want to logout?</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              className="bg-transparent text-gray-400 hover:bg-[#2A1A1A]"
+              onPress={cancelLogout}
+            >
+              No
+            </Button>
+            <Button
+              className="bg-[#E9423A] text-white"
+              onPress={confirmLogout}
+            >
+              Yes
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

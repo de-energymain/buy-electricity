@@ -30,7 +30,9 @@ interface FarmDetails {
 interface Calculations {
   totalCapacity: number;
   dailyOutput: number;
+  platformFee: number;
   totalCost: number;
+  perPanelNRGYield: number;
 }
 
 const PanelSelectionPage: React.FC = () => {
@@ -56,7 +58,9 @@ const PanelSelectionPage: React.FC = () => {
   const [calculations, setCalculations] = useState<Calculations>({
     totalCapacity: 0,
     dailyOutput: 0,
-    totalCost: 0
+    platformFee: 0,
+    totalCost: 0,
+    perPanelNRGYield: 0,
   });
 
   // Check authentication status when component mounts and when wallet connection changes
@@ -69,8 +73,8 @@ const PanelSelectionPage: React.FC = () => {
       }
       
       // Check for Torus session
-      const web3AuthSession = localStorage.getItem("web3AuthSession");
-      if (web3AuthSession) {
+      const torusSession = localStorage.getItem("torusSession");
+      if (torusSession) {
         setIsAuthenticated(true);
         return;
       }
@@ -84,7 +88,7 @@ const PanelSelectionPage: React.FC = () => {
   // Extract kwh from query params if available
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
-    const kwh = parseFloat(queryParams.get("kwh") || "0");
+    /*const kwh = parseFloat(queryParams.get("kwh") || "0");
     
     if (kwh > 0) {
       // Calculate panels needed (simplified version)
@@ -95,7 +99,10 @@ const PanelSelectionPage: React.FC = () => {
       if (panelsNeeded > 0) {
         setPanelQuantity(panelsNeeded);
       }
-    }
+    }*/
+
+    const panels = parseFloat(queryParams.get("panels") || "0");
+    setPanelQuantity(panels);
   }, [location.search, farmDetails.solarIndex, farmDetails.panelPower]);
 
   // Recalculate whenever panel quantity changes
@@ -108,14 +115,30 @@ const PanelSelectionPage: React.FC = () => {
     
     // Calculate total cost
     const panelCost = panelQuantity * farmDetails.pricePerPanel;
-    const totalCost = panelCost + farmDetails.networkFee;
+    const platformFee = Math.floor(panelCost/10);
+    const totalCost = panelCost + platformFee;
+
+    //Calculate per panel NRG yield
+    const panelPowerKW = farmDetails.panelPower / 1000;
+    const dailyEnergy = panelPowerKW * 3.5;
+    const pricePerKWh = 0.10; //V assumed as $0.1 for now
+    const perPanelNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
     
     setCalculations({
       totalCapacity: capacity,
       dailyOutput,
-      totalCost
+      platformFee,
+      totalCost,
+      perPanelNRGYield
     });
   }, [panelQuantity, farmDetails]);
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10);
+    if (!isNaN(value) && value >= 1) {
+      setPanelQuantity(value);
+    }
+  };
 
   const handleDecreaseQuantity = (): void => {
     if (panelQuantity > 1) {
@@ -227,7 +250,13 @@ const PanelSelectionPage: React.FC = () => {
                     >
                       <Minus size={16} />
                     </Button>
-                    <span className="mx-4 text-xl font-bold text-white">{panelQuantity}</span>
+                    <input 
+                      type="number"
+                      min={1}
+                      value={panelQuantity}
+                      onChange={handleQuantityChange}
+                      className="mx-4 h-10 w-16 text-center text-xl font-bold text-white bg-[#1e1e1e] border border-gray-700 rounded [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                    />
                     <Button
                       isIconOnly
                       size="sm"
@@ -246,6 +275,10 @@ const PanelSelectionPage: React.FC = () => {
                     <div className="text-lg font-bold text-white">{calculations.totalCapacity.toFixed(2)} kW</div>
                   </div>
                   <div>
+                    <div className="text-sm text-gray-400">Per Panel $NRG Yield</div>
+                    <div className="text-lg font-bold text-white">{calculations.perPanelNRGYield.toFixed(2)} NRG</div>
+                  </div>
+                  <div>
                     <div className="text-sm text-gray-400">Est. Daily Output</div>
                     <div className="text-lg font-bold text-white">{calculations.dailyOutput} kWh</div>
                   </div>
@@ -258,8 +291,8 @@ const PanelSelectionPage: React.FC = () => {
                     <div className="text-white font-medium">${panelQuantity * farmDetails.pricePerPanel}</div>
                   </div>
                   <div className="flex justify-between">
-                    <div className="text-gray-300">Network Fee</div>
-                    <div className="text-white font-medium">${farmDetails.networkFee}</div>
+                    <div className="text-gray-300">Platform Fee</div>
+                    <div className="text-white font-medium">${calculations.platformFee}</div>
                   </div>
                   <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
                     <div className="text-white font-bold">Total Amount</div>
