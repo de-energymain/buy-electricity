@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Button, 
@@ -81,6 +81,23 @@ export default function PaymentMethodPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [lockMinutes, setLockMinutes] = useState(13);
   const [lockSeconds, setLockSeconds] = useState(22);
+
+  const queryParams = new URLSearchParams(location.search);
+  const panels = queryParams.get('panels');
+  const cost = queryParams.get('cost');
+  const capacity = queryParams.get('capacity');
+
+  // Construct the redirect URL with only the necessary parameters
+  const redirectSearchParams = new URLSearchParams();
+  if (panels) {
+    redirectSearchParams.append('panels', panels);
+  }
+  if (cost) {
+    redirectSearchParams.append('cost', cost);
+  }
+  if (capacity) {
+    redirectSearchParams.append('capacity', capacity);
+  }
 
   // Helper function to extract Web3Auth wallet info
   const getWeb3AuthWalletInfo = (): Web3AuthWalletInfo | null => {
@@ -178,19 +195,41 @@ export default function PaymentMethodPage() {
   }, [connected]);
 
   // Parse query params
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get("farm")) {
-      setOrderDetails({
-        farm: params.get("farm") || orderDetails.farm,
-        location: params.get("location") || orderDetails.location,
-        panels: parseInt(params.get("panels") || `${orderDetails.panels}`),
-        capacity: parseFloat(params.get("capacity") || `${orderDetails.capacity}`),
-        output: parseInt(params.get("output") || `${orderDetails.output}`),
-        cost: parseFloat(params.get("cost") || `${orderDetails.cost}`)
-      });
-    }
-  }, [location.search]);
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const newOrderDetails = {...orderDetails};
+
+  if (params.has("panels")) {
+    const panelsValue = params.get("panels");
+    newOrderDetails.panels = panelsValue ? parseInt(panelsValue) : orderDetails.panels;
+  }
+
+  if (params.has("capacity")) {
+    const capacityValue = params.get("capacity");
+    newOrderDetails.capacity = capacityValue ? parseFloat(capacityValue) : orderDetails.capacity;
+  }
+
+  if (params.has("cost")) {
+    const costValue = params.get("cost");
+    newOrderDetails.cost = costValue ? parseFloat(costValue) : orderDetails.cost;
+  }
+
+  if (params.has("farm")) {
+    newOrderDetails.farm = params.get("farm") || orderDetails.farm;
+  }
+
+  if (params.has("location")) {
+    newOrderDetails.location = params.get("location") || orderDetails.location;
+  }
+
+  if (params.has("output")) {
+    const outputValue = params.get("output");
+    newOrderDetails.output = outputValue ? parseInt(outputValue) : orderDetails.output;
+  }
+
+  setOrderDetails(newOrderDetails);
+  console.log("New order Details:", newOrderDetails)
+}, [location.search]);
 
   // Update token amount based on current cost
   useEffect(() => {
@@ -442,6 +481,16 @@ export default function PaymentMethodPage() {
     navigate(isAuthenticated ? "/dashboard" : "/login");
   };
 
+  const handleLoginButtonClick = () => {
+    console.log("Is authenticed?", isAuthenticated);
+    if (!isAuthenticated) {
+    //navigate(`/login?redirect=/payment?${redirectSearchParams.toString()}`);
+    const redirectUrl = `/payment?panels=${panels}&cost=${cost}&capacity=${capacity}`;
+    const encodedRedirect = encodeURIComponent(redirectUrl);
+    navigate(`/login?redirect=${encodedRedirect}`);
+  }
+  }
+
   return (
     <FormContainer>
       <div className="w-full max-w-[420px] mx-auto relative z-10 h-full flex flex-col">
@@ -456,7 +505,7 @@ export default function PaymentMethodPage() {
             Back
           </Button>
           
-          {/* Conditional Login/Dashboard link aligned to the right */}
+          {/* Conditional Login/Dashboard link aligned to the right 
           <a 
             href={isAuthenticated ? "/dashboard" : "/login"}
             onClick={handleAuthButtonClick}
@@ -474,6 +523,7 @@ export default function PaymentMethodPage() {
               </>
             )}
           </a>
+          */}
         </div>
 
         <Card className={`${cardClasses} w-full overflow-hidden`}>
@@ -562,7 +612,7 @@ export default function PaymentMethodPage() {
               
               <Button 
                 className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative" 
-                onPress={handlePaymentAction} 
+                onPress={isAuthenticated ? handlePaymentAction : handleLoginButtonClick} 
                 disabled={isProcessingPayment}
               >
                 {isProcessingPayment && (
@@ -575,9 +625,11 @@ export default function PaymentMethodPage() {
                   </motion.div>
                 )}
                 <span className={`${isProcessingPayment ? 'opacity-0' : 'opacity-100'}`}>
-                  {connected ? 'Complete Payment with Wallet' : 
-                   web3AuthWalletInfo ? 'Complete Payment with Web3Auth' : 
-                   'Select Wallet'}
+                  {isAuthenticated ? (
+                    connected ? 'Complete Payment with Wallet' : 
+                    web3AuthWalletInfo ? 'Complete Payment with Web3Auth' : 
+                    'Select Wallet'
+                  ) : 'Login to Continue'}
                 </span>
               </Button>
             </div>
