@@ -220,7 +220,7 @@ const ElectricityEstimateForm: React.FC = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    navigate("/contact");
+                    navigate("/panel-selection");
                   }}
                   className="text-red-500 hover:underline"
                 >

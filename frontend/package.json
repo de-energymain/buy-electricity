@@ -24,6 +24,7 @@
     "@web3auth/solana-wallet-connector-plugin": "^9.5.4",
     "@web3auth/torus-solana-adapter": "^9.7.0",
     "all": "^0.0.0",
+    "axios": "^1.9.0",
     "buffer": "^6.0.3",
     "events": "^3.3.0",
     "framer-motion": "^12.4.7",
