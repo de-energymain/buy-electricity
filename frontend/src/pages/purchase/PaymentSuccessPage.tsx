@@ -5,7 +5,7 @@ import {
   Card, 
   CardBody
 } from "@nextui-org/react";
-import { Check, LogIn } from "lucide-react";
+import { Check } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.svg";
 import { 
