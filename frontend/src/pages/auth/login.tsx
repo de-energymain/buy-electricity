@@ -6,7 +6,7 @@ import {
   Spinner
 } from "@nextui-org/react";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.svg";
@@ -32,7 +32,7 @@ const GoogleIcon = () => (
     <path d="M19.76 10.2271C19.76 9.57656 19.7062 8.93156 19.5985 8.29761H10.24V12.0497H15.605C15.3919 13.2997 14.6946 14.3591 13.6485 15.0685V17.5771H16.8603C18.7576 15.8351 19.76 13.2726 19.76 10.2271Z" fill="#4285F4"/>
     <path d="M10.24 20C12.9128 20 15.1641 19.1045 16.8641 17.577L13.6523 15.0684C12.7538 15.6683 11.5908 16.0228 10.24 16.0228C7.59097 16.0228 5.33826 14.2616 4.59177 11.9001H1.26953V14.4911C3.00354 17.8592 6.39354 20 10.24 20Z" fill="#34A853"/>
     <path d="M4.58699 11.9001C4.14838 10.6683 4.14838 9.33663 4.58699 8.10481V5.5138H1.26974C-0.108951 8.33663 -0.108951 11.6683 1.26974 14.4911L4.58699 11.9001Z" fill="#FBBC04"/>
-    <path d="M10.24 3.97727C11.6953 3.95909 13.0922 4.52272 14.1411 5.56136L16.9912 2.71136C15.1845 0.991363 12.7584 0.0504544 10.24 0.0681817C6.39355 0.0681817 3.00354 2.20909 1.26953 5.5818L4.58677 8.10477C5.33327 5.77727 7.59097 3.97727 10.24 3.97727Z" fill="#EA4335"/>
+    <path d="M10.24 3.97727C11.6953 3.95909 13.0922 4.52272 14.1411 5.56136L16.9912 2.71136C15.1845 0.991363 12.7584 0.050 10.24 0.0681817C6.39355 0.0681817 3.00354 2.20909 1.26953 5.5818L4.58677 8.10477C5.33327 5.77727 7.59097 3.97727 10.24 3.97727Z" fill="#EA4335"/>
   </svg>
 );
 
@@ -45,6 +45,7 @@ const SolanaIcon = () => (
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { connected, connecting, disconnect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
   
@@ -56,8 +57,32 @@ function Login() {
   const [redirecting, setRedirecting] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Remove the unused connection variable to avoid TS error
-  // const [connection, setConnection] = useState<Connection | null>(null);
+  const queryParams = new URLSearchParams(location.search);
+  const redirectParam = queryParams.get('redirect') || '/dashboard';
+  
+  const getRedirectDestination = () => {
+  if (!redirectParam) return '/dashboard';
+
+  try {
+    const decodedRedirect = decodeURIComponent(redirectParam);
+
+    if (!decodedRedirect.startsWith('/payment')) {
+      return '/dashboard';
+    }
+
+    const url = new URL(decodedRedirect, window.location.origin);
+    const params = new URLSearchParams(url.search);
+
+    if (!params.has('panels') || !params.has('cost') || !params.has('capacity')) {
+      return '/dashboard';
+    }
+
+    return `/payment?${params.toString()}`;
+  } catch (error) {
+    console.error("Error processing redirect URL:", error);
+    return '/dashboard';
+  }
+};
 
   // Check if already authenticated on load
   useEffect(() => {
@@ -69,9 +94,10 @@ function Login() {
       console.log("Authentication check:", { walletConnected, hasSession: !!web3AuthSession });
       
       if (walletConnected || !!web3AuthSession) {
-        console.log("User is authenticated, redirecting to dashboard");
+        const destination = getRedirectDestination();
+        console.log("User is authenticated, redirecting to:", destination);
         setRedirecting(true);
-        navigate("/dashboard");
+        navigate(destination);
       } else {
         console.log("User is not authenticated, showing login page");
         setCheckingAuth(false);
@@ -81,22 +107,24 @@ function Login() {
     // Small delay to ensure localStorage is up to date
     const timer = setTimeout(checkAuth, 100);
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, redirectParam]);
 
   // Add effect to handle wallet connection state changes
   useEffect(() => {
     if (connected && wallet) {
       // The wallet is now connected, update localStorage
       localStorage.setItem("walletConnected", "true");
-      console.log("Wallet connected, redirecting to dashboard");
+      
+      const destination = getRedirectDestination();
+      console.log("Wallet connected, redirecting to:", destination);
       
       // Set redirecting state to provide visual feedback
       setRedirecting(true);
       
       // Add a small delay to ensure localStorage is updated before redirect
-      setTimeout(() => navigate("/dashboard"), 500);
+      setTimeout(() => navigate(destination), 500);
     }
-  }, [connected, wallet, navigate]);
+  }, [connected, wallet, navigate, redirectParam]);
 
   // Initialize Web3Auth when component mounts
   useEffect(() => {
@@ -155,7 +183,31 @@ function Login() {
         });
         
         // Initialize the modal
-        await web3authInstance.initModal();
+        await web3authInstance.initModal({
+          modalConfig: {
+            "openlogin": {
+              label: "openlogin",
+              loginMethods: {
+                facebook: {
+                  name: "facebook",
+                  showOnModal: false
+                },
+                reddit: {
+                  name: "reddit",
+                  showOnModal: false
+                },
+                email_passwordless: {
+                  name: "email_passwordless",
+                  showOnModal: false
+                },
+                sms_passwordless: {
+                  name: "sms_passwordless",
+                  showOnModal: false
+                }
+              }
+            }
+          }
+        });
         
         setWeb3auth(web3authInstance);
         setWeb3AuthError(null);
@@ -258,9 +310,12 @@ function Login() {
       // Set redirecting state to prevent multiple redirects
       setRedirecting(true);
       
-      console.log("Redirecting to dashboard...");
+      // Get the destination with all query parameters preserved
+      const destination = getRedirectDestination();
+      console.log("Redirecting to:", destination);
+      
       // Add a small delay to ensure localStorage is updated before redirect
-      setTimeout(() => navigate("/dashboard"), 500);
+      setTimeout(() => navigate(destination), 500);
     } catch (error) {
       console.error("Web3Auth Google login failed:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -313,7 +368,7 @@ function Login() {
             <img src={logo} alt="Renrg logo" />
           </div>
           <Spinner size="lg" color="danger" className="mb-4" />
-          <p className="text-white text-lg">Redirecting to dashboard...</p>
+          <p className="text-white text-lg">Redirecting...</p>
         </div>
       </FormContainer>
     );
@@ -385,7 +440,7 @@ function Login() {
                 
                 {connected && (
                   <p className="text-xs text-green-400 mt-2 text-center">
-                    Wallet connected! Redirecting to dashboard...
+                    Wallet connected! Redirecting...
                   </p>
                 )}
               </div>

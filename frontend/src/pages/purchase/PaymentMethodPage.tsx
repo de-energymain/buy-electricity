@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Button, 
@@ -50,6 +50,11 @@ interface Web3AuthWalletInfo {
   email: string | null;
 }
 
+interface ExchangeRates {
+  sol: number; 
+  usdc: number; 
+}
+
 export default function PaymentMethodPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,6 +86,27 @@ export default function PaymentMethodPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [lockMinutes, setLockMinutes] = useState(13);
   const [lockSeconds, setLockSeconds] = useState(22);
+
+  //Exchange rates
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ sol: 20, usdc: 1 });
+  const [isLoadingRates, setIsLoadingRates] = useState(true);
+
+  const queryParams = new URLSearchParams(location.search);
+  const panels = queryParams.get('panels');
+  const cost = queryParams.get('cost');
+  const capacity = queryParams.get('capacity');
+
+  // Construct the redirect URL with only the necessary parameters
+  const redirectSearchParams = new URLSearchParams();
+  if (panels) {
+    redirectSearchParams.append('panels', panels);
+  }
+  if (cost) {
+    redirectSearchParams.append('cost', cost);
+  }
+  if (capacity) {
+    redirectSearchParams.append('capacity', capacity);
+  }
 
   // Helper function to extract Web3Auth wallet info
   const getWeb3AuthWalletInfo = (): Web3AuthWalletInfo | null => {
@@ -177,26 +203,73 @@ export default function PaymentMethodPage() {
     checkAuth();
   }, [connected]);
 
-  // Parse query params
+  //Fetch exchange rates
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get("farm")) {
-      setOrderDetails({
-        farm: params.get("farm") || orderDetails.farm,
-        location: params.get("location") || orderDetails.location,
-        panels: parseInt(params.get("panels") || `${orderDetails.panels}`),
-        capacity: parseFloat(params.get("capacity") || `${orderDetails.capacity}`),
-        output: parseInt(params.get("output") || `${orderDetails.output}`),
-        cost: parseFloat(params.get("cost") || `${orderDetails.cost}`)
-      });
-    }
-  }, [location.search]);
+    const fetchExchangeRates = async () => {
+      try {
+        setIsLoadingRates(true);
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=solana,usd-coin&vs_currencies=usd'
+        );
+        const data = await response.json();
+        setExchangeRates({
+          sol: data.solana.usd,
+          usdc: data['usd-coin'].usd
+        });
+        //console.log("Conversion rates", data);
+      } catch (error) {
+        console.error('Error fetching exchange rates:', error);
+        showToast('Error', 'Failed to fetch exchange rates. Using default rates.', 'danger', 3000);
+      } finally {
+        setIsLoadingRates(false);
+      }
+    };
+
+    fetchExchangeRates();
+  }, []);
+
+  // Parse query params
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const newOrderDetails = {...orderDetails};
+
+  if (params.has("panels")) {
+    const panelsValue = params.get("panels");
+    newOrderDetails.panels = panelsValue ? parseInt(panelsValue) : orderDetails.panels;
+  }
+
+  if (params.has("capacity")) {
+    const capacityValue = params.get("capacity");
+    newOrderDetails.capacity = capacityValue ? parseFloat(capacityValue) : orderDetails.capacity;
+  }
+
+  if (params.has("cost")) {
+    const costValue = params.get("cost");
+    newOrderDetails.cost = costValue ? parseFloat(costValue) : orderDetails.cost;
+  }
+
+  if (params.has("farm")) {
+    newOrderDetails.farm = params.get("farm") || orderDetails.farm;
+  }
+
+  if (params.has("location")) {
+    newOrderDetails.location = params.get("location") || orderDetails.location;
+  }
+
+  if (params.has("output")) {
+    const outputValue = params.get("output");
+    newOrderDetails.output = outputValue ? parseInt(outputValue) : orderDetails.output;
+  }
+
+  setOrderDetails(newOrderDetails);
+  console.log("New order Details:", newOrderDetails)
+}, [location.search]);
 
   // Update token amount based on current cost
   useEffect(() => {
     if (selectedPayment === "SOL") {
       // Use a reasonable SOL to USD conversion rate (example: 1 SOL = $20)
-      setTokenAmount(orderDetails.cost / 20);
+      setTokenAmount(orderDetails.cost / exchangeRates.sol);
     } else if (selectedPayment === "USDC") {
       // USDC is pegged to USD (1:1)
       setTokenAmount(orderDetails.cost);
@@ -219,7 +292,7 @@ export default function PaymentMethodPage() {
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [lockMinutes, lockSeconds]);
+  }, [lockMinutes, lockSeconds, exchangeRates, isLoadingRates]);
 
   // Toast helper
   const showToast = (title: string, description: string, type = "success", duration = 3000) => {
@@ -442,6 +515,17 @@ export default function PaymentMethodPage() {
     navigate(isAuthenticated ? "/dashboard" : "/login");
   };
 
+  const handleLoginButtonClick = () => {
+    console.log("Is authenticed?", isAuthenticated);
+    if (!isAuthenticated) {
+    //navigate(`/login?redirect=/payment?${redirectSearchParams.toString()}`);
+    const redirectUrl = `/payment?panels=${panels}&cost=${cost}&capacity=${capacity}`;
+    const encodedRedirect = encodeURIComponent(redirectUrl);
+    navigate(`/login?redirect=${encodedRedirect}`);
+  }
+
+  }
+
   return (
     <FormContainer>
       <div className="w-full max-w-[420px] mx-auto relative z-10 h-full flex flex-col">
@@ -456,7 +540,7 @@ export default function PaymentMethodPage() {
             Back
           </Button>
           
-          {/* Conditional Login/Dashboard link aligned to the right */}
+          {/* Conditional Login/Dashboard link aligned to the right 
           <a 
             href={isAuthenticated ? "/dashboard" : "/login"}
             onClick={handleAuthButtonClick}
@@ -474,6 +558,7 @@ export default function PaymentMethodPage() {
               </>
             )}
           </a>
+          */}
         </div>
 
         <Card className={`${cardClasses} w-full overflow-hidden`}>
@@ -562,8 +647,8 @@ export default function PaymentMethodPage() {
               
               <Button 
                 className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative" 
-                onPress={handlePaymentAction} 
-                disabled={isProcessingPayment}
+                onPress={isAuthenticated ? handlePaymentAction : handleLoginButtonClick} 
+                disabled={isProcessingPayment || isLoadingRates}
               >
                 {isProcessingPayment && (
                   <motion.div 
@@ -575,9 +660,11 @@ export default function PaymentMethodPage() {
                   </motion.div>
                 )}
                 <span className={`${isProcessingPayment ? 'opacity-0' : 'opacity-100'}`}>
-                  {connected ? 'Complete Payment with Wallet' : 
-                   web3AuthWalletInfo ? 'Complete Payment with Web3Auth' : 
-                   'Select Wallet'}
+                  {isAuthenticated ? (
+                    connected ? 'Complete Payment with Wallet' : 
+                    web3AuthWalletInfo ? 'Complete Payment with Web3Auth' : 
+                    'Select Wallet'
+                  ) : 'Login to Continue'}
                 </span>
               </Button>
             </div>
