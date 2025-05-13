@@ -6,7 +6,7 @@ import {
   CardBody,
   Spinner
 } from "@nextui-org/react";
-import { ArrowLeft, Clock, LogIn, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { 
   FormContainer, 
@@ -510,10 +510,10 @@ useEffect(() => {
   const handleBack = () => navigate(-1);
 
   // Handler for login/dashboard button click
-  const handleAuthButtonClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
-    e.preventDefault();
-    navigate(isAuthenticated ? "/dashboard" : "/login");
-  };
+  // const handleAuthButtonClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+  //   e.preventDefault();
+  //   navigate(isAuthenticated ? "/dashboard" : "/login");
+  // };
 
   const handleLoginButtonClick = () => {
     console.log("Is authenticed?", isAuthenticated);
