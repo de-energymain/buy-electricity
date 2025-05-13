@@ -22,7 +22,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 // Import Web3Auth SDKs
 import { Web3Auth } from "@web3auth/modal";
-import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK } from "@web3auth/base";
+import { CHAIN_NAMESPACES, WALLET_ADAPTERS, WEB3AUTH_NETWORK } from "@web3auth/base";
 import { SolanaPrivateKeyProvider } from "@web3auth/solana-provider";
 import { Connection } from "@solana/web3.js";
 
@@ -182,18 +182,65 @@ function Login() {
           privateKeyProvider: privateKeyProvider
         });
         
-        // Initialize the modal
+        // Initialize the modal with the AUTH adapter key (not OPENLOGIN)
         await web3authInstance.initModal({
           modalConfig: {
-            "openlogin": {
-              label: "openlogin",
+            // Use AUTH adapter key instead of OPENLOGIN
+            [WALLET_ADAPTERS.AUTH]: {
+              label: "auth",
               loginMethods: {
+                // Only show Google
+                google: {
+                  name: "google",
+                  showOnModal: true
+                },
+                // Hide all other login methods
                 facebook: {
                   name: "facebook",
                   showOnModal: false
                 },
+                twitter: {
+                  name: "twitter",
+                  showOnModal: false
+                },
                 reddit: {
                   name: "reddit",
+                  showOnModal: false
+                },
+                discord: {
+                  name: "discord",
+                  showOnModal: false
+                },
+                twitch: {
+                  name: "twitch",
+                  showOnModal: false
+                },
+                apple: {
+                  name: "apple",
+                  showOnModal: false
+                },
+                line: {
+                  name: "line",
+                  showOnModal: false
+                },
+                github: {
+                  name: "github",
+                  showOnModal: false
+                },
+                kakao: {
+                  name: "kakao",
+                  showOnModal: false
+                },
+                linkedin: {
+                  name: "linkedin",
+                  showOnModal: false
+                },
+                weibo: {
+                  name: "weibo",
+                  showOnModal: false
+                },
+                wechat: {
+                  name: "wechat",
                   showOnModal: false
                 },
                 email_passwordless: {
@@ -203,7 +250,11 @@ function Login() {
                 sms_passwordless: {
                   name: "sms_passwordless",
                   showOnModal: false
-                }
+                },
+                farcaster: {
+                  name: "farcaster",
+                  showOnModal: false
+                },
               }
             }
           }
