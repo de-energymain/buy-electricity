@@ -32,7 +32,7 @@ interface Calculations {
   dailyOutput: number;
   platformFee: number;
   totalCost: number;
-  perPanelNRGYield: number;
+  dailyNRGYield: number; // Changed from perPanelNRGYield to dailyNRGYield
 }
 
 const PanelSelectionPage: React.FC = () => {
@@ -43,7 +43,7 @@ const PanelSelectionPage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Panel configuration and details
-  const [panelQuantity, setPanelQuantity] = useState<number>(17);
+  const [panelQuantity, setPanelQuantity] = useState<number>(14); // Default to 14 panels to match screenshot
   const [farmDetails] = useState<FarmDetails>({
     name: "Jaipur Solar Farm",
     location: "Jaipur, Rajasthan, India",
@@ -60,7 +60,7 @@ const PanelSelectionPage: React.FC = () => {
     dailyOutput: 0,
     platformFee: 0,
     totalCost: 0,
-    perPanelNRGYield: 0,
+    dailyNRGYield: 0, // Changed from perPanelNRGYield to dailyNRGYield
   });
 
   // Check authentication status when component mounts and when wallet connection changes
@@ -85,51 +85,41 @@ const PanelSelectionPage: React.FC = () => {
     checkAuth();
   }, [connected]);
 
-  // Extract kwh from query params if available
+  // Extract panels from query params if available
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
-    /*const kwh = parseFloat(queryParams.get("kwh") || "0");
-    
-    if (kwh > 0) {
-      // Calculate panels needed (simplified version)
-      const dailyUsage = kwh / 30; // Convert monthly to daily
-      const requiredCapacity = dailyUsage / (farmDetails.solarIndex * 0.8); // Accounting for efficiency
-      const panelsNeeded = Math.ceil(requiredCapacity / (farmDetails.panelPower / 1000));
-      
-      if (panelsNeeded > 0) {
-        setPanelQuantity(panelsNeeded);
-      }
-    }*/
-
     const panels = parseFloat(queryParams.get("panels") || "0");
-    setPanelQuantity(panels);
-  }, [location.search, farmDetails.solarIndex, farmDetails.panelPower]);
+    if (panels > 0) {
+      setPanelQuantity(panels);
+    }
+  }, [location.search]);
 
-  // Recalculate whenever panel quantity changes
+      // Recalculate whenever panel quantity changes
   useEffect(() => {
     // Calculate total capacity (kW)
     const capacity = (panelQuantity * farmDetails.panelPower) / 1000;
     
     // Calculate estimated daily output (kWh)
-    const dailyOutput = Math.floor(capacity * farmDetails.solarIndex * (farmDetails.efficiency / 100));
+    const dailyOutput = Math.round(capacity * farmDetails.solarIndex * (farmDetails.efficiency / 100));
     
     // Calculate total cost
     const panelCost = panelQuantity * farmDetails.pricePerPanel;
-    const platformFee = Math.floor(panelCost/10);
+    // Calculate platform fee as exactly 10% without rounding
+    const platformFee = panelCost * 0.1;
     const totalCost = panelCost + platformFee;
 
-    //Calculate per panel NRG yield
+    // Calculate daily NRG yield (for all panels combined)
     const panelPowerKW = farmDetails.panelPower / 1000;
-    const dailyEnergy = panelPowerKW * 3.5;
-    const pricePerKWh = 0.10; //V assumed as $0.1 for now
-    const perPanelNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
+    const dailyEnergy = panelPowerKW * 3.5 * panelQuantity; // Multiply by panel quantity for total
+    const pricePerKWh = 0.10; // Assumed as $0.1 for now
+    const dailyNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
     
     setCalculations({
       totalCapacity: capacity,
       dailyOutput,
       platformFee,
       totalCost,
-      perPanelNRGYield
+      dailyNRGYield
     });
   }, [panelQuantity, farmDetails]);
 
@@ -268,31 +258,35 @@ const PanelSelectionPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Capacity and Output */}
+                {/* Capacity, Daily Output, and NRG Yield - REORDERED as requested */}
                 <div className="flex justify-between mb-6">
                   <div>
                     <div className="text-sm text-gray-400">Total Capacity</div>
                     <div className="text-lg font-bold text-white">{calculations.totalCapacity.toFixed(2)} kW</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-400">Per Panel $NRG Yield</div>
-                    <div className="text-lg font-bold text-white">{calculations.perPanelNRGYield.toFixed(2)} NRG</div>
-                  </div>
-                  <div>
                     <div className="text-sm text-gray-400">Est. Daily Output</div>
                     <div className="text-lg font-bold text-white">{calculations.dailyOutput} kWh</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-400">Daily $NRG Yield</div>
+                    <div className="text-lg font-bold text-white">{calculations.dailyNRGYield.toFixed(2)} NRG</div>
                   </div>
                 </div>
 
                 {/* Cost Breakdown */}
                 <div className="space-y-2 border-t border-gray-700 pt-4">
                   <div className="flex justify-between">
-                    <div className="text-gray-300">Panel Cost ({panelQuantity} × ${farmDetails.pricePerPanel})</div>
+                    <div className="text-gray-300">Per Panel Cost</div>
+                    <div className="text-white font-medium">${farmDetails.pricePerPanel}</div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="text-gray-300">Total Panel Cost ({panelQuantity} panels)</div>
                     <div className="text-white font-medium">${panelQuantity * farmDetails.pricePerPanel}</div>
                   </div>
                   <div className="flex justify-between">
-                    <div className="text-gray-300">Platform Fee</div>
-                    <div className="text-white font-medium">${calculations.platformFee}</div>
+                    <div className="text-gray-300">Platform Fee (10%)</div>
+                    <div className="text-white font-medium">${calculations.platformFee.toFixed(2)}</div>
                   </div>
                   <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
                     <div className="text-white font-bold">Total Amount</div>
@@ -322,8 +316,6 @@ const PanelSelectionPage: React.FC = () => {
           </CardBody>
         </Card>
       </div>
-
-      {/* No business profile text as requested */}
     </FormContainer>
   );
 };

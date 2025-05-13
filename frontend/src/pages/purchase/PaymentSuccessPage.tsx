@@ -84,8 +84,8 @@ function PaymentSuccessPage() {
 
       {/* Navigation Bar with Login link aligned to the right */}
       <div className="max-w-md mx-auto w-full relative z-10">
-        <div className="flex justify-end items-center mb-4">
-          {/* No back button on success page, just the login link aligned right */}
+        {/* <div className="flex justify-end items-center mb-4">
+         
           <a 
             href="/login"
             onClick={(e) => {
@@ -97,7 +97,7 @@ function PaymentSuccessPage() {
             <LogIn size={18} />
             <span>Login</span>
           </a>
-        </div>
+        </div> */}
 
         <Card className={cardClasses}>
           <CardBody className="p-6 bg-[#1A1A1A] flex flex-col items-center">
