@@ -242,7 +242,7 @@ const PanelsPage: React.FC = () => {
                       
                       <div>
                         <div className="text-xs text-gray-400 mb-1">Daily Output</div>
-                        <div className="text-sm">{panel.dailyOutput} kWh</div>
+                        <div className="text-sm text-white">{panel.dailyOutput} kWh</div>
                       </div>
                       
                       <div>
