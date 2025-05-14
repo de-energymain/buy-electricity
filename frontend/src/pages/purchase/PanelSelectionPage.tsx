@@ -97,21 +97,21 @@ const PanelSelectionPage: React.FC = () => {
       // Recalculate whenever panel quantity changes
   useEffect(() => {
     // Calculate total capacity (kW)
-    const capacity = (panelQuantity * farmDetails.panelPower) / 1000;
+    const capacity = panelQuantity * 1; //Previously (panelQuantity * farmDetails.panelPower) / 1000
     
     // Calculate estimated daily output (kWh)
-    const dailyOutput = Math.round(capacity * farmDetails.solarIndex * (farmDetails.efficiency / 100));
+    const dailyOutput = parseFloat((capacity * 2.8).toFixed(2)); //Previously Math.round(capacity * farmDetails.solarIndex * (farmDetails.efficiency / 100));
     
     // Calculate total cost
     const panelCost = panelQuantity * farmDetails.pricePerPanel;
     // Calculate platform fee as exactly 10% without rounding
     const platformFee = panelCost * 0.1;
-    const totalCost = panelCost + platformFee;
+    const totalCost = panelCost; //Previously included + platformFee;
 
     // Calculate daily NRG yield (for all panels combined)
     const panelPowerKW = farmDetails.panelPower / 1000;
     const dailyEnergy = panelPowerKW * 3.5 * panelQuantity; // Multiply by panel quantity for total
-    const pricePerKWh = 0.10; // Assumed as $0.1 for now
+    const pricePerKWh = 0.15; // Previously assumed as $0.1
     const dailyNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
     
     setCalculations({
@@ -269,7 +269,7 @@ const PanelSelectionPage: React.FC = () => {
                     <div className="text-lg font-bold text-white">{calculations.dailyOutput} kWh</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-400">Daily $NRG Yield</div>
+                    <div className="text-sm text-gray-400">Est. Daily Yield</div>
                     <div className="text-lg font-bold text-white">{calculations.dailyNRGYield.toFixed(2)} NRG</div>
                   </div>
                 </div>
@@ -284,10 +284,11 @@ const PanelSelectionPage: React.FC = () => {
                     <div className="text-gray-300">Total Panel Cost ({panelQuantity} panels)</div>
                     <div className="text-white font-medium">${panelQuantity * farmDetails.pricePerPanel}</div>
                   </div>
-                  <div className="flex justify-between">
+                  {/*<div className="flex justify-between">
                     <div className="text-gray-300">Platform Fee (10%)</div>
                     <div className="text-white font-medium">${calculations.platformFee.toFixed(2)}</div>
                   </div>
+                  */}
                   <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
                     <div className="text-white font-bold">Total Amount</div>
                     <div className="text-white font-bold">${calculations.totalCost}</div>
