@@ -5,7 +5,10 @@ import {
   Card, 
   CardBody
 } from "@nextui-org/react";
-import { Check } from "lucide-react";
+import { 
+  Check,
+  Copy
+} from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.svg";
 import { 
@@ -30,9 +33,11 @@ function PaymentSuccessPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [orderDetails, setOrderDetails] = useState<SuccessDetails | null>(null);
+  const [copied, setCopied] = useState<boolean>(false);
 
   // Generate a realistic looking transaction hash
   const [transactionHash, setTransactionHash] = useState("");
+  const [entireHash, setEntireHash] = useState<string>("");
   const [nodeToken, setNodeToken] = useState("");
   
   useEffect(() => {
@@ -46,6 +51,7 @@ function PaymentSuccessPage() {
       for (let i = 0; i < 64; i++) {
         hash += characters.charAt(Math.floor(Math.random() * characters.length));
       }
+      setEntireHash(hash);
       // Format hash to look like the one in the design (truncated with ellipsis)
       const displayHash = `${hash.substring(0, 12)}...${hash.substring(58)}`;
       setTransactionHash(displayHash);
@@ -72,6 +78,13 @@ function PaymentSuccessPage() {
 
   // If no orderDetails, show nothing (will redirect)
   if (!orderDetails) return null;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(entireHash).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    })
+  }
 
   return (
     <FormContainer>
@@ -126,9 +139,33 @@ function PaymentSuccessPage() {
               <Card className="w-full bg-[#222]">
                 <CardBody className="p-4">
                   <div className="text-sm text-gray-400 mb-1">Transaction Hash</div>
-                  <div className="text-white font-mono text-sm overflow-hidden text-ellipsis">
-                    {transactionHash}
+                  <div className="flex items-center justify-between">
+                    <div className="text-white font-mono text-sm overflow-hidden text-ellipsis">
+                      {transactionHash}
+                    </div>
+                    <button
+                      onClick={handleCopy}
+                      title="Copy to Clipboard"
+                      className="ml-4 p-1 rounded hover:bg-gray-700 transition-colors text-gray-400"
+                    >
+                      <Copy size={16} color="white" />
+                    </button>
                   </div>
+                  <div className="mt-1 text-xs text-gray-400">
+                    <a
+                      href={`https://explorer.solana.com/tx/${entireHash}?cluster=devnet`}
+                      target='_blank'
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                    >
+                      View on Explorer
+                    </a>
+                  </div>
+                  {copied && (
+                     <div className="mt-1 text-xs text-green-400">
+                       Copied to clipboard!
+                      </div>
+                  )}
                 </CardBody>
               </Card>
 
