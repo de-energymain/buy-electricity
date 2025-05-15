@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  Button, 
-  Card, 
-  CardBody, 
+import {
+  Button,
+  Card,
+  CardBody,
   Spinner,
 } from "@nextui-org/react";
 import { ArrowLeft, Plus, Minus, LogIn, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react"; // Import wallet hook
 import logo from "../../assets/logo.svg";
-import { 
-  FormContainer, 
+import {
+  FormContainer,
   cardClasses,
   secondaryButtonClasses,
   formElementTransition
@@ -71,17 +71,17 @@ const PanelSelectionPage: React.FC = () => {
         setIsAuthenticated(true);
         return;
       }
-      
+
       // Check for Torus session
       const torusSession = localStorage.getItem("torusSession");
       if (torusSession) {
         setIsAuthenticated(true);
         return;
       }
-      
+
       setIsAuthenticated(false);
     };
-    
+
     checkAuth();
   }, [connected]);
 
@@ -94,14 +94,14 @@ const PanelSelectionPage: React.FC = () => {
     }
   }, [location.search]);
 
-      // Recalculate whenever panel quantity changes
+  // Recalculate whenever panel quantity changes
   useEffect(() => {
     // Calculate total capacity (kW)
     const capacity = panelQuantity * 1; //Previously (panelQuantity * farmDetails.panelPower) / 1000
-    
+
     // Calculate estimated daily output (kWh)
     const dailyOutput = parseFloat((capacity * 2.8).toFixed(2)); //Previously Math.round(capacity * farmDetails.solarIndex * (farmDetails.efficiency / 100));
-    
+
     // Calculate total cost
     const panelCost = panelQuantity * farmDetails.pricePerPanel;
     // Calculate platform fee as exactly 10% without rounding
@@ -113,7 +113,7 @@ const PanelSelectionPage: React.FC = () => {
     const dailyEnergy = panelPowerKW * 3.5 * panelQuantity; // Multiply by panel quantity for total
     const pricePerKWh = 0.15; // Previously assumed as $0.1
     const dailyNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
-    
+
     setCalculations({
       totalCapacity: capacity,
       dailyOutput,
@@ -142,7 +142,7 @@ const PanelSelectionPage: React.FC = () => {
 
   const handleContinueToPayment = (): void => {
     setIsLoading(true);
-    
+
     // Create query params with all the necessary data
     const queryParams = new URLSearchParams({
       farm: farmDetails.name,
@@ -152,7 +152,7 @@ const PanelSelectionPage: React.FC = () => {
       output: calculations.dailyOutput.toString(),
       cost: calculations.totalCost.toString()
     });
-    
+
     // Add a slight delay for better UX
     setTimeout(() => {
       navigate(`/payment?${queryParams.toString()}`);
@@ -188,9 +188,9 @@ const PanelSelectionPage: React.FC = () => {
           >
             Back
           </Button>
-          
+
           {/* Conditional Login/Dashboard link aligned to the right */}
-          <a 
+          <a
             href={isAuthenticated ? "/dashboard" : "/login"}
             onClick={handleAuthButtonClick}
             className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"
@@ -218,16 +218,16 @@ const PanelSelectionPage: React.FC = () => {
               Review and confirm your selection
             </p>
           </div>
-        </Card>       
+        </Card>
 
         <div className="h-4 m-2"></div>
-        
+
         <Card className={cardClasses}>
           <CardBody className="bg-[#2F2F2F] p-6">
             <div className="space-y-6">
               <div>
                 <h3 className="text-xl font-bold text-white mb-4 font-electrolize">Panel Details</h3>
-                
+
                 {/* Panel Quantity Selector */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="text-white font-medium">Panel Quantity</div>
@@ -240,7 +240,7 @@ const PanelSelectionPage: React.FC = () => {
                     >
                       <Minus size={16} />
                     </Button>
-                    <input 
+                    <input
                       type="number"
                       min={1}
                       value={panelQuantity}
@@ -297,11 +297,11 @@ const PanelSelectionPage: React.FC = () => {
               </div>
 
               {/* Continue Button */}
-              <motion.div 
+              <motion.div
                 {...formElementTransition}
                 className="pt-2"
               >
-                <Button 
+                <Button
                   className="w-full bg-[#E9423A] text-white font-medium py-6 rounded-none"
                   onPress={handleContinueToPayment}
                   disabled={isLoading}

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Card, 
-  CardBody, 
-  Button, 
-  Tabs, 
+import {
+  Card,
+  CardBody,
+  Button,
+  Tabs,
   Tab,
   Tooltip,
   Modal,
@@ -13,15 +13,15 @@ import {
   ModalBody,
   ModalFooter
 } from "@nextui-org/react";
-import { 
-  BarChart3, 
-  Home, 
-  PieChart, 
-  Settings, 
-  HelpCircle, 
-  History, 
-  Wallet, 
-  ShoppingBag, 
+import {
+  BarChart3,
+  Home,
+  PieChart,
+  Settings,
+  HelpCircle,
+  History,
+  Wallet,
+  ShoppingBag,
   LogOut,
   ExternalLink,
   Plus
@@ -47,7 +47,7 @@ interface ChartData {
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { publicKey, wallet, disconnect, connected } = useWallet(); 
+  const { publicKey, wallet, disconnect, connected } = useWallet();
   const [activeTab, setActiveTab] = useState("week");
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [nodes, setNodes] = useState<NodeData[]>([]);
@@ -89,8 +89,8 @@ function DashboardPage() {
           setEmail(data.userInfo.email);
           //console.log("Username:", data.userInfo.email);
           if (data.publicKey) {
-          setWeb3AuthPublicKey(data.publicKey);
-        }
+            setWeb3AuthPublicKey(data.publicKey);
+          }
         }
       } catch (e) {
         console.error("Error parsing Web3Auth session", e);
@@ -132,7 +132,7 @@ function DashboardPage() {
   // Generate chart data based on selected time period
   const generateChartData = (period: string) => {
     let data: ChartData[] = [];
-    
+
     switch (period) {
       case "day":
         // Hourly data for a day
@@ -142,7 +142,7 @@ function DashboardPage() {
           value: Math.floor(Math.random() * 6) + 2
         }));
         break;
-      
+
       case "week":
         // Daily data for a week
         // const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -156,7 +156,7 @@ function DashboardPage() {
           { day: "Sun", value: 25 }
         ];
         break;
-      
+
       case "month":
         // Weekly data for a month
         const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
@@ -165,7 +165,7 @@ function DashboardPage() {
           value: Math.floor(Math.random() * 150) + 100
         }));
         break;
-      
+
       case "year":
         // Monthly data for a year
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -175,7 +175,7 @@ function DashboardPage() {
         }));
         break;
     }
-    
+
     setChartData(data);
   };
 
@@ -204,10 +204,10 @@ function DashboardPage() {
     if (disconnect) {
       await disconnect();
     }
-    
+
     localStorage.removeItem("web3AuthSession");
     localStorage.setItem("walletConnected", "false");
-    
+
     navigate("/");
     setIsLogoutModalOpen(false); // Close modal
   };
@@ -234,14 +234,14 @@ function DashboardPage() {
             <img src={logo} alt="Renrg logo" />
           </div>
         </div>
-        
+
         {/* Navigation */}
         <div className="flex-1 flex flex-col">
           <div className="p-4">
             <div className="text-xs text-gray-500 mb-2">OVERVIEW</div>
             <ul className="space-y-1">
               <li>
-                <Button 
+                <Button
                   className="w-full justify-start bg-red-500 text-white"
                   startContent={<Home size={18} />}
                 >
@@ -249,7 +249,7 @@ function DashboardPage() {
                 </Button>
               </li>
               <li>
-                <Button 
+                <Button
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<BarChart3 size={18} />}
                   onPress={() => navigate("/dashboard/analytics")}
@@ -258,7 +258,7 @@ function DashboardPage() {
                 </Button>
               </li>
               <li>
-                <Button 
+                <Button
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<PieChart size={18} />}
                   onPress={() => navigate("/dashboard/panels")}
@@ -268,12 +268,12 @@ function DashboardPage() {
               </li>
             </ul>
           </div>
-          
+
           <div className="p-4">
             <div className="text-xs text-gray-500 mb-2">MANAGEMENT</div>
             <ul className="space-y-1">
               <li>
-                <Button 
+                <Button
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<History size={18} />}
                   onPress={() => navigate("/dashboard/transactions")}
@@ -282,16 +282,16 @@ function DashboardPage() {
                 </Button>
               </li>
               <li>
-                <Button 
+                <Button
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<Wallet size={18} />}
-                  //onPress={() => navigate("/dashboard/wallet")}
+                //onPress={() => navigate("/dashboard/wallet")}
                 >
                   Wallet
                 </Button>
               </li>
               <li>
-                <Button 
+                <Button
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<ShoppingBag size={18} />}
                   onPress={() => navigate("/dashboard/marketplace")}
@@ -301,12 +301,12 @@ function DashboardPage() {
               </li>
             </ul>
           </div>
-          
+
           <div className="p-4">
             <div className="text-xs text-gray-500 mb-2">ACCOUNT</div>
             <ul className="space-y-1">
               <li>
-                <Button 
+                <Button
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<Settings size={18} />}
                   onPress={() => navigate("/dashboard/settings")}
@@ -315,7 +315,7 @@ function DashboardPage() {
                 </Button>
               </li>
               <li>
-                <Button 
+                <Button
                   className="w-full justify-start bg-transparent text-gray-400 hover:text-white"
                   startContent={<HelpCircle size={18} />}
                   onPress={() => navigate("/dashboard/help")}
@@ -325,7 +325,7 @@ function DashboardPage() {
               </li>
             </ul>
           </div>
-          
+
           <div className="mt-auto p-4 border-t border-gray-800">
             <div className="flex items-center">
               <div className="w-8 h-8 rounded-full bg-[#E9423A] flex items-center justify-center mr-2">
@@ -335,7 +335,7 @@ function DashboardPage() {
                 <div className="text-sm font-medium">{username}</div>
                 <div className="text-xs text-gray-500">{email}</div>
               </div>
-              <Button 
+              <Button
                 isIconOnly
                 className="ml-auto bg-transparent text-gray-400 hover:text-white"
                 onPress={handleLogout}
@@ -346,13 +346,13 @@ function DashboardPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-6 bg-[#0A0A0A]">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">Dashboard</h1>
-            
+
             {/* Wallet & Buy Panels Section - UPDATED */}
             <div className="flex items-center space-x-4">
               {/* Connected Wallet Display */}
@@ -381,9 +381,9 @@ function DashboardPage() {
                   </div>
                 </div>
               )}
-              
+
               {/* Buy Panels Button */}
-              <Button 
+              <Button
                 className="bg-[#E9423A] text-white"
                 startContent={<Plus size={18} />}
                 onPress={handleBuyPanels}
@@ -392,7 +392,7 @@ function DashboardPage() {
               </Button>
             </div>
           </div>
-          
+
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Energy Generated */}
@@ -410,7 +410,7 @@ function DashboardPage() {
                 </div>
               </CardBody>
             </Card>
-            
+
             {/* NRG Earnings */}
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-4">
@@ -426,7 +426,7 @@ function DashboardPage() {
                 </div>
               </CardBody>
             </Card>
-            
+
             {/* Carbon Impact */}
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-4">
@@ -442,7 +442,7 @@ function DashboardPage() {
                 </div>
               </CardBody>
             </Card>
-            
+
             {/* Clean Points */}
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-4">
@@ -459,7 +459,7 @@ function DashboardPage() {
               </CardBody>
             </Card>
           </div>
-          
+
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Energy Production Chart */}
@@ -467,8 +467,8 @@ function DashboardPage() {
               <CardBody className="p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium">Energy Production</h3>
-                  <Tabs 
-                    aria-label="Time Period" 
+                  <Tabs
+                    aria-label="Time Period"
                     selectedKey={activeTab}
                     onSelectionChange={handleTabChange}
                     color="danger"
@@ -481,22 +481,22 @@ function DashboardPage() {
                     <Tab key="year" title="Year" />
                   </Tabs>
                 </div>
-                
+
                 {/* Bar Chart */}
                 <div className="h-64 relative">
                   <div className="absolute inset-0 flex items-end">
                     {chartData.map((item, index) => (
                       <div key={index} className="flex-1 flex flex-col items-center space-y-2">
-                        <div 
+                        <div
                           className="w-6 bg-gradient-to-t from-red-800 to-[#E9423A] rounded-sm"
-                          style={{  height: `${(item.value / maxValue) * 180}px` }}
+                          style={{ height: `${(item.value / maxValue) * 180}px` }}
                         ></div>
                         <div className="text-xs text-gray-400">{item.day}</div>
                       </div>
                     ))}
                   </div>
                 </div>
-                
+
                 {/* Chart Summary */}
                 <div className="flex justify-between mt-6 pt-4 border-t border-gray-800">
                   <div className="text-center">
@@ -514,21 +514,21 @@ function DashboardPage() {
                 </div>
               </CardBody>
             </Card>
-            
+
             {/* Efficiency Gauge */}
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6 text-white">
                 <h3 className="text-lg font-medium mb-4">Efficiency</h3>
-                
+
                 {/* Circular Gauge */}
                 <div className="relative flex items-center justify-center my-4">
                   <svg width="160" height="160" viewBox="0 0 160 160" className="transform -rotate-90">
                     <defs>
                       <linearGradient id="efficiencyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                         <stop offset="0%" stopColor="#E9423A" />
-                        <stop offset="100%" stopColor="#c62828" /> 
+                        <stop offset="100%" stopColor="#c62828" />
                       </linearGradient>
-                     </defs>
+                    </defs>
                     <circle
                       cx="80"
                       cy="80"
@@ -555,7 +555,7 @@ function DashboardPage() {
                     <div className="text-xs text-gray-400">Current</div>
                   </div>
                 </div>
-                
+
                 {/* Efficiency Stats */}
                 <div className="grid grid-cols-3 gap-2 text-center mt-6">
                   <div>
@@ -574,12 +574,12 @@ function DashboardPage() {
               </CardBody>
             </Card>
           </div>
-          
+
           {/* Solar Nodes Table */}
           <Card className="bg-[#1A1A1A] border-none">
             <CardBody className="p-6 text-white">
               <h3 className="text-lg font-medium mb-4">Your Solar Nodes</h3>
-              
+
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
@@ -611,8 +611,8 @@ function DashboardPage() {
                         <td className="py-4 text-center">{node.dailyOutput} kWh</td>
                         <td className="py-4 text-center">{node.earnings}</td>
                         <td className="py-4 text-right">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             className="text-white bg-transparent border border-[#E9423A] hover:bg-[#2A1A1A]"
                             onPress={() => handleNodeDetails(node.id)}
                           >
@@ -629,8 +629,8 @@ function DashboardPage() {
         </div>
       </div>
       {/* Logout Modal */}
-      <Modal 
-        isOpen={isLogoutModalOpen} 
+      <Modal
+        isOpen={isLogoutModalOpen}
         onClose={cancelLogout}
         className="bg-[#1A1A1A] text-white"
       >
