@@ -14,10 +14,10 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../assets/logo.svg";
 import { useNavigate } from "react-router-dom";
-import { 
-  FormContainer, 
-  inputClasses, 
-  selectClasses, 
+import {
+  FormContainer,
+  inputClasses,
+  selectClasses,
   cardClasses,
   secondaryButtonClasses,
   formElementTransition
@@ -178,14 +178,14 @@ function ContactForm() {
       const numB = parseInt(b.value.replace(/[^\d]/g, ''), 10);
       return numA - numB;
     });
-    
+
   // Filter phone codes based on input (compare both country and code in lower case)
   const filteredCodes = phoneCodeInput.trim() === ""
     ? callingCodes
-    : callingCodes.filter(code => 
-        code.country.toLowerCase().includes(phoneCodeInput.toLowerCase()) ||
-        code.value.toLowerCase().includes(phoneCodeInput.toLowerCase())
-      );
+    : callingCodes.filter(code =>
+      code.country.toLowerCase().includes(phoneCodeInput.toLowerCase()) ||
+      code.value.toLowerCase().includes(phoneCodeInput.toLowerCase())
+    );
 
   // Validate a single field
   const validateField = (field: keyof FormDataType, value: string): string | undefined => {
@@ -193,10 +193,10 @@ function ContactForm() {
       case "name":
         return !value.trim() ? "Name is required" : undefined;
       case "email":
-        return !value.trim() 
-          ? "Email is required" 
-          : !isValidEmail(value) 
-            ? "Valid email is required" 
+        return !value.trim()
+          ? "Email is required"
+          : !isValidEmail(value)
+            ? "Valid email is required"
             : undefined;
       case "country":
         return !value ? "Country is required" : undefined;
@@ -248,7 +248,7 @@ function ContactForm() {
     const usageInput = parseFloat(queryParams.get("kwh") || "0");
     const panelCount = parseInt(queryParams.get("panels") || "0", 10);
     const totalCost = parseFloat(queryParams.get("cost") || "0");
-  
+
     setFormData((prevData) => ({
       ...prevData,
       kwh: usageInput.toString(),
@@ -340,10 +340,10 @@ function ContactForm() {
           `
         })
       });
-      
+
       const result = await response.json();
       console.log("Email sent result:", result);
-      
+
       if (response.ok) {
         setEmailStatus("sent");
       } else {
@@ -443,7 +443,7 @@ function ContactForm() {
         <CardBody className="p-6">
           <AnimatePresence mode="wait">
             {formState === "success" ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -466,7 +466,7 @@ function ContactForm() {
                     We couldn't send a confirmation email. Please check your inbox later.
                   </p>
                 )}
-                <Button 
+                <Button
                   className="bg-[#E9423A] text-white"
                   onPress={() => {
                     setFormState("idle");
@@ -488,7 +488,7 @@ function ContactForm() {
                 </Button>
               </motion.div>
             ) : (
-              <motion.form 
+              <motion.form
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onSubmit={handleSubmit}
@@ -533,7 +533,7 @@ function ContactForm() {
                   </div>
                 </div>
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1 min-w-0"  onKeyDown={handleKeyDownCountry}>
+                  <div className="flex-1 min-w-0" onKeyDown={handleKeyDownCountry}>
                     <Select
                       placeholder="Country *"
                       variant="faded"
@@ -623,13 +623,13 @@ function ContactForm() {
                       isDisabled={formState === "loading"}
                     />
                     {showPhoneDropdown && (
-                      <div 
+                      <div
                         id="phone-code-dropdown"
                         className="absolute z-50 w-full mt-1 bg-[#333] border border-[#444] rounded-lg shadow-lg max-h-[200px] overflow-y-auto"
                       >
                         {filteredCodes.length > 0 ? (
                           filteredCodes.map((code) => (
-                            <div 
+                            <div
                               key={code.value}
                               className="flex items-center gap-2 p-2 hover:bg-[#444] cursor-pointer"
                               onClick={() => {
@@ -685,8 +685,8 @@ function ContactForm() {
                   {...formElementTransition}
                   style={{ pointerEvents: formState === "loading" ? "none" : "auto" }}
                 >
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-[#E9423A] text-white rounded-none"
                     disabled={formState === "loading"}
                   >
@@ -702,10 +702,10 @@ function ContactForm() {
           </AnimatePresence>
         </CardBody>
       </Card>
-      
+
       {/* Login icon with text - Same as ElectricityEstimateForm */}
       <div className="flex justify-center w-full mt-10" style={{ position: "relative", zIndex: 10 }}>
-        <a 
+        <a
           href="/login"
           onClick={(e) => {
             e.preventDefault();
