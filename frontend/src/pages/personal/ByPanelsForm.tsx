@@ -6,9 +6,9 @@ import { ArrowLeft, LogIn, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react"; // Import wallet hook
 import logo from "../../assets/logo.svg";
-import { 
-  FormContainer, 
-  inputClasses, 
+import {
+  FormContainer,
+  inputClasses,
   cardClasses,
   secondaryButtonClasses,
   formElementTransition
@@ -18,7 +18,7 @@ const ByPanelsForm: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { connected } = useWallet(); // Get wallet connection status
-  
+
   const [panelCount, setPanelCount] = useState<number>(0);
   const [estimatedCost, setEstimatedCost] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -34,17 +34,17 @@ const ByPanelsForm: React.FC = () => {
         setIsAuthenticated(true);
         return;
       }
-      
+
       // Check for Torus session
       const web3AuthSession = localStorage.getItem("web3AuthSession");
       if (web3AuthSession) {
         setIsAuthenticated(true);
         return;
       }
-      
+
       setIsAuthenticated(false);
     };
-    
+
     checkAuth();
   }, [connected]);
 
@@ -73,7 +73,7 @@ const ByPanelsForm: React.FC = () => {
 
         // Cost = Panels × $525
         const totalCost = requiredPanels * 525;
-        setEstimatedCost(totalCost);      
+        setEstimatedCost(totalCost);
       }
       setIsLoading(false);
     }, 1000); // Slight delay for loading effect
@@ -83,12 +83,12 @@ const ByPanelsForm: React.FC = () => {
     setIsNavigating(true);
     setTimeout(() => {
       const queryParams = new URLSearchParams({
-        kwh: usageInput.toString(), 
+        kwh: usageInput.toString(),
         panels: panelCount.toString(),
         cost: estimatedCost.toString(),
       });
       console.log("Navigating with query params:", queryParams.toString());
-      
+
       // Navigate to the panel selection page instead of contact page
       navigate(`/panel-selection?${queryParams.toString()}`);
     }, 800);
@@ -156,9 +156,9 @@ const ByPanelsForm: React.FC = () => {
                     isReadOnly
                     endContent={<div className="text-default-400">Panels</div>}
                     classNames={{
-                      ...inputClasses, 
+                      ...inputClasses,
                       inputWrapper: [
-                        "rounded-none", 
+                        "rounded-none",
                         "!border-gray-500",
                         "!bg-[#5E5E5E]",
                         inputClasses.inputWrapper,
@@ -176,32 +176,32 @@ const ByPanelsForm: React.FC = () => {
                     variant="faded"
                     isReadOnly
                     classNames={{
-                      ...inputClasses, 
+                      ...inputClasses,
                       inputWrapper: [
-                        "rounded-none", 
+                        "rounded-none",
                         "!border-gray-500",
                         "!bg-[#5E5E5E]",
-                        inputClasses.inputWrapper, 
+                        inputClasses.inputWrapper,
                       ].join(" "),
                     }}
                   />
                 </div>
               </div>
 
-              <div className="p-6 flex justify-center">       
-              <motion.div {...formElementTransition}>
-                <Button
-                  className="w-full bg-[#E9423A] text-white rounded-none"
-                  onPress={handleBuyPanels}
-                  disabled={isLoading || isNavigating}
-                >
-                  {isNavigating ? (
-                    <Spinner color="white" size="sm" />
-                  ) : (
-                    "Buy Panels"
-                  )}
-                </Button>
-              </motion.div>
+              <div className="p-6 flex justify-center">
+                <motion.div {...formElementTransition}>
+                  <Button
+                    className="w-full bg-[#E9423A] text-white rounded-none"
+                    onPress={handleBuyPanels}
+                    disabled={isLoading || isNavigating}
+                  >
+                    {isNavigating ? (
+                      <Spinner color="white" size="sm" />
+                    ) : (
+                      "Buy Panels"
+                    )}
+                  </Button>
+                </motion.div>
               </div>
             </div>
           </CardBody>
@@ -210,7 +210,7 @@ const ByPanelsForm: React.FC = () => {
 
       {/* Conditional Login or Dashboard button */}
       <div className="flex justify-center w-full mt-10" style={{ position: "relative", zIndex: 10 }}>
-        <a 
+        <a
           href={isAuthenticated ? "/dashboard" : "/login"}
           onClick={handleAuthButtonClick}
           className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"

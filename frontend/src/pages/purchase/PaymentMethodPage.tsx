@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  Button, 
-  Card, 
+import {
+  Button,
+  Card,
   CardBody,
   Spinner
 } from "@nextui-org/react";
 import { ArrowLeft, Clock } from "lucide-react";
 import { motion } from "framer-motion";
-import { 
-  FormContainer, 
+import {
+  FormContainer,
   cardClasses
 } from "../../shared/styles";
 
@@ -51,8 +51,8 @@ interface Web3AuthWalletInfo {
 }
 
 interface ExchangeRates {
-  sol: number; 
-  usdc: number; 
+  sol: number;
+  usdc: number;
 }
 
 export default function PaymentMethodPage() {
@@ -135,7 +135,7 @@ export default function PaymentMethodPage() {
   //     if (session) {
   //       const data = JSON.parse(session);
   //       console.log("Web3Auth Session Data:", data);
-        
+
   //       // Show private key info (format, type, length)
   //       if (data.privateKey) {
   //         const privateKeyType = typeof data.privateKey;
@@ -145,10 +145,10 @@ export default function PaymentMethodPage() {
   //             : Array.isArray(data.privateKey) 
   //               ? data.privateKey.length 
   //               : Object.keys(data.privateKey).length;
-                
+
   //         console.log("Private Key Type:", privateKeyType);
   //         console.log("Private Key Length:", privateKeyLength);
-          
+
   //         // If it's an object, show a sample of the values
   //         if (privateKeyType === 'object' && !Array.isArray(data.privateKey)) {
   //           const keys = Object.keys(data.privateKey);
@@ -160,7 +160,7 @@ export default function PaymentMethodPage() {
   //       } else {
   //         console.log("No privateKey in session data");
   //       }
-        
+
   //       // Show a toast with basic info
   //       showToast(
   //         "Web3Auth Session Info", 
@@ -187,7 +187,7 @@ export default function PaymentMethodPage() {
         setWeb3AuthWalletInfo(null);
         return;
       }
-      
+
       // Check for Web3Auth session
       const web3AuthInfo = getWeb3AuthWalletInfo();
       if (web3AuthInfo) {
@@ -195,11 +195,11 @@ export default function PaymentMethodPage() {
         setWeb3AuthWalletInfo(web3AuthInfo);
         return;
       }
-      
+
       setIsAuthenticated(false);
       setWeb3AuthWalletInfo(null);
     };
-    
+
     checkAuth();
   }, [connected]);
 
@@ -229,41 +229,41 @@ export default function PaymentMethodPage() {
   }, []);
 
   // Parse query params
-useEffect(() => {
-  const params = new URLSearchParams(location.search);
-  const newOrderDetails = {...orderDetails};
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const newOrderDetails = { ...orderDetails };
 
-  if (params.has("panels")) {
-    const panelsValue = params.get("panels");
-    newOrderDetails.panels = panelsValue ? parseInt(panelsValue) : orderDetails.panels;
-  }
+    if (params.has("panels")) {
+      const panelsValue = params.get("panels");
+      newOrderDetails.panels = panelsValue ? parseInt(panelsValue) : orderDetails.panels;
+    }
 
-  if (params.has("capacity")) {
-    const capacityValue = params.get("capacity");
-    newOrderDetails.capacity = capacityValue ? parseFloat(capacityValue) : orderDetails.capacity;
-  }
+    if (params.has("capacity")) {
+      const capacityValue = params.get("capacity");
+      newOrderDetails.capacity = capacityValue ? parseFloat(capacityValue) : orderDetails.capacity;
+    }
 
-  if (params.has("cost")) {
-    const costValue = params.get("cost");
-    newOrderDetails.cost = costValue ? parseFloat(costValue) : orderDetails.cost;
-  }
+    if (params.has("cost")) {
+      const costValue = params.get("cost");
+      newOrderDetails.cost = costValue ? parseFloat(costValue) : orderDetails.cost;
+    }
 
-  if (params.has("farm")) {
-    newOrderDetails.farm = params.get("farm") || orderDetails.farm;
-  }
+    if (params.has("farm")) {
+      newOrderDetails.farm = params.get("farm") || orderDetails.farm;
+    }
 
-  if (params.has("location")) {
-    newOrderDetails.location = params.get("location") || orderDetails.location;
-  }
+    if (params.has("location")) {
+      newOrderDetails.location = params.get("location") || orderDetails.location;
+    }
 
-  if (params.has("output")) {
-    const outputValue = params.get("output");
-    newOrderDetails.output = outputValue ? parseInt(outputValue) : orderDetails.output;
-  }
+    if (params.has("output")) {
+      const outputValue = params.get("output");
+      newOrderDetails.output = outputValue ? parseInt(outputValue) : orderDetails.output;
+    }
 
-  setOrderDetails(newOrderDetails);
-  console.log("New order Details:", newOrderDetails)
-}, [location.search]);
+    setOrderDetails(newOrderDetails);
+    console.log("New order Details:", newOrderDetails)
+  }, [location.search]);
 
   // Update token amount based on current cost
   useEffect(() => {
@@ -324,7 +324,7 @@ useEffect(() => {
     // If using Solana wallet or Web3Auth
     if (connected || web3AuthWalletInfo) {
       handleProceedToPayment();
-    } 
+    }
     // No authentication
     else {
       handleSelectWallet();
@@ -335,7 +335,7 @@ useEffect(() => {
     setIsProcessingPayment(true);
     const processingId = toastKey;
     showToast("Processing Payment", `Sending ${tokenAmount.toFixed(2)} ${selectedPayment}...`, "primary", 100000);
-    
+
     try {
       // Handle payment via Solana wallet adapter
       if (connected && publicKey && signTransaction) {
@@ -350,20 +350,20 @@ useEffect(() => {
         const signedTx = await signTransaction(tx);
         const signature = await connection.sendRawTransaction(signedTx.serialize());
         await connection.confirmTransaction(signature, 'confirmed');
-        
+
         // Complete transaction
         setToasts(prev => prev.filter(t => t.id !== processingId));
         showToast("Payment Successful", "Your transaction was completed successfully", "success", 3000);
         navigate("/payment-success", {
-          state: { 
-            ...orderDetails, 
-            paymentMethod: selectedPayment, 
-            tokenAmount, 
-            wallet: wallet?.adapter.name ?? "Unknown", 
-            signature 
+          state: {
+            ...orderDetails,
+            paymentMethod: selectedPayment,
+            tokenAmount,
+            wallet: wallet?.adapter.name ?? "Unknown",
+            signature
           }
         });
-      } 
+      }
       // Handle payment via Web3Auth/Google login
       else if (web3AuthWalletInfo && web3AuthWalletInfo.publicKey) {
         try {
@@ -372,40 +372,40 @@ useEffect(() => {
           if (!sessionStr) {
             throw new Error("Web3Auth session not found");
           }
-          
+
           const sessionData = JSON.parse(sessionStr);
-          
+
           // Check if privateKey is available
           if (!sessionData.privateKey) {
             throw new Error("Private key not available in session");
           }
-          
+
           // Debug the private key format
           console.log("Private key type:", typeof sessionData.privateKey);
-          console.log("Private key length:", 
-                     typeof sessionData.privateKey === 'string' 
-                     ? sessionData.privateKey.length 
-                     : Array.isArray(sessionData.privateKey) 
-                       ? sessionData.privateKey.length 
-                       : Object.keys(sessionData.privateKey).length);
-          
+          console.log("Private key length:",
+            typeof sessionData.privateKey === 'string'
+              ? sessionData.privateKey.length
+              : Array.isArray(sessionData.privateKey)
+                ? sessionData.privateKey.length
+                : Object.keys(sessionData.privateKey).length);
+
           // Handle different private key formats
           let privateKeyBytes;
-          
+
           if (typeof sessionData.privateKey === 'string') {
             // If it's a base58 encoded string
             if (sessionData.privateKey.length === 88) {
               // Decode base58 string to bytes - you might need bs58 library for this
               // privateKeyBytes = bs58.decode(sessionData.privateKey);
               throw new Error("Base58 decoding requires bs58 library");
-            } 
+            }
             // If it's a hex string
             else if (sessionData.privateKey.length === 128 || sessionData.privateKey.length === 64) {
               privateKeyBytes = new Uint8Array(sessionData.privateKey.length / 2);
               for (let i = 0; i < sessionData.privateKey.length; i += 2) {
-                privateKeyBytes[i/2] = parseInt(sessionData.privateKey.substr(i, 2), 16);
+                privateKeyBytes[i / 2] = parseInt(sessionData.privateKey.substr(i, 2), 16);
               }
-            } 
+            }
             // Attempt to parse as JSON if it's a stringified array
             else {
               try {
@@ -415,7 +415,7 @@ useEffect(() => {
                 throw new Error(`Unable to parse privateKey format: ${e.message}`);
               }
             }
-          } 
+          }
           // If it's already an array
           else if (Array.isArray(sessionData.privateKey)) {
             privateKeyBytes = new Uint8Array(sessionData.privateKey);
@@ -427,19 +427,19 @@ useEffect(() => {
           else {
             throw new Error("Unsupported privateKey format");
           }
-          
+
           // Ensure the private key is the correct size for Solana (64 bytes)
           if (privateKeyBytes.length !== 64) {
             console.error("Invalid private key length:", privateKeyBytes.length);
             throw new Error(`Bad secret key size: expected 64 bytes, got ${privateKeyBytes.length}`);
           }
-          
+
           // Create keypair from the processed private key
           try {
             const keyPair = Keypair.fromSecretKey(privateKeyBytes);
             console.log("Successfully created keypair from private key");
             console.log("Public key from keypair:", keyPair.publicKey.toString());
-            
+
             // Verify the keypair's public key matches what we expect
             if (keyPair.publicKey.toString() !== web3AuthWalletInfo.publicKey) {
               console.warn(
@@ -448,12 +448,12 @@ useEffect(() => {
                 "Got:", keyPair.publicKey.toString()
               );
             }
-            
+
             // Create and sign the transaction using the private key
             const recipientPublicKey = new PublicKey("7C4jsPZpht1JaRJB7u8QdXhfY2pFdh6fT2xatJhvLpzz");
             const senderPublicKey = keyPair.publicKey;
             const lamports = Math.floor(tokenAmount * LAMPORTS_PER_SOL);
-            
+
             // Create a transaction
             const tx = new Transaction().add(
               SystemProgram.transfer({
@@ -462,29 +462,29 @@ useEffect(() => {
                 lamports
               })
             );
-            
+
             // Get recent blockhash
             const { blockhash } = await connection.getLatestBlockhash();
             tx.recentBlockhash = blockhash;
             tx.feePayer = senderPublicKey;
-            
+
             // Sign transaction using the keypair
             tx.sign(keyPair);
-            
+
             // Send the signed transaction
             const signature = await connection.sendRawTransaction(tx.serialize());
             await connection.confirmTransaction(signature, 'confirmed');
-            
+
             // Complete transaction
             setToasts(prev => prev.filter(t => t.id !== processingId));
             showToast("Payment Successful", "Your transaction was completed successfully", "success", 3000);
             navigate("/payment-success", {
-              state: { 
-                ...orderDetails, 
-                paymentMethod: selectedPayment, 
-                tokenAmount, 
-                wallet: "Google Web3Auth", 
-                signature 
+              state: {
+                ...orderDetails,
+                paymentMethod: selectedPayment,
+                tokenAmount,
+                wallet: "Google Web3Auth",
+                signature
               }
             });
           } catch (error) {
@@ -518,11 +518,11 @@ useEffect(() => {
   const handleLoginButtonClick = () => {
     console.log("Is authenticed?", isAuthenticated);
     if (!isAuthenticated) {
-    //navigate(`/login?redirect=/payment?${redirectSearchParams.toString()}`);
-    const redirectUrl = `/payment?panels=${panels}&cost=${cost}&capacity=${capacity}`;
-    const encodedRedirect = encodeURIComponent(redirectUrl);
-    navigate(`/login?redirect=${encodedRedirect}`);
-  }
+      //navigate(`/login?redirect=/payment?${redirectSearchParams.toString()}`);
+      const redirectUrl = `/payment?panels=${panels}&cost=${cost}&capacity=${capacity}`;
+      const encodedRedirect = encodeURIComponent(redirectUrl);
+      navigate(`/login?redirect=${encodedRedirect}`);
+    }
 
   }
 
@@ -539,7 +539,7 @@ useEffect(() => {
           >
             Back
           </Button>
-          
+
           {/* Conditional Login/Dashboard link aligned to the right 
           <a 
             href={isAuthenticated ? "/dashboard" : "/login"}
@@ -582,7 +582,7 @@ useEffect(() => {
                 ].map(({ method, icon }) => (
                   <div
                     key={method}
-                    className={`cursor-pointer transition-all border ${selectedPayment===method ? 'border-[#E9423A] bg-[#3A1A18]' : 'border-gray-700 bg-[#252525]'}`}
+                    className={`cursor-pointer transition-all border ${selectedPayment === method ? 'border-[#E9423A] bg-[#3A1A18]' : 'border-gray-700 bg-[#252525]'}`}
                     onClick={() => handleSelectPayment(method as PaymentMethod)}
                   >
                     <div className="p-3 flex flex-col items-center justify-center h-full">
@@ -598,7 +598,7 @@ useEffect(() => {
                 <p className="text-sm text-gray-400 mb-2">≈ ${orderDetails.cost.toFixed(2)} USD</p>
                 <div className="inline-block px-2 py-1 bg-yellow-500 bg-opacity-20 rounded text-xs text-yellow-400">Devnet</div>
               </div>
-              <div className="flex items-center justify-center text-sm text-[#E9423A]"><Clock size={14} className="mr-1" /><span>Price locked for {lockMinutes}:{lockSeconds<10?`0${lockSeconds}`:lockSeconds}</span></div>
+              <div className="flex items-center justify-center text-sm text-[#E9423A]"><Clock size={14} className="mr-1" /><span>Price locked for {lockMinutes}:{lockSeconds < 10 ? `0${lockSeconds}` : lockSeconds}</span></div>
             </div>
             <div className="bg-[#111111] p-4">
               {/* Updated wallet information section */}
@@ -628,8 +628,8 @@ useEffect(() => {
                       )}
                     </div>
                     <div className="flex justify-center">
-                      <button 
-                        onClick={() => navigate("/login")} 
+                      <button
+                        onClick={() => navigate("/login")}
                         className="text-[#E9423A] text-xs mt-1 hover:underline"
                       >
                         change login
@@ -644,16 +644,16 @@ useEffect(() => {
                   </div>
                 )
               )}
-              
-              <Button 
-                className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative" 
-                onPress={isAuthenticated ? handlePaymentAction : handleLoginButtonClick} 
+
+              <Button
+                className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative"
+                onPress={isAuthenticated ? handlePaymentAction : handleLoginButtonClick}
                 disabled={isProcessingPayment || isLoadingRates}
               >
                 {isProcessingPayment && (
-                  <motion.div 
-                    animate={{rotate:360}} 
-                    transition={{repeat:Infinity,duration:1}} 
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1 }}
                     className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
                   >
                     <Spinner size="sm" />
@@ -661,9 +661,9 @@ useEffect(() => {
                 )}
                 <span className={`${isProcessingPayment ? 'opacity-0' : 'opacity-100'}`}>
                   {isAuthenticated ? (
-                    connected ? 'Complete Payment with Wallet' : 
-                    web3AuthWalletInfo ? 'Complete Payment with Web3Auth' : 
-                    'Select Wallet'
+                    connected ? 'Complete Payment with Wallet' :
+                      web3AuthWalletInfo ? 'Complete Payment with Web3Auth' :
+                        'Select Wallet'
                   ) : 'Login to Continue'}
                 </span>
               </Button>
@@ -672,23 +672,22 @@ useEffect(() => {
         </Card>
 
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-          {toasts.map(toast=>(
-            <div 
-              key={toast.id} 
-              className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${
-                toast.type === 'success' ? 'bg-green-500/90 text-white' : 
-                toast.type === 'danger' ? 'bg-red-500/90 text-white' : 
-                toast.type === 'primary' ? 'bg-blue-500/90 text-white' : 
-                'bg-black/80 text-white'
-              }`} 
-              style={{animationDuration:'200ms'}}
+          {toasts.map(toast => (
+            <div
+              key={toast.id}
+              className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${toast.type === 'success' ? 'bg-green-500/90 text-white' :
+                  toast.type === 'danger' ? 'bg-red-500/90 text-white' :
+                    toast.type === 'primary' ? 'bg-blue-500/90 text-white' :
+                      'bg-black/80 text-white'
+                }`}
+              style={{ animationDuration: '200ms' }}
             >
               <div className="flex-1">
                 {toast.title && <h4 className="font-medium text-sm mb-1">{toast.title}</h4>}
                 {toast.description && <p className="text-xs opacity-90">{toast.description}</p>}
               </div>
-              <button 
-                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} 
+              <button
+                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
                 className="text-xs text-white/80 hover:text-white"
               >
                 ✕
@@ -697,7 +696,7 @@ useEffect(() => {
           ))}
         </div>
       </div>
-      
+
       <style>{`
         @keyframes slideIn {
           from {transform: translateX(100%); opacity: 0;}
