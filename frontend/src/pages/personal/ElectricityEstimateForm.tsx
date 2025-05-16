@@ -197,7 +197,7 @@ const ElectricityEstimateForm: React.FC = () => {
                   {isSubmitting ? (
                     <Spinner color="white" size="sm" />
                   ) : (
-                    <span className="font-electrolize">Calculate Estimate</span>
+                    <span className="font-electrolize">Estimate Panels needed</span>
                   )}
                   <svg width="37" height="37" viewBox="0 0 37 37" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="37" height="37" rx="18.4082" fill="white" />

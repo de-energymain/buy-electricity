@@ -86,6 +86,7 @@ export default function PaymentMethodPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [lockMinutes, setLockMinutes] = useState(13);
   const [lockSeconds, setLockSeconds] = useState(22);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   //Exchange rates
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ sol: 20, usdc: 1 });
@@ -226,7 +227,28 @@ export default function PaymentMethodPage() {
     };
 
     fetchExchangeRates();
-  }, []);
+  }, []);  
+
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      if (!publicKey) return;
+
+      try {
+        let balance = 0;
+
+        if( selectedPayment === 'SOL' ) {
+          balance = await connection.getBalance(publicKey);
+          balance /= LAMPORTS_PER_SOL;
+        }
+        //NRG and USDC need to be added!
+        setWalletBalance(balance);
+      } catch (error) {
+        console.error("Error fetching wallet balance:", error);
+      }
+    };
+
+    fetchWalletBalance();
+  }, [publicKey, selectedPayment, connection]);
 
   // Parse query params
   useEffect(() => {
@@ -609,6 +631,10 @@ export default function PaymentMethodPage() {
                     <span>{wallet?.adapter.name || 'Unknown Wallet'}</span>
                     <span>•</span>
                     <span className="font-mono">{truncateAddress(publicKey.toString())}</span>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-gray-400 text-xs">Wallet Balance</p>
+                    <span className="text-white">{walletBalance.toFixed(2)} {selectedPayment}</span>
                   </div>
                   <button onClick={handleChangeWallet} className="text-[#E9423A] text-xs mt-1 hover:underline">
                     change wallet
