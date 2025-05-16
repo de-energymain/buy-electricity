@@ -5,8 +5,16 @@ import {
   Card,
   CardBody,
   Spinner,
+  Tooltip,
 } from "@nextui-org/react";
-import { ArrowLeft, Plus, Minus, LogIn, LayoutDashboard } from "lucide-react";
+import { 
+  ArrowLeft,
+  Plus,
+  Minus,
+  LogIn,
+  LayoutDashboard,
+  Info 
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react"; // Import wallet hook
 import logo from "../../assets/logo.svg";
@@ -210,19 +218,15 @@ const PanelSelectionPage: React.FC = () => {
         </div>
 
         <Card className={cardClasses}>
-          <div className="p-4 bg-[#2F2F2F]">
+          <div className="mt-3 p-4 bg-[#2F2F2F]">
             <h2 className="text-3xl font-bold text-white mb-2 font-electrolize text-center">
-              Panel Selection
+              Select Panels
             </h2>
             <p className="text-sm text-gray-300 text-center font-inter">
-              Review and confirm your selection
+              Review and confirm your selection.
             </p>
           </div>
-        </Card>
 
-        <div className="h-4 m-2"></div>
-
-        <Card className={cardClasses}>
           <CardBody className="bg-[#2F2F2F] p-6">
             <div className="space-y-6">
               <div>
@@ -261,15 +265,39 @@ const PanelSelectionPage: React.FC = () => {
                 {/* Capacity, Daily Output, and NRG Yield - REORDERED as requested */}
                 <div className="flex justify-between mb-6">
                   <div>
-                    <div className="text-sm text-gray-400">Total Capacity</div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      Total Capacity
+                      <Tooltip
+                        content="Total capacity of your purchased solar panels. Each panel has a capacity of 1.0 kW."
+                        className="bg-[#3b3b3b] text-white text-xs px-3 py-2 rounded shadow-lg font-inter"
+                      >
+                        <Info size={14} className="text-gray-400 hover:text-white cursor-pointer" />
+                      </Tooltip>
+                    </div>
                     <div className="text-lg font-bold text-white">{calculations.totalCapacity.toFixed(2)} kW</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-400">Est. Daily Output</div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      Est. Daily Output
+                      <Tooltip
+                        content="Your daily output of the purhcased panels. Each panel gives an output of 2.8 kWh."
+                        className="bg-[#3b3b3b] text-white text-xs px-3 py-2 rounded shadow-lg font-inter"
+                      >
+                        <Info size={14} className="text-gray-400 hover:text-white cursor-pointer" />
+                      </Tooltip>
+                    </div>
                     <div className="text-lg font-bold text-white">{calculations.dailyOutput} kWh</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-400">Est. Daily Yield</div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      Est. Daily Yield
+                      <Tooltip
+                        content="Your yield generated daily upon purchase of the solar panels."
+                        className="bg-[#3b3b3b] text-white text-xs px-3 py-2 rounded shadow-lg font-inter"
+                      >
+                        <Info size={14} className="text-gray-400 hover:text-white cursor-pointer" />
+                      </Tooltip>
+                    </div>
                     <div className="text-lg font-bold text-white">{calculations.dailyNRGYield.toFixed(2)} NRG</div>
                   </div>
                 </div>
