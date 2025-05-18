@@ -198,7 +198,7 @@ const ByPanelsForm: React.FC = () => {
                     {isNavigating ? (
                       <Spinner color="white" size="sm" />
                     ) : (
-                      "Buy Panels"
+                      "Select Panels"
                     )}
                   </Button>
                 </motion.div>
