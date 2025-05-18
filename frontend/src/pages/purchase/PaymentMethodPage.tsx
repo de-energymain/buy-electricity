@@ -299,10 +299,10 @@ export default function PaymentMethodPage() {
     showToast("Copied", "Address copied to clipboard", "success", 2000);
   };
 
-  const openExplorer = (address: string) => {
-    // Solana explorer URL for Devnet
-    window.open(`https://explorer.solana.com/address/${address}?cluster=devnet`, '_blank');
-  };
+  // const openExplorer = (address: string) => {
+  //   // Solana explorer URL for Devnet
+  //   window.open(`https://explorer.solana.com/address/${address}?cluster=devnet`, '_blank');
+  // };
 
   // Handle action based on authentication state
   const handlePaymentAction = () => {
