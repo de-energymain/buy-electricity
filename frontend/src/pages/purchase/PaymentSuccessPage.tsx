@@ -130,12 +130,12 @@ function PaymentSuccessPage() {
             </h2>
             <p className="text-white text-center mb-8">
               Your solar panel purchase was successful.
-              <br />
-              You now own {orderDetails.panels} panels at {orderDetails.farm}.
             </p>
 
             {/* Transaction Details */}
-            <div className="w-full space-y-4 mb-8">
+            <div className="w-full mb-8">
+              {/* First row - Transaction Hash (full width) */}
+              <div className="mb-4">
               <Card className="w-full bg-[#222]">
                 <CardBody className="p-4">
                   <div className="text-sm text-gray-400 mb-1">Transaction Hash</div>
@@ -168,59 +168,66 @@ function PaymentSuccessPage() {
                   )}
                 </CardBody>
               </Card>
+              </div>
 
-              <Card className="w-full bg-[#222]">
-                <CardBody className="p-4">
-                  <div className="text-sm text-gray-400 mb-1">Panels Purchased</div>
-                  <div className="text-white">
-                    {orderDetails.panels} x 450W Solar Panels
-                  </div>
-                </CardBody>
-              </Card>
+              {/* Second row - 2 cards side by side */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <Card className="w-full bg-[#222]">
+                  <CardBody className="p-4">
+                    <div className="text-sm text-gray-400 mb-1">Panels Purchased</div>
+                    <div className="text-white">
+                      {orderDetails.panels} x 450W Solar Panels
+                    </div>
+                  </CardBody>
+                </Card>
 
-              <Card className="w-full bg-[#222]">
-                <CardBody className="p-4">
-                  <div className="text-sm text-gray-400 mb-1">Total Capacity</div>
-                  <div className="text-white">
-                    {orderDetails.capacity.toFixed(2)} kW
-                  </div>
-                </CardBody>
-              </Card>
+                <Card className="w-full bg-[#222]">
+                  <CardBody className="p-4">
+                    <div className="text-sm text-gray-400 mb-1">Total Capacity</div>
+                    <div className="text-white">
+                      {orderDetails.capacity.toFixed(2)} kW
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
 
-              <Card className="w-full bg-[#222]">
-                <CardBody className="p-4">
-                  <div className="text-sm text-gray-400 mb-1">Payment Method</div>
-                  <div className="text-white">
-                    {orderDetails.tokenAmount.toLocaleString()} {orderDetails.paymentMethod}
-                  </div>
-                </CardBody>
-              </Card>
+              {/* Third row - 2 cards side by side */}
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="w-full bg-[#222]">
+                  <CardBody className="p-4">
+                    <div className="text-sm text-gray-400 mb-1">Payment Method</div>
+                    <div className="text-white">
+                      {orderDetails.tokenAmount.toLocaleString()} {orderDetails.paymentMethod}
+                    </div>
+                  </CardBody>
+                </Card>
 
-              <Card className="w-full bg-[#222]">
-                <CardBody className="p-4">
-                  <div className="text-sm text-gray-400 mb-1">Node Token ID</div>
-                  <div className="text-white font-mono">
-                    {nodeToken}
-                  </div>
-                </CardBody>
-              </Card>
+                <Card className="w-full bg-[#222]">
+                  <CardBody className="p-4">
+                    <div className="text-sm text-gray-400 mb-1">Node Token ID</div>
+                    <div className="text-white font-mono">
+                      {nodeToken}
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col w-full gap-3">
-              <Button 
-                className="w-full bg-[#E9423A] text-white py-6 rounded-none"
-                onPress={handleViewDashboard}
-              >
-                View Dashboard
-              </Button>
-              <Button 
-                className="w-full bg-transparent text-white border border-white py-6 rounded-none"
-                onPress={handlePurchaseMore}
-              >
-                Purchase More Panels
-              </Button>
-            </div>
+<div className="flex w-full gap-3">
+  <Button 
+    className="w-full bg-[#E9423A] text-white py-6 rounded-none"
+    onPress={handleViewDashboard}
+  >
+    View Dashboard
+  </Button>
+  <Button 
+    className="w-full bg-transparent text-white border border-white py-6 rounded-none"
+    onPress={handlePurchaseMore}
+  >
+    Purchase More Panels
+  </Button>
+</div>
           </CardBody>
         </Card>
       </div>

@@ -4,9 +4,10 @@ import {
   Button,
   Card,
   CardBody,
-  Spinner
+  Spinner,
+  Tooltip
 } from "@nextui-org/react";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, Copy, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   FormContainer,
@@ -69,6 +70,9 @@ export default function PaymentMethodPage() {
   // Toast state
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [toastKey, setToastKey] = useState(0);
+  
+  // Clipboard state
+  const [copied, setCopied] = useState(false);
 
   // Order details
   const [orderDetails, setOrderDetails] = useState<OrderDetails>({
@@ -128,57 +132,6 @@ export default function PaymentMethodPage() {
     }
   };
 
-  // Show a debug dialog for Web3Auth session
-  // const debugWeb3Auth = (e: React.MouseEvent<HTMLButtonElement>) => {
-  //   e.stopPropagation();
-  //   const session = localStorage.getItem("web3AuthSession");
-  //   try {
-  //     if (session) {
-  //       const data = JSON.parse(session);
-  //       console.log("Web3Auth Session Data:", data);
-
-  //       // Show private key info (format, type, length)
-  //       if (data.privateKey) {
-  //         const privateKeyType = typeof data.privateKey;
-  //         const privateKeyLength = 
-  //           privateKeyType === 'string' 
-  //             ? data.privateKey.length 
-  //             : Array.isArray(data.privateKey) 
-  //               ? data.privateKey.length 
-  //               : Object.keys(data.privateKey).length;
-
-  //         console.log("Private Key Type:", privateKeyType);
-  //         console.log("Private Key Length:", privateKeyLength);
-
-  //         // If it's an object, show a sample of the values
-  //         if (privateKeyType === 'object' && !Array.isArray(data.privateKey)) {
-  //           const keys = Object.keys(data.privateKey);
-  //           const sampleKeys = keys.slice(0, 5);
-  //           console.log("First 5 keys:", sampleKeys);
-  //           const sampleValues = sampleKeys.map(k => data.privateKey[k]);
-  //           console.log("First 5 values:", sampleValues);
-  //         }
-  //       } else {
-  //         console.log("No privateKey in session data");
-  //       }
-
-  //       // Show a toast with basic info
-  //       showToast(
-  //         "Web3Auth Session Info", 
-  //         `User: ${data.userInfo?.email || 'Unknown'}\nPublic Key: ${data.publicKey ? truncateAddress(data.publicKey) : 'None'}\nPrivate Key: ${data.privateKey ? 'Present' : 'Missing'}`, 
-  //         "primary", 
-  //         5000
-  //       );
-  //     } else {
-  //       console.log("No Web3Auth session found");
-  //       showToast("No Session", "No Web3Auth session found", "danger", 3000);
-  //     }
-  //   } catch (e) {
-  //     console.error("Error parsing session:", e);
-  //     showToast("Error", `Failed to parse session: ${e instanceof Error ? e.message : String(e)}`, "danger", 3000);
-  //   }
-  // };
-
   // Check authentication status when component mounts and when wallet connection changes
   useEffect(() => {
     const checkAuth = (): void => {
@@ -217,7 +170,6 @@ export default function PaymentMethodPage() {
           sol: data.solana.usd,
           usdc: data['usd-coin'].usd
         });
-        //console.log("Conversion rates", data);
       } catch (error) {
         console.error('Error fetching exchange rates:', error);
         showToast('Error', 'Failed to fetch exchange rates. Using default rates.', 'danger', 3000);
@@ -284,7 +236,6 @@ export default function PaymentMethodPage() {
     }
 
     setOrderDetails(newOrderDetails);
-    console.log("New order Details:", newOrderDetails)
   }, [location.search]);
 
   // Update token amount based on current cost
@@ -340,6 +291,18 @@ export default function PaymentMethodPage() {
 
   const truncateAddress = (address: string) =>
     address.length <= 8 ? address : `${address.slice(0, 4)}...${address.slice(-4)}`;
+    
+  const copyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    showToast("Copied", "Address copied to clipboard", "success", 2000);
+  };
+
+  const openExplorer = (address: string) => {
+    // Solana explorer URL for Devnet
+    window.open(`https://explorer.solana.com/address/${address}?cluster=devnet`, '_blank');
+  };
 
   // Handle action based on authentication state
   const handlePaymentAction = () => {
@@ -531,27 +494,18 @@ export default function PaymentMethodPage() {
 
   const handleBack = () => navigate(-1);
 
-  // Handler for login/dashboard button click
-  // const handleAuthButtonClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
-  //   e.preventDefault();
-  //   navigate(isAuthenticated ? "/dashboard" : "/login");
-  // };
-
   const handleLoginButtonClick = () => {
-    console.log("Is authenticed?", isAuthenticated);
     if (!isAuthenticated) {
-      //navigate(`/login?redirect=/payment?${redirectSearchParams.toString()}`);
       const redirectUrl = `/payment?panels=${panels}&cost=${cost}&capacity=${capacity}`;
       const encodedRedirect = encodeURIComponent(redirectUrl);
       navigate(`/login?redirect=${encodedRedirect}`);
     }
-
   }
 
   return (
     <FormContainer>
       <div className="w-full max-w-[420px] mx-auto relative z-10 h-full flex flex-col">
-        {/* Navigation Bar with Back button and Login/Dashboard link side by side */}
+        {/* Navigation Bar with Back button */}
         <div className="flex justify-between items-center mb-4">
           <Button
             className="bg-transparent text-white px-0 min-w-0 h-8 justify-start"
@@ -561,26 +515,6 @@ export default function PaymentMethodPage() {
           >
             Back
           </Button>
-
-          {/* Conditional Login/Dashboard link aligned to the right 
-          <a 
-            href={isAuthenticated ? "/dashboard" : "/login"}
-            onClick={handleAuthButtonClick}
-            className="flex items-center gap-2 text-white hover:text-gray-300 transition-colors duration-300"
-          >
-            {isAuthenticated ? (
-              <>
-                <LayoutDashboard size={18} />
-                <span>Dashboard</span>
-              </>
-            ) : (
-              <>
-                <LogIn size={18} />
-                <span>Login</span>
-              </>
-            )}
-          </a>
-          */}
         </div>
 
         <Card className={`${cardClasses} w-full overflow-hidden`}>
@@ -589,14 +523,24 @@ export default function PaymentMethodPage() {
             <p className="text-sm text-gray-300 font-inter">Choose your payment method</p>
           </div>
           <CardBody className="p-0 space-y-0 divide-y divide-gray-800 no-scrollbar">
+            {/* Order details section - more compact */}
             <div className="p-4 bg-[#111111]">
-              <div className="flex justify-between mb-3"><span className="text-gray-400 text-sm">Panels:</span><span className="text-white">{orderDetails.panels}</span></div>
-              <div className="flex justify-between mb-3"><span className="text-gray-400 text-sm">Capacity:</span><span className="text-white">{orderDetails.capacity.toFixed(2)} kW</span></div>
-              <div className="mt-4 pt-4 border-t border-gray-800"><div className="flex justify-between items-center"><span className="text-white font-medium">Total:</span><span className="text-white font-bold">${orderDetails.cost.toFixed(2)}</span></div></div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="flex justify-between"><span className="text-gray-400 text-sm">Panels:</span><span className="text-white">{orderDetails.panels}</span></div>
+                <div className="flex justify-between"><span className="text-gray-400 text-sm">Capacity:</span><span className="text-white">{orderDetails.capacity.toFixed(2)} kW</span></div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-800">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">Total:</span>
+                  <span className="text-white font-bold">${orderDetails.cost.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
+            
+            {/* Payment method selection */}
             <div className="p-4 bg-[#111111]">
-              <h3 className="text-xl font-bold text-white mb-4">Payment Method</h3>
-              <div className="grid grid-cols-3 gap-3 mb-5">
+              <h3 className="text-xl font-bold text-white mb-3">Payment Method</h3>
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 {[
                   { method: 'NRG', icon: nrgIcon },
                   { method: 'SOL', icon: solIcon },
@@ -615,60 +559,110 @@ export default function PaymentMethodPage() {
                 ))}
               </div>
               <div className="mb-3 text-center">
-                <p className="text-sm text-gray-300 mb-1">Amount Due in {selectedPayment}</p>
-                <p className="text-3xl font-bold text-white mb-1">{tokenAmount.toFixed(2)} {selectedPayment}</p>
-                <p className="text-sm text-gray-400 mb-2">≈ ${orderDetails.cost.toFixed(2)} USD</p>
-                <div className="inline-block px-2 py-1 bg-yellow-500 bg-opacity-20 rounded text-xs text-yellow-400">Devnet</div>
+                <p className="text-sm text-gray-300">Amount Due in {selectedPayment}</p>
+                <p className="text-3xl font-bold text-white">{tokenAmount.toFixed(2)} {selectedPayment}</p>
+                <p className="text-sm text-gray-400">≈ ${orderDetails.cost.toFixed(2)} USD</p>
+                <div className="inline-block px-2 py-1 bg-yellow-500 bg-opacity-20 rounded text-xs text-yellow-400 mt-2">Devnet</div>
               </div>
-              <div className="flex items-center justify-center text-sm text-[#E9423A]"><Clock size={14} className="mr-1" /><span>Price locked for {lockMinutes}:{lockSeconds < 10 ? `0${lockSeconds}` : lockSeconds}</span></div>
+              <div className="flex items-center justify-center text-sm text-[#E9423A]">
+                <Clock size={14} className="mr-1" />
+                <span>Price locked for {lockMinutes}:{lockSeconds < 10 ? `0${lockSeconds}` : lockSeconds}</span>
+              </div>
             </div>
+            
+            {/* Wallet connection section - UPDATED */}
             <div className="bg-[#111111] p-4">
-              {/* Updated wallet information section */}
+              {/* Connected wallet with clickable address & copy button */}
               {(connected && publicKey) ? (
-                <div className="px-4 py-2 text-center">
-                  <p className="text-gray-400 text-xs">Connected to</p>
-                  <div className="flex items-center justify-center gap-1 text-sm text-white">
-                    <span>{wallet?.adapter.name || 'Unknown Wallet'}</span>
-                    <span>•</span>
-                    <span className="font-mono">{truncateAddress(publicKey.toString())}</span>
+                <div className="px-3 py-2 bg-[#1A1A1A] rounded mb-3">
+                  <div className="flex flex-col">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-400 text-xs">Connected to</span>
+                      <span className="text-white text-sm">{wallet?.adapter.name || 'Unknown Wallet'}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-400 text-xs">Address</span>
+                      <div className="flex items-center gap-1">
+                        <a 
+                          href={`https://explorer.solana.com/address/${publicKey.toString()}?cluster=devnet`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white text-sm hover:text-[#E9423A] transition-colors flex items-center"
+                        >
+                          <span className="font-mono">{truncateAddress(publicKey.toString())}</span>
+                          <ExternalLink size={12} className="ml-1" />
+                        </a>
+                        <Tooltip content={copied ? "Copied!" : "Copy Address"}>
+                          <button 
+                            onClick={() => copyAddress(publicKey.toString())}
+                            className="text-gray-400 hover:text-white transition-colors ml-1"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </Tooltip>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-xs">Balance</span>
+                      <span className="text-white text-sm">{walletBalance.toFixed(4)} {selectedPayment}</span>
+                    </div>
                   </div>
-                  <div className="mt-2">
-                    <p className="text-gray-400 text-xs">Wallet Balance</p>
-                    <span className="text-white">{walletBalance.toFixed(2)} {selectedPayment}</span>
+                  
+                  <div className="mt-2 text-center">
+                    <button onClick={handleChangeWallet} className="text-[#E9423A] text-xs hover:underline">
+                      change wallet
+                    </button>
                   </div>
-                  <button onClick={handleChangeWallet} className="text-[#E9423A] text-xs mt-1 hover:underline">
-                    change wallet
-                  </button>
                 </div>
-              ) : (
-                web3AuthWalletInfo && (
-                  <div className="px-4 py-2 text-center">
-                    <p className="text-gray-400 text-xs">Connected via</p>
-                    <div className="flex items-center justify-center gap-1 text-sm text-white">
-                      <span>{web3AuthWalletInfo.provider}</span>
-                      {web3AuthWalletInfo.publicKey && (
-                        <>
-                          <span>•</span>
-                          <span className="font-mono">{truncateAddress(web3AuthWalletInfo.publicKey)}</span>
-                        </>
-                      )}
+              ) : web3AuthWalletInfo && (
+                <div className="px-3 py-2 bg-[#1A1A1A] rounded mb-3">
+                  <div className="flex flex-col">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-400 text-xs">Connected via</span>
+                      <span className="text-white text-sm">{web3AuthWalletInfo.provider}</span>
                     </div>
-                    <div className="flex justify-center">
-                      <button
-                        onClick={() => navigate("/login")}
-                        className="text-[#E9423A] text-xs mt-1 hover:underline"
-                      >
-                        change login
-                      </button>
-                      {/* <button 
-                        className="text-[#E9423A] text-xs mt-1 ml-2 hover:underline"
-                        onClick={debugWeb3Auth}
-                      >
-                        debug
-                      </button> */}
-                    </div>
+                    
+                    {web3AuthWalletInfo.publicKey && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-400 text-xs">Address</span>
+                        <div className="flex items-center gap-1">
+                          <a 
+                            href={`https://explorer.solana.com/address/${web3AuthWalletInfo.publicKey}?cluster=devnet`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-white text-sm hover:text-[#E9423A] transition-colors flex items-center"
+                          >
+                            <span className="font-mono">{truncateAddress(web3AuthWalletInfo.publicKey)}</span>
+                            <ExternalLink size={12} className="ml-1" />
+                          </a>
+                          <Tooltip content={copied ? "Copied!" : "Copy Address"}>
+                            <button 
+                              onClick={() => copyAddress(web3AuthWalletInfo.publicKey!)}
+                              className="text-gray-400 hover:text-white transition-colors ml-1"
+                            >
+                              <Copy size={14} />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {web3AuthWalletInfo.email && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 text-xs">Email</span>
+                        <span className="text-white text-sm">{web3AuthWalletInfo.email}</span>
+                      </div>
+                    )}
                   </div>
-                )
+                  
+                  <div className="mt-2 text-center">
+                    <button onClick={() => navigate("/login")} className="text-[#E9423A] text-xs hover:underline">
+                      change login
+                    </button>
+                  </div>
+                </div>
               )}
 
               <Button
@@ -687,8 +681,8 @@ export default function PaymentMethodPage() {
                 )}
                 <span className={`${isProcessingPayment ? 'opacity-0' : 'opacity-100'}`}>
                   {isAuthenticated ? (
-                    connected ? 'Complete Payment with Wallet' :
-                      web3AuthWalletInfo ? 'Complete Payment with Web3Auth' :
+                    connected ? 'Complete Payment' :
+                      web3AuthWalletInfo ? 'Complete Payment' :
                         'Select Wallet'
                   ) : 'Login to Continue'}
                 </span>
@@ -697,15 +691,17 @@ export default function PaymentMethodPage() {
           </CardBody>
         </Card>
 
+        {/* Toast notifications */}
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
           {toasts.map(toast => (
             <div
               key={toast.id}
-              className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${toast.type === 'success' ? 'bg-green-500/90 text-white' :
-                  toast.type === 'danger' ? 'bg-red-500/90 text-white' :
-                    toast.type === 'primary' ? 'bg-blue-500/90 text-white' :
-                      'bg-black/80 text-white'
-                }`}
+              className={`p-4 rounded shadow-lg flex items-start gap-3 transition-all duration-300 animate-slideIn max-w-xs ${
+                toast.type === 'success' ? 'bg-green-500/90 text-white' :
+                toast.type === 'danger' ? 'bg-red-500/90 text-white' :
+                toast.type === 'primary' ? 'bg-blue-500/90 text-white' :
+                'bg-black/80 text-white'
+              }`}
               style={{ animationDuration: '200ms' }}
             >
               <div className="flex-1">
