@@ -21,7 +21,6 @@ interface DashboardTemplateProps {
 
 const DashboardTemplate: React.FC<DashboardTemplateProps> = ({ 
   children, 
-  title, 
   activePage 
 }) => {
   const navigate = useNavigate();
@@ -47,7 +46,12 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 
   const getDate = () => {
     const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
     return now.toLocaleDateString('en-US', options);
   };
 
