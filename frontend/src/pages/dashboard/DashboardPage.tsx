@@ -6,26 +6,12 @@ import {
   Button,
   Tabs,
   Tab,
-  Tooltip,
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter
 } from "@nextui-org/react";
-import {
-  BarChart3,
-  Home,
-  PieChart,
-  Settings,
-  HelpCircle,
-  History,
-  Wallet,
-  ShoppingBag,
-  LogOut,
-  ExternalLink,
-  Plus
-} from "lucide-react";
 import { useWallet } from '@solana/wallet-adapter-react';
 import DashboardTemplate from "../../components/DashboardTemplate";
 
@@ -47,7 +33,7 @@ interface ChartData {
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { publicKey, wallet, disconnect, connected } = useWallet();
+  const { disconnect, connected } = useWallet();
   const [activeTab, setActiveTab] = useState("week");
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [nodes, setNodes] = useState<NodeData[]>([]);
@@ -67,10 +53,6 @@ function DashboardPage() {
     highest: 72
   });
 
-  const [username, setUsername] = useState<string>("John Doe");
-  const [email, setEmail] = useState<string>("Personal Account");
-  const [web3AuthPublicKey, setWeb3AuthPublicKey] = useState<string | null>(null);
-
   // Update authentication status when wallet connection changes
   useEffect(() => {
     if (connected) {
@@ -84,10 +66,10 @@ function DashboardPage() {
       try {
         const data = JSON.parse(session);
         if (data.userInfo && data.userInfo.email && data.userInfo.name) {
-          setUsername(data.userInfo.name);
-          setEmail(data.userInfo.email);
+          // Store user info for potential future use
+          console.log("User authenticated:", data.userInfo.name, data.userInfo.email);
           if (data.publicKey) {
-            setWeb3AuthPublicKey(data.publicKey);
+            console.log("Public key available:", data.publicKey);
           }
         }
       } catch (e) {
@@ -179,14 +161,6 @@ function DashboardPage() {
     navigate(`/dashboard/node/${nodeId}`);
   };
 
-  const handleBuyPanels = () => {
-    navigate("/");
-  };
-
-  const handleLogout = async () => {
-    setIsLogoutModalOpen(true);
-  };
-
   const confirmLogout = async () => {
     if (disconnect) {
       await disconnect();
@@ -201,11 +175,6 @@ function DashboardPage() {
 
   const cancelLogout = () => {
     setIsLogoutModalOpen(false);
-  };
-
-  const truncateAddress = (address: string) => {
-    if (!address) return "";
-    return address.length <= 8 ? address : `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   const maxValue = Math.max(...chartData.map(item => item.value));
