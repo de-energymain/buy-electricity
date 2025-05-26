@@ -292,6 +292,14 @@ const MarketplacePage: React.FC = () => {
 
   return (
     <DashboardTemplate title="Marketplace" activePage="marketplace">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Marketplace</h1>
+            <p className="text-gray-400">Looking to expand your portfolio? Buy, view and sell solar farms at our Marketplace.</p>
+          </div>         
+        </div>
       <Tabs 
         aria-label="Marketplace Tabs" 
         selectedKey={activeTab}
@@ -695,6 +703,7 @@ const MarketplacePage: React.FC = () => {
           </ModalContent>
         )}
       </Modal>
+      </div>
     </DashboardTemplate>
   );
 };

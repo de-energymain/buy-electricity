@@ -57,6 +57,14 @@ const HelpPage: React.FC = () => {
   
   return (
     <DashboardTemplate title="Help & Support" activePage="help">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Help</h1>
+            <p className="text-gray-400">Need help? Check our FAQs, contact Support, or find Developer Docs and Tutorials.</p>
+          </div>         
+        </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Card className="bg-[#1A1A1A] border-none mb-6">
@@ -236,6 +244,7 @@ const HelpPage: React.FC = () => {
             </CardBody>
           </Card>
         </div>
+      </div>
       </div>
     </DashboardTemplate>
   );
