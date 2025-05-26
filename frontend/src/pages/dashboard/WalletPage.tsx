@@ -240,6 +240,14 @@ const WalletPage: React.FC = () => {
 
   return (
     <DashboardTemplate title="Wallet" activePage="wallet">
+       {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Wallet</h1>
+            <p className="text-gray-400">Access your wallet to send, receive and stake tokens.</p>
+          </div>         
+        </div>
       {/* Balance Card */}
       <Card className="bg-[#1A1A1A] border-none mb-6">
         <CardBody className="p-6">
@@ -300,11 +308,12 @@ const WalletPage: React.FC = () => {
               aria-label="Tokens"
               removeWrapper
               classNames={{
-                base: "bg-[#1A1A1A] text-white",
-                thead: "bg-[#2A2A2A]",
-                th: "text-gray-400 text-xs font-normal py-3",
-                td: "text-white border-t border-gray-800"
-              }}
+              base: "bg-transparent",
+              thead: "[&>tr]:first:shadow-none",
+              th: "bg-gray-900/50 text-gray-400 text-xs font-medium py-3",
+              td: "text-white border-t border-gray-800",
+              tr: "hover:bg-gray-900/20 transition-colors"
+            }}
             >
               <TableHeader>
                 <TableColumn>TOKEN</TableColumn>
@@ -604,6 +613,7 @@ const WalletPage: React.FC = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      </div>
     </DashboardTemplate>
   );
 };
