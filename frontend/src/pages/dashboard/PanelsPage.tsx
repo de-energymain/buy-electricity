@@ -148,58 +148,50 @@ const PanelsPage: React.FC = () => {
         </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm text-gray-400">Total Panels</div>
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-[#E9423A]">
-                <Sun size={16} />
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-[#E9423A]/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Panels</div>
+            <div className="w-12 h-12 bg-gradient-to-br from-[#E9423A]/20 to-[#E9423A]/10 rounded-xl flex items-center justify-center border border-[#E9423A]/20">
+              <Sun size={20} className="text-[#E9423A]" />
             </div>
-            <div className="text-2xl font-bold text-white">{panels.length}</div>
-            <div className="text-xs text-gray-400">Total Power: {totalPower.toFixed(2)} kW</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div className="text-3xl font-bold text-white mb-2">{panels.length}</div>
+          <div className="text-sm text-gray-400">Total Power: <span className="text-white font-semibold">{totalPower.toFixed(2)} kW</span></div>
+        </div>
         
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm text-gray-400">Active Panels</div>
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-green-500">
-                <CheckCircle2 size={16} />
-              </div>
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-green-500/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Active Panels</div>
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-green-500/10 rounded-xl flex items-center justify-center border border-green-500/20">
+              <CheckCircle2 size={20} className="text-green-500" />
             </div>
-            <div className="text-2xl text-white font-bold">{activeCount}</div>
-            <div className="text-xs text-green-500">{((activeCount / panels.length) * 100).toFixed(0)}% Online</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div className="text-3xl font-bold text-white mb-2">{activeCount}</div>
+          <div className="text-sm text-gray-400"><span className="text-green-500 font-semibold">{((activeCount / panels.length) * 100).toFixed(0)}%</span> Online</div>
+        </div>
         
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm text-gray-400">Maintenance</div>
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-yellow-500">
-                <Activity size={16} />
-              </div>
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-yellow-500/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Maintenance</div>
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 rounded-xl flex items-center justify-center border border-yellow-500/20">
+              <Activity size={20} className="text-yellow-500" />
             </div>
-            <div className="text-2xl text-white font-bold">{maintenanceCount}</div>
-            <div className="text-xs text-yellow-500">{((maintenanceCount / panels.length) * 100).toFixed(0)}% In Maintenance</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div className="text-3xl font-bold text-white mb-2">{maintenanceCount}</div>
+          <div className="text-sm text-gray-400"><span className="text-yellow-500 font-semibold">{((maintenanceCount / panels.length) * 100).toFixed(0)}%</span> Under Maintenance</div>
+        </div>
         
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm text-gray-400">Offline</div>
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-red-500">
-                <AlertTriangle size={16} />
-              </div>
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-red-500/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Offline</div>
+            <div className="w-12 h-12 bg-gradient-to-br from-red-500/20 to-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
+              <AlertTriangle size={20} className="text-red-500" />
             </div>
-            <div className="text-2xl text-white font-bold">{offlineCount}</div>
-            <div className="text-xs text-red-500">{((offlineCount / panels.length) * 100).toFixed(0)}% Offline</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div className="text-3xl font-bold text-white mb-2">{offlineCount}</div>
+          <div className="text-sm text-gray-400"><span className="text-red-500 font-semibold">{((offlineCount / panels.length) * 100).toFixed(0)}%</span> Offline</div>
+        </div>
       </div>
       
       {/* Search */}
