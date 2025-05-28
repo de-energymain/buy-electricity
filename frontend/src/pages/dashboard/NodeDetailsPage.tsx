@@ -24,9 +24,10 @@ import {
   Thermometer,
   Wind,
   Shield,
-  AlertTriangle,
   ChevronDown,
-  Download
+  Download,
+  Activity,
+  Zap,
 } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
@@ -157,7 +158,7 @@ const NodeDetailsPage: React.FC = () => {
   
   if (isLoading || !nodeData) {
     return (
-      <DashboardTemplate title="Node Details" activePage="dashboard">
+      <DashboardTemplate title="Solar Node Details" activePage="dashboard">
         <div className="flex items-center mb-6">
           <Button
             className="bg-transparent text-white"
@@ -179,8 +180,8 @@ const NodeDetailsPage: React.FC = () => {
   }
   
   return (
-    <DashboardTemplate title={nodeData.name} activePage="dashboard">
-      <div className="flex items-center mb-6">
+    <DashboardTemplate title="Solar Node Details" activePage="dashboard">
+      <div className="flex items-center justify-between mb-8">
         <Button
           className="bg-transparent text-white"
           startContent={<ArrowLeft size={20} />}
@@ -189,7 +190,7 @@ const NodeDetailsPage: React.FC = () => {
           Back to Dashboard
         </Button>
         
-        <div className="ml-auto flex gap-2">
+        <div className="flex gap-2">
           <Dropdown>
             <DropdownTrigger>
               <Button 
@@ -233,18 +234,33 @@ const NodeDetailsPage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-semibold text-white mb-2">Viewing {nodeData.name}</h1>
+            <p className="text-gray-400 font-semibold">{nodeData.location}</p>
+            <p className="text-gray-400 text-sm">Installed on {formatDate(nodeData.installedDate)}</p>
+          </div>
+          <Chip color={getStatusColor(nodeData.status)} size="lg" className="text-sm px-4 py-2">
+            {nodeData.status.charAt(0).toUpperCase() + nodeData.status.slice(1)}
+          </Chip>
+        </div>
+      </div>
       
       <Tabs 
         aria-label="Node Details Tabs" 
         selectedKey={activeTab}
         onSelectionChange={key => setActiveTab(key as string)}
         color="danger"
-        variant="bordered"
+        variant="underlined"
         classNames={{
           base: "mb-6",
-          tabList: "bg-[#1A1A1A] p-1",
+          tabList: "bg-transparent",
           cursor: "bg-[#E9423A]",
-          tab: "text-gray-400 data-[selected=true]:text-white"
+          tab: "text-gray-400 data-[selected=true]:text-white pb-4",
+          panel: "pt-6"
         }}
       >
         <Tab key="overview" title="Overview" />
@@ -255,155 +271,157 @@ const NodeDetailsPage: React.FC = () => {
       
       {/* Overview Tab */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            <Card className="bg-[#1A1A1A] border-none mb-6">
+        <div className="space-y-8">
+          <Card className="bg-[#1A1A1A] border-none">
+            <CardBody className="p-8">
+              <div className="flex items-center justify-center mb-6">
+                <div className="flex items-center space-x-4">                  
+                  <div className="w-20 h-16 bg-[#E9423A] bg-opacity-20 rounded-lg border-2 border-[#E9423A] flex items-center justify-center">
+                    <Sun size={32} className="text-[#E9423A]" />
+                  </div>                 
+                </div>
+              </div>
+              
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-semibold text-white mb-2">Welcome to your solar node!</h2>
+                <p className="text-gray-400 max-w-md mx-auto">
+                  Your solar installation is active and generating clean energy. 
+                  Check your status below or read our guide to solar monitoring.
+                </p>
+              </div>
+
+              <div className="bg-[#2A1A1A] rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                  <div>
+                    <div className="text-white font-medium">You're generating power!</div>
+                    <div className="text-sm text-gray-400">Currently producing {nodeData.dailyOutput} kWh today</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-gray-400 text-sm">
+                <div className="flex items-center">
+                  <div className="w-6 h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center mr-3">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                  <span>System is operational and monitoring energy production</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-6 h-6 rounded-full border-2 border-gray-600 flex items-center justify-center mr-3">
+                    <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
+                  </div>
+                  <span>Performance optimization in progress</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-6 h-6 rounded-full border-2 border-gray-600 flex items-center justify-center mr-3">
+                    <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
+                  </div>
+                  <span>Monthly performance report will be available soon</span>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h3 className="text-xl font-medium mb-1">{nodeData.name}</h3>
-                    <div className="text-sm text-gray-400">{nodeData.location}</div>
-                  </div>
-                  <Chip color={getStatusColor(nodeData.status)} size="sm">
-                    {nodeData.status.charAt(0).toUpperCase() + nodeData.status.slice(1)}
-                  </Chip>
+                <div className="flex items-center mb-4">
+                  <h3 className="text-lg font-medium text-white">Your solar energy production</h3>
                 </div>
+                <p className="text-gray-400 text-sm mb-6">
+                  Track your daily energy generation and see how your solar installation is performing in real-time.
+                </p>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div>
-                    <div className="text-xs text-gray-400">Panels</div>
-                    <div className="font-medium">{nodeData.panels}</div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Daily Output</span>
+                    <span className="text-white font-medium">{nodeData.dailyOutput} kWh</span>
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-400">Capacity</div>
-                    <div className="font-medium">{nodeData.capacity} kW</div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Efficiency</span>
+                    <span className="text-white font-medium">{nodeData.efficiency}%</span>
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-400">Daily Output</div>
-                    <div className="font-medium">{nodeData.dailyOutput} kWh</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400">Total Generated</div>
-                    <div className="font-medium">{nodeData.totalGenerated} kWh</div>
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="text-sm">Efficiency</div>
-                    <div className="text-sm">{nodeData.efficiency}%</div>
-                  </div>
-                  <Progress 
-                    value={nodeData.efficiency} 
-                    maxValue={100}
-                    color={nodeData.efficiency > 75 ? "success" : nodeData.efficiency > 65 ? "warning" : "danger"}
-                    size="md"
-                    className="h-2"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <div className="text-xs text-gray-400">Installed Date</div>
-                    <div className="font-medium">{formatDate(nodeData.installedDate)}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400">Last Maintenance</div>
-                    <div className="font-medium">{formatDate(nodeData.lastMaintenance)}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400">Next Maintenance</div>
-                    <div className="font-medium">{formatDate(nodeData.nextMaintenance)}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400">Type</div>
-                    <div className="font-medium capitalize">{nodeData.type}</div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Total Generated</span>
+                    <span className="text-white font-medium">{nodeData.totalGenerated} kWh</span>
                   </div>
                 </div>
               </CardBody>
             </Card>
-            
+
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <h3 className="text-lg font-medium mb-4">Daily Production</h3>
-                
-                <div className="h-64 relative">
-                  <div className="absolute inset-0 flex items-end">
-                    {dailyData.map((item, index) => (
-                      <div key={index} className="flex-1 flex flex-col items-center h-full pt-8">
-                        <div className="text-xs text-gray-400 mb-1">{item.output} kWh</div>
-                        <div 
-                          className="w-6 bg-gradient-to-t from-red-800 to-[#E9423A] rounded-sm"
-                          style={{ height: `${(item.output / Math.max(...dailyData.map(d => d.output))) * 180}px` }}
-                        ></div>
-                        <div className="text-xs text-gray-400 mt-2">{item.day.substring(0, 3)}</div>
-                      </div>
-                    ))}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <h3 className="text-lg font-medium text-white">Your solar farm details</h3>
                   </div>
                 </div>
                 
-                <div className="flex justify-between mt-6 pt-4 border-t border-gray-800">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-400">Avg. Daily</div>
-                    <div className="font-medium">{Math.round(dailyData.reduce((sum, item) => sum + item.output, 0) / dailyData.length)} kWh</div>
+                <div className="flex items-center mb-4">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-gray-400">{nodeData.location}</span>
+                </div>              
+
+                <div className="bg-[#2A1A1A] rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Panel Count</span>
+                    <span className="text-white font-medium">{nodeData.panels} panels</span>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-400">Peak Output</div>
-                    <div className="font-medium">{Math.max(...dailyData.map(item => item.output))} kWh</div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-gray-400">Total Capacity</span>
+                    <span className="text-white font-medium">{nodeData.capacity} kW</span>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-400">Total Week</div>
-                    <div className="font-medium">{dailyData.reduce((sum, item) => sum + item.output, 0)} kWh</div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-gray-400">Next Maintenance</span>
+                    <span className="text-white font-medium">{formatDate(nodeData.nextMaintenance)}</span>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-gray-400">Last Maintenance</span>
+                    <span className="text-white font-medium">{formatDate(nodeData.lastMaintenance)}</span>
                   </div>
                 </div>
               </CardBody>
             </Card>
           </div>
-          
-          <div className="md:col-span-1">
-            <Card className="bg-[#1A1A1A] border-none mb-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <h3 className="text-lg font-medium mb-4">Current Conditions</h3>
+                <h3 className="text-lg text-white font-medium mb-4">Current Conditions</h3>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-[#2A1A1A] rounded-lg">
                     <div className="flex items-center">
                       {getWeatherIcon(nodeData.weatherCondition)}
-                      <div className="ml-3">
-                        <div className="text-sm">Weather</div>
-                      </div>
+                      <span className="ml-3 text-gray-400">Weather</span>
                     </div>
-                    <div className="font-medium capitalize">{nodeData.weatherCondition}</div>
+                    <span className="text-white font-medium capitalize">{nodeData.weatherCondition}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#2A1A1A] rounded-lg">
                     <div className="flex items-center">
-                      <Thermometer size={20} className="text-red-500" />
-                      <div className="ml-3">
-                        <div className="text-sm">Temperature</div>
-                      </div>
+                      <Thermometer size={18} className="text-red-500" />
+                      <span className="ml-3 text-gray-400">Temperature</span>
                     </div>
-                    <div className="font-medium">{nodeData.temperature}°C</div>
+                    <span className="text-white font-medium">{nodeData.temperature}°C</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#2A1A1A] rounded-lg">
                     <div className="flex items-center">
-                      <Droplets size={20} className="text-blue-500" />
-                      <div className="ml-3">
-                        <div className="text-sm">Humidity</div>
-                      </div>
+                      <Droplets size={18} className="text-blue-500" />
+                      <span className="ml-3 text-gray-400">Humidity</span>
                     </div>
-                    <div className="font-medium">{nodeData.humidity}%</div>
+                    <span className="text-white font-medium">{nodeData.humidity}%</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#2A1A1A] rounded-lg">
                     <div className="flex items-center">
-                      <Wind size={20} className="text-blue-300" />
-                      <div className="ml-3">
-                        <div className="text-sm">Wind Speed</div>
-                      </div>
+                      <Wind size={18} className="text-blue-300" />
+                      <span className="ml-3 text-gray-400">Wind Speed</span>
                     </div>
-                    <div className="font-medium">{nodeData.windSpeed} km/h</div>
+                    <span className="text-white font-medium">{nodeData.windSpeed} km/h</span>
                   </div>
                 </div>
               </CardBody>
@@ -411,66 +429,84 @@ const NodeDetailsPage: React.FC = () => {
             
             <Card className="bg-[#1A1A1A] border-none">
               <CardBody className="p-6">
-                <h3 className="text-lg font-medium mb-4">System Status</h3>
+                <h3 className="text-lg text-white font-medium mb-4">System Status</h3>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-[#2A1A1A] rounded-lg">
                     <div className="flex items-center">
-                      <Shield size={20} className="text-green-500" />
-                      <div className="ml-3">
-                        <div className="text-sm">Panel Health</div>
-                      </div>
+                      <Shield size={18} className="text-green-500" />
+                      <span className="ml-3 text-gray-400">Panel Health</span>
                     </div>
-                    <div className="font-medium text-green-500">Good</div>
+                    <span className="font-medium text-green-500">Excellent</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#2A1A1A] rounded-lg">
                     <div className="flex items-center">
-                      <Shield size={20} className="text-green-500" />
-                      <div className="ml-3">
-                        <div className="text-sm">Inverter Status</div>
-                      </div>
+                      <Zap size={18} className="text-green-500" />
+                      <span className="ml-3 text-gray-400">Inverter Status</span>
                     </div>
-                    <div className="font-medium text-green-500">Operational</div>
+                    <span className="font-medium text-green-500">Operational</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#2A1A1A] rounded-lg">
                     <div className="flex items-center">
-                      <Shield size={20} className="text-green-500" />
-                      <div className="ml-3">
-                        <div className="text-sm">Connection</div>
-                      </div>
+                      <Activity size={18} className="text-green-500" />
+                      <span className="ml-3 text-gray-400">Connection</span>
                     </div>
-                    <div className="font-medium text-green-500">Online</div>
+                    <span className="font-medium text-green-500">Online</span>
                   </div>
-                  
-                  {nodeData.status === "maintenance" && (
-                    <div className="p-4 bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg">
-                      <div className="flex items-start">
-                        <AlertTriangle size={20} className="text-yellow-500 mr-2 mt-0.5" />
-                        <div>
-                          <div className="font-medium text-yellow-400">Maintenance In Progress</div>
-                          <div className="text-sm text-gray-300 mt-1">Scheduled maintenance is currently in progress. Performance may be temporarily affected.</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {nodeData.status === "offline" && (
-                    <div className="p-4 bg-red-900 bg-opacity-30 border border-red-600 rounded-lg">
-                      <div className="flex items-start">
-                        <AlertTriangle size={20} className="text-red-500 mr-2 mt-0.5" />
-                        <div>
-                          <div className="font-medium text-red-400">System Offline</div>
-                          <div className="text-sm text-gray-300 mt-1">This node is currently offline. Our technicians have been notified and are working to resolve the issue.</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
+                  <div className="mt-4 p-3 bg-[#2A1A1A] rounded-lg">
+                    <div className="text-sm text-gray-400 mb-2">Efficiency</div>
+                    <Progress 
+                      value={nodeData.efficiency} 
+                      maxValue={100}
+                      color={nodeData.efficiency > 75 ? "success" : nodeData.efficiency > 65 ? "warning" : "danger"}
+                      size="md"
+                      className="mb-2"
+                    />
+                    <div className="text-right text-sm text-white">{nodeData.efficiency}%</div>
+                  </div>
                 </div>
               </CardBody>
             </Card>
           </div>
+
+          <Card className="bg-[#1A1A1A] border-none">
+            <CardBody className="p-6">
+              <h3 className="text-lg text-white font-medium mb-6">Daily Production</h3>
+              
+              <div className="h-64 relative mb-6">
+                <div className="absolute inset-0 flex items-end">
+                  {dailyData.map((item, index) => (
+                    <div key={index} className="flex-1 flex flex-col items-center h-full pt-8">
+                      <div className="text-xs text-gray-400 mb-1">{item.output} kWh</div>
+                      <div 
+                        className="w-8 bg-gradient-to-t from-red-800 to-[#E9423A] rounded-sm"
+                        style={{ height: `${(item.output / Math.max(...dailyData.map(d => d.output))) * 180}px` }}
+                      ></div>
+                      <div className="text-xs text-gray-400 mt-2">{item.day.substring(0, 3)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-800">
+                <div className="text-center">
+                  <div className="text-sm text-gray-400">Avg. Daily</div>
+                  <div className="font-medium text-white">{Math.round(dailyData.reduce((sum, item) => sum + item.output, 0) / dailyData.length)} kWh</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm text-gray-400">Peak Output</div>
+                  <div className="font-medium text-white">{Math.max(...dailyData.map(item => item.output))} kWh</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm text-gray-400">Total Week</div>
+                  <div className="font-medium text-white">{dailyData.reduce((sum, item) => sum + item.output, 0)} kWh</div>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
         </div>
       )}
       

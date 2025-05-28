@@ -224,6 +224,63 @@ const TransactionsPage: React.FC = () => {
 
   return (
     <DashboardTemplate title="Transactions" activePage="transactions">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Transactions</h1>
+            <p className="text-gray-400">View and manage all your transactions, including rewards.</p>
+          </div>         
+        </div>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-green-500/30">
+            <div className="flex justify-between items-start mb-4">
+              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Received</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-green-500/10 rounded-xl flex items-center justify-center border border-green-500/20">
+                <ArrowDown size={20} className="text-green-500" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-green-500 mb-2">
+              +{transactions
+                .filter(tx => tx.type === "receive" || tx.type === "reward")
+                .reduce((sum, tx) => sum + tx.amount, 0)
+                .toFixed(2)}
+            </div>
+            <div className="text-sm text-gray-400">Tokens Received</div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-red-500/30">
+            <div className="flex justify-between items-start mb-4">
+              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Sent</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-red-500/20 to-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
+                <ArrowUp size={20} className="text-red-500" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-white mb-2">
+              -{transactions
+                .filter(tx => tx.type === "send")
+                .reduce((sum, tx) => sum + tx.amount, 0)
+                .toFixed(2)}
+            </div>
+            <div className="text-sm text-gray-400">Tokens Sent</div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-blue-500/30">
+            <div className="flex justify-between items-start mb-4">
+              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Network Fees</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20">
+                <Wallet size={20} className="text-blue-500" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-white mb-2">
+              {transactions
+                .reduce((sum, tx) => sum + (tx.fee || 0), 0)
+                .toFixed(4)}
+            </div>
+            <div className="text-sm text-gray-400">SOL Fees</div>
+          </div>
+        </div>
       {/* Filters */}
       <div className="mb-6 flex flex-col md:flex-row gap-4">
         <Input
@@ -343,125 +400,105 @@ const TransactionsPage: React.FC = () => {
       </div>
       
       {/* Transactions Table */}
-      <Card className="bg-[#1A1A1A] border-none mb-4">
-        <CardBody>
-          <Table 
-            aria-label="Transactions table"
-            removeWrapper
-            bottomContent={
-              pages > 1 ? (
-                <div className="flex w-full justify-center">
-                  <Pagination
-                    isCompact
-                    showControls
-                    showShadow
-                    color="danger"
-                    page={currentPage}
-                    total={pages}
-                    onChange={(page) => setCurrentPage(page)}
-                  />
-                </div>
-              ) : null
-            }
-            classNames={{
-              base: "bg-[#1A1A1A] text-white",
-              thead: "bg-[#2A2A2A]",
-              th: "text-gray-400 text-xs font-normal py-3",
-              td: "text-white border-t border-gray-800"
-            }}
-          >
-            <TableHeader>
-              <TableColumn>TRANSACTION</TableColumn>
-              <TableColumn>TYPE</TableColumn>
-              <TableColumn>AMOUNT</TableColumn>
-              <TableColumn>DATE</TableColumn>
-              <TableColumn>STATUS</TableColumn>
-              <TableColumn>ACTIONS</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="No transactions found">
-              {currentItems.map((tx, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 flex items-center justify-center mr-3 bg-[#2A1A1A] rounded-full">
-                        {getTransactionIcon(tx.type, tx.status)}
-                      </div>
-                      <div>
-                        <div className="font-medium">
-                          {getTransactionDescription(tx)}
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-700/50">
+                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-400 uppercase tracking-wide">Transaction</th>
+                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-400 uppercase tracking-wide">Type</th>
+                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-400 uppercase tracking-wide">Amount</th>
+                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-400 uppercase tracking-wide">Date</th>
+                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-400 uppercase tracking-wide">Status</th>
+                  <th className="text-left py-4 px-6 text-sm font-medium text-gray-400 uppercase tracking-wide">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.map((tx, index) => (
+                  <tr key={index} className="border-b border-gray-800/30 hover:bg-gray-800/20 transition-colors">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center">
+                        <div className="w-12 h-12 flex items-center justify-center mr-4 bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] rounded-xl border border-gray-600/30">
+                          {getTransactionIcon(tx.type, tx.status)}
                         </div>
-                        <div className="text-xs text-gray-400">
-                          ID: {tx.id.substring(0, 8)}...
+                        <div>
+                          <div className="font-medium text-white text-sm">
+                            {getTransactionDescription(tx)}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            ID: {tx.id.substring(0, 12)}...
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="capitalize">{tx.type}</TableCell>
-                  <TableCell>
-                    <div className={tx.type === "receive" || tx.type === "reward" ? "text-green-500" : "text-white"}>
-                      {tx.type === "receive" || tx.type === "reward" ? "+" : tx.type === "send" ? "-" : ""}{tx.amount.toFixed(2)} {tx.token}
-                    </div>
-                    {tx.fee && (
-                      <div className="text-xs text-gray-400">
-                        Fee: {tx.fee.toFixed(4)} SOL
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className="capitalize text-white font-medium">{tx.type}</span>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className={`font-semibold ${tx.type === "receive" || tx.type === "reward" ? "text-green-500" : "text-white"}`}>
+                        {tx.type === "receive" || tx.type === "reward" ? "+" : tx.type === "send" ? "-" : ""}{tx.amount.toFixed(2)} {tx.token}
                       </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDate(tx.timestamp)}</TableCell>
-                  <TableCell>{getStatusChip(tx.status)}</TableCell>
-                  <TableCell>
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      className="bg-[#2A1A1A] text-white"
-                      onPress={() => window.open(`https://explorer.solana.com/tx/${tx.id}?cluster=devnet`, '_blank')}
+                      {tx.fee && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          Fee: {tx.fee.toFixed(4)} SOL
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-4 px-6 text-white text-sm">{formatDate(tx.timestamp)}</td>
+                    <td className="py-4 px-6">{getStatusChip(tx.status)}</td>
+                    <td className="py-4 px-6">
+                      <button
+                        onClick={() => window.open(`https://explorer.solana.com/tx/${tx.id}?cluster=devnet`, '_blank')}
+                        className="w-10 h-10 bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] hover:from-gray-600 hover:to-gray-500 rounded-lg flex items-center justify-center text-white transition-all border border-gray-600/30 hover:border-gray-500/50"
+                      >
+                        <ExternalLink size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>         
+
+          {pages > 1 && (
+            <div className="flex justify-center items-center py-6 border-t border-gray-700/50">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 rounded-lg bg-gray-800/50 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700/50 transition-colors"
+                >
+                  Previous
+                </button>
+                
+                {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-2 rounded-lg transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-[#E9423A] text-white'
+                          : 'bg-gray-800/50 text-white hover:bg-gray-700/50'
+                      }`}
                     >
-                      <ExternalLink size={14} />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
-      
-      {/* Total Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="text-sm text-gray-400 mb-1">Total Received</div>
-            <div className="text-2xl font-bold text-green-500">
-              +{transactions
-                .filter(tx => tx.type === "receive" || tx.type === "reward")
-                .reduce((sum, tx) => sum + tx.amount, 0)
-                .toFixed(2)} Tokens
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => setCurrentPage(Math.min(pages, currentPage + 1))}
+                  disabled={currentPage === pages}
+                  className="px-3 py-2 rounded-lg bg-gray-800/50 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700/50 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          </CardBody>
-        </Card>
-        
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="text-sm text-gray-400 mb-1">Total Sent</div>
-            <div className="text-2xl font-bold text-white">
-              -{transactions
-                .filter(tx => tx.type === "send")
-                .reduce((sum, tx) => sum + tx.amount, 0)
-                .toFixed(2)} Tokens
-            </div>
-          </CardBody>
-        </Card>
-        
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="text-sm text-gray-400 mb-1">Network Fees</div>
-            <div className="text-2xl font-bold text-white">
-              {transactions
-                .reduce((sum, tx) => sum + (tx.fee || 0), 0)
-                .toFixed(4)} SOL
-            </div>
-          </CardBody>
-        </Card>
+          )}
+        </div>
       </div>
     </DashboardTemplate>
   );
