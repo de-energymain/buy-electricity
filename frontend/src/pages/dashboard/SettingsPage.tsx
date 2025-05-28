@@ -10,6 +10,14 @@ const SettingsPage: React.FC = () => {
   
   return (
     <DashboardTemplate title="Settings" activePage="settings">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+            <p className="text-gray-400">Effortlessly configure, customise and personalise your dashboard.</p>
+          </div>         
+        </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
           <Card className="bg-[#1A1A1A] border-none h-min sticky top-6">
@@ -343,6 +351,7 @@ const SettingsPage: React.FC = () => {
             </Card>
           )}
         </div>
+      </div>
       </div>
     </DashboardTemplate>
   );

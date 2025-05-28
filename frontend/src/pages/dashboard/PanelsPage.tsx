@@ -6,7 +6,8 @@ import {
   Progress,
   Switch,
   Input,
-  Divider
+  Divider,
+  Chip
 } from "@nextui-org/react";
 import {
   Search,
@@ -15,7 +16,8 @@ import {
   Sun,
   AlertTriangle,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  MoreVertical
 } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
@@ -119,6 +121,15 @@ const PanelsPage: React.FC = () => {
     return "danger";
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'success';
+      case 'maintenance': return 'warning';
+      case 'offline': return 'danger';
+      default: return 'default';
+    }
+  };
+
   // Format date
 //   const formatDate = (dateString: string) => {
 //     const date = new Date(dateString);
@@ -127,59 +138,60 @@ const PanelsPage: React.FC = () => {
 
   return (
     <DashboardTemplate title="Solar Panels" activePage="panels">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Panel Management</h1>
+            <p className="text-gray-400">Monitor and manage your solar panel infrastructure.</p>
+          </div>         
+        </div>
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm text-gray-400">Total Panels</div>
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-[#E9423A]">
-                <Sun size={16} />
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-[#E9423A]/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Panels</div>
+            <div className="w-12 h-12 bg-gradient-to-br from-[#E9423A]/20 to-[#E9423A]/10 rounded-xl flex items-center justify-center border border-[#E9423A]/20">
+              <Sun size={20} className="text-[#E9423A]" />
             </div>
-            <div className="text-2xl font-bold text-white">{panels.length}</div>
-            <div className="text-xs text-gray-400">Total Power: {totalPower.toFixed(2)} kW</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div className="text-3xl font-bold text-white mb-2">{panels.length}</div>
+          <div className="text-sm text-gray-400">Total Power: <span className="text-white font-semibold">{totalPower.toFixed(2)} kW</span></div>
+        </div>
         
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm text-gray-400">Active Panels</div>
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-green-500">
-                <CheckCircle2 size={16} />
-              </div>
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-green-500/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Active Panels</div>
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-green-500/10 rounded-xl flex items-center justify-center border border-green-500/20">
+              <CheckCircle2 size={20} className="text-green-500" />
             </div>
-            <div className="text-2xl text-white font-bold">{activeCount}</div>
-            <div className="text-xs text-green-500">{((activeCount / panels.length) * 100).toFixed(0)}% Online</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div className="text-3xl font-bold text-white mb-2">{activeCount}</div>
+          <div className="text-sm text-gray-400"><span className="text-green-500 font-semibold">{((activeCount / panels.length) * 100).toFixed(0)}%</span> Online</div>
+        </div>
         
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm text-gray-400">Maintenance</div>
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-yellow-500">
-                <Activity size={16} />
-              </div>
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-yellow-500/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Maintenance</div>
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 rounded-xl flex items-center justify-center border border-yellow-500/20">
+              <Activity size={20} className="text-yellow-500" />
             </div>
-            <div className="text-2xl text-white font-bold">{maintenanceCount}</div>
-            <div className="text-xs text-yellow-500">{((maintenanceCount / panels.length) * 100).toFixed(0)}% In Maintenance</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div className="text-3xl font-bold text-white mb-2">{maintenanceCount}</div>
+          <div className="text-sm text-gray-400"><span className="text-yellow-500 font-semibold">{((maintenanceCount / panels.length) * 100).toFixed(0)}%</span> Under Maintenance</div>
+        </div>
         
-        <Card className="bg-[#1A1A1A] border-none">
-          <CardBody className="p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm text-gray-400">Offline</div>
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-red-500">
-                <AlertTriangle size={16} />
-              </div>
+        <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-red-500/30">
+          <div className="flex justify-between items-start mb-4">
+            <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Offline</div>
+            <div className="w-12 h-12 bg-gradient-to-br from-red-500/20 to-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
+              <AlertTriangle size={20} className="text-red-500" />
             </div>
-            <div className="text-2xl text-white font-bold">{offlineCount}</div>
-            <div className="text-xs text-red-500">{((offlineCount / panels.length) * 100).toFixed(0)}% Offline</div>
-          </CardBody>
-        </Card>
+          </div>
+          <div className="text-3xl font-bold text-white mb-2">{offlineCount}</div>
+          <div className="text-sm text-gray-400"><span className="text-red-500 font-semibold">{((offlineCount / panels.length) * 100).toFixed(0)}%</span> Offline</div>
+        </div>
       </div>
       
       {/* Search */}
@@ -198,89 +210,118 @@ const PanelsPage: React.FC = () => {
         />
       </div>
       
-     {/* Panels List */}
-     <Card className="bg-[#1A1A1A] border-none mb-4">
-        <CardBody>
-          <div className="space-y-4">
-            {filteredPanels.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                No panels found matching your search.
-              </div>
-            ) : (
-              filteredPanels.map((panel) => (
-                <div key={panel.id}>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between p-2 gap-4">
-                    <div className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white mr-3 ${
-                        panel.status === 'active' ? 'bg-green-500' : 
-                        panel.status === 'maintenance' ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}>
-                        {panel.status === 'active' ? <Zap size={18} /> : 
-                         panel.status === 'maintenance' ? <Activity size={18} /> : <AlertTriangle size={18} />}
-                      </div>
-                      
-                      <div>
-                        <div className="text-white font-medium">{panel.name}</div>
-                        <div className="text-xs text-gray-400">{panel.farm} • {panel.location}</div>
-                      </div>
+     {/* Panels Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+        {filteredPanels.length === 0 ? (
+          <div className="col-span-full">
+            <Card className="bg-[#1A1A1A] border border-gray-800">
+              <CardBody className="text-center py-12">
+                <Sun size={48} className="text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No panels found</h3>
+                <p className="text-gray-400">Try adjusting your search criteria</p>
+              </CardBody>
+            </Card>
+          </div>
+        ) : (
+          filteredPanels.map((panel) => (
+            <Card key={panel.id} className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] border border-gray-800 hover:border-gray-700 transition-all duration-200 shadow-lg">
+              <CardBody className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      panel.status === 'active' ? 'bg-green-500/20 text-green-400' : 
+                      panel.status === 'maintenance' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {panel.status === 'active' ? <Zap size={20} /> : 
+                       panel.status === 'maintenance' ? <Activity size={20} /> : <AlertTriangle size={20} />}
                     </div>
-                    
-                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 w-full md:w-auto">
-                      <div className="w-full md:w-auto">
-                        <div className="text-xs text-gray-400 mb-1">Efficiency</div>
-                        <div className="flex items-center gap-2">
-                          <Progress 
-                            size="sm" 
-                            value={panel.efficiency} 
-                            maxValue={100}
-                            color={getHealthColor(panel.efficiency)}
-                            className="w-24"
-                          />
-                          <span className="text-sm">{panel.efficiency}%</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Daily Output</div>
-                        <div className="text-sm text-white">{panel.dailyOutput} kWh</div>
-                      </div>
-                      
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Status</div>
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            size="sm"
-                            isSelected={panel.active}
-                            isDisabled={panel.status !== 'active'}
-                            onChange={(e) => handleTogglePanel(panel.id, e.target.checked)}
-                            classNames={{
-                              wrapper: "group-data-[selected=true]:bg-[#E9423A]"
-                            }}
-                          />
-                          <span className="text-sm">{panel.active ? 'On' : 'Off'}</span>
-                        </div>
-                      </div>
-                      
-                      <Button
-                        isIconOnly
-                        size="sm"
-                        className="ml-auto bg-transparent text-gray-400 hover:text-white"
-                      >
-                        <ChevronRight size={20} />
-                      </Button>
+                    <div>
+                      <h3 className="font-semibold text-white">{panel.name}</h3>
+                      <p className="text-sm text-gray-400">{panel.farm}</p>
                     </div>
                   </div>
-                  <Divider className="my-2 bg-gray-800" />
+                  
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    className="bg-transparent text-gray-400 hover:text-white hover:bg-[#3A3A3A]"
+                  >
+                    <MoreVertical size={16} />
+                  </Button>
                 </div>
-              ))
-            )}
-          </div>
-        </CardBody>
-      </Card>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Status</span>
+                    <Chip
+                      size="sm"
+                      color={getStatusColor(panel.status)}
+                      variant="flat"
+                      className="capitalize"
+                    >
+                      {panel.status}
+                    </Chip>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Efficiency</span>
+                    <div className="flex items-center gap-2">
+                      <Progress 
+                        size="sm" 
+                        value={panel.efficiency} 
+                        maxValue={100}
+                        color={getHealthColor(panel.efficiency)}
+                        className="w-16"
+                      />
+                      <span className="text-sm font-medium text-white">{panel.efficiency}%</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Daily Output</span>
+                    <span className="text-sm font-medium text-white">{panel.dailyOutput} kWh</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Master Control</span>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        size="sm"
+                        isSelected={panel.active}
+                        isDisabled={panel.status !== 'active'}
+                        onChange={(e) => handleTogglePanel(panel.id, e.target.checked)}
+                        classNames={{
+                          wrapper: "group-data-[selected=true]:bg-[#E9423A]"
+                        }}
+                      />
+                      <span className="text-sm text-white">{panel.active ? 'On' : 'Off'}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <Divider className="my-4 bg-gray-800" />
+                
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-500">
+                    Location: {panel.location}
+                  </div>
+                  <Button
+                    size="sm"
+                    endContent={<ChevronRight size={14} />}
+                    className="bg-transparent text-[#E9423A] hover:bg-[#E9423A]/10 font-medium"
+                  >
+                    Details
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          ))
+        )}
+      </div>
       
       {/* Panel Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-[#1A1A1A] border-none">
+        <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] border-none">
           <CardBody className="p-6">
             <h3 className="text-lg text-white font-medium mb-4">Performance by Location</h3>
             <div className="space-y-4">
@@ -340,7 +381,7 @@ const PanelsPage: React.FC = () => {
           </CardBody>
         </Card>
         
-        <Card className="bg-[#1A1A1A] border-none">
+        <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] border-none">
           <CardBody className="p-6">
             <h3 className="text-lg text-white font-medium mb-4">Upcoming Maintenance</h3>
             <div className="space-y-4">
@@ -371,6 +412,7 @@ const PanelsPage: React.FC = () => {
             </div>
           </CardBody>
         </Card>
+      </div>
       </div>
     </DashboardTemplate>
   );

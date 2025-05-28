@@ -57,180 +57,212 @@ const HelpPage: React.FC = () => {
   
   return (
     <DashboardTemplate title="Help & Support" activePage="help">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <Card className="bg-[#1A1A1A] border-none mb-6">
-            <CardBody className="p-6">
-              <h3 className="text-xl text-white font-medium mb-4">Frequently Asked Questions</h3>
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Help & Support</h1>
+            <p className="text-gray-400">Need help? Check our FAQs, contact Support, or find Developer Docs and Tutorials.</p>
+          </div>         
+        </div>
+
+
+        <div className="mb-8">
+          <Card className="bg-[#1A1A1A] border-gray-800 border">
+            <CardBody className="p-8">
+              <h2 className="text-2xl text-white font-semibold mb-6">Frequently Asked Questions</h2>
               
-              <div className="mb-6">
+              <div className="mb-8">
                 <Input
                   placeholder="Search for help..."
-                  startContent={<Search size={18} />}
+                  startContent={<Search size={20} className="text-gray-400" />}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  size="lg"
                   classNames={{
-                    base: "bg-[#1A1A1A]",
-                    inputWrapper: "bg-[#2A1A1A] border-1 border-gray-700 hover:border-white focus-within:border-[#E9423A]",
-                    input: "text-white placeholder:text-gray-400"
+                    base: "max-w-md",
+                    inputWrapper: "bg-[#2A1A1A] border-gray-700 hover:border-gray-600 focus-within:border-[#E9423A] transition-colors duration-200",
+                    input: "text-white placeholder:text-gray-500"
                   }}
                 />
               </div>
               
               {filteredFaqs.length > 0 ? (
-                <Accordion variant="splitted">
+                <Accordion 
+                  variant="splitted"
+                  className="px-0"
+                  itemClasses={{
+                    base: "bg-[#2A1A1A] border border-gray-800 mb-3 rounded",
+                    title: "text-white font-medium",
+                    trigger: "px-6 py-4 transition-colors",
+                    content: "text-gray-300 px-6 pb-4 leading-relaxed"
+                  }}
+                >
                   {filteredFaqs.map((faq, index) => (
                     <AccordionItem 
                       key={index} 
                       title={faq.question}
-                      classNames={{
-                        base: "bg-[#2A1A1A] mb-2",
-                        title: "text-white",
-                        trigger: "px-4 py-2",
-                        content: "text-gray-300 px-4"
-                      }}
                     >
                       {faq.answer}
                     </AccordionItem>
                   ))}
                 </Accordion>
               ) : (
-                <div className="text-center py-10 bg-[#2A1A1A] rounded-lg">
-                  <div className="text-gray-400">No results found for "{searchQuery}"</div>
-                  <div className="text-sm text-gray-500 mt-2">Try different keywords or contact support</div>
+                <div className="text-center py-12 bg-[#2A1A1A] rounded-xl border border-gray-800">
+                  <Search size={48} className="mx-auto text-gray-600 mb-4" />
+                  <div className="text-gray-400 text-lg font-medium mb-2">No results found for "{searchQuery}"</div>
+                  <div className="text-gray-500">Try different keywords or contact our support team</div>
                 </div>
               )}
             </CardBody>
           </Card>
-          
-          <Card className="bg-[#1A1A1A] border-none">
-            <CardBody className="p-6">
-              <h3 className="text-xl text-white font-medium mb-4">Video Tutorials</h3>
+        </div>
+
+        <div className="mb-8">
+          <Card className="bg-[#1A1A1A] border-gray-800 border">
+            <CardBody className="p-8">
+              <h2 className="text-2xl text-white font-semibold mb-6">Video Tutorials</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-[#2A1A1A] border-none">
-                  <div className="h-40 bg-[#3A1A1A] flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
-                      <PlayCircle size={48} className="text-white opacity-80 mb-4" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="bg-[#2A1A1A] border-gray-800 border hover:border-gray-700 transition-colors cursor-pointer group">
+                  <div className="relative h-48 bg-gradient-to-br from-[#3A1A1A] to-[#2A1A1A] overflow-hidden">
+                    <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-[#E9423A] rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                          <PlayCircle size={32} className="text-white" />
+                        </div>
+                        <div className="text-white font-medium">Getting Started</div>
+                      </div>
                     </div>
-                    <div className="text-center text-white mt-20">Getting Started Tutorial</div>
                   </div>
                   <CardBody className="p-4">
-                    <h4 className="font-medium text-white">Introduction to Solar Panels</h4>
-                    <div className="text-xs text-gray-400 mt-1">3:45 • Beginner</div>
+                    <h4 className="font-semibold text-white mb-1">Introduction to Solar Panels</h4>
+                    <div className="text-sm text-gray-400">3:45 • Beginner</div>
                   </CardBody>
                 </Card>
                 
-                <Card className="bg-[#2A1A1A] border-none">
-                  <div className="h-40 bg-[#3A1A1A] flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
-                      <PlayCircle size={48} className="text-white opacity-80 mb-4" />
+                <Card className="bg-[#2A1A1A] border-gray-800 border hover:border-gray-700 transition-colors cursor-pointer group">
+                  <div className="relative h-48 bg-gradient-to-br from-[#3A1A1A] to-[#2A1A1A] overflow-hidden">
+                    <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-[#E9423A] rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                          <PlayCircle size={32} className="text-white" />
+                        </div>
+                        <div className="text-white font-medium">Dashboard Guide</div>
+                      </div>
                     </div>
-                    <div className="text-center text-white mt-20">Dashboard Tutorial</div>
                   </div>
                   <CardBody className="p-4">
-                    <h4 className="font-medium text-white">Understanding Your Dashboard</h4>
-                    <div className="text-xs text-gray-400 mt-1">5:12 • Beginner</div>
+                    <h4 className="font-semibold text-white mb-1">Understanding Your Dashboard</h4>
+                    <div className="text-sm text-gray-400">5:12 • Beginner</div>
                   </CardBody>
                 </Card>
                 
-                <Card className="bg-[#2A1A1A] border-none">
-                <div className="h-40 bg-[#3A1A1A] flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
-                      <PlayCircle size={48} className="text-white opacity-80 mb-4" />
+                <Card className="bg-[#2A1A1A] border-gray-800 border hover:border-gray-700 transition-colors cursor-pointer group">
+                  <div className="relative h-48 bg-gradient-to-br from-[#3A1A1A] to-[#2A1A1A] overflow-hidden">
+                    <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-[#E9423A] rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                          <PlayCircle size={32} className="text-white" />
+                        </div>
+                        <div className="text-white font-medium">Analytics Deep Dive</div>
+                      </div>
                     </div>
-                    <div className="text-center text-white mt-20">Analytics Tutorial</div>
                   </div>
                   <CardBody className="p-4">
-                    <h4 className="font-medium text-white">Analyzing Your Performance</h4>
-                    <div className="text-xs text-gray-400 mt-1">7:23 • Intermediate</div>
+                    <h4 className="font-semibold text-white mb-1">Analyzing Your Performance</h4>
+                    <div className="text-sm text-gray-400">7:23 • Intermediate</div>
                   </CardBody>
                 </Card>
                 
-                <Card className="bg-[#2A1A1A] border-none">
-                  <div className="h-40 bg-[#3A1A1A] flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-black opacity-50 flex items-center justify-center">
-                      <PlayCircle size={48} className="text-white opacity-80 mb-4" />
+                <Card className="bg-[#2A1A1A] border-gray-800 border hover:border-gray-700 transition-colors cursor-pointer group">
+                  <div className="relative h-48 bg-gradient-to-br from-[#3A1A1A] to-[#2A1A1A] overflow-hidden">
+                    <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-[#E9423A] rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                          <PlayCircle size={32} className="text-white" />
+                        </div>
+                        <div className="text-white font-medium">NRG Tokens</div>
+                      </div>
                     </div>
-                    <div className="text-center text-white mt-20">NRG Token Tutorial</div>
                   </div>
                   <CardBody className="p-4">
-                    <h4 className="font-medium text-white">Understanding NRG Tokens</h4>
-                    <div className="text-xs text-gray-400 mt-1">6:48 • Intermediate</div>
+                    <h4 className="font-semibold text-white mb-1">Understanding NRG Tokens</h4>
+                    <div className="text-sm text-gray-400">6:48 • Intermediate</div>
                   </CardBody>
                 </Card>
               </div>
             </CardBody>
           </Card>
         </div>
-        
-        <div className="md:col-span-1">
-          <Card className="bg-[#1A1A1A] border-none mb-6">
-            <CardBody className="p-6">
-              <h3 className="text-xl text-white font-medium mb-4">Contact Support</h3>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="bg-[#1A1A1A] border-gray-800 border">
+            <CardBody className="p-8">
+              <h2 className="text-2xl text-white font-semibold mb-6">Contact Support</h2>
               
               <div className="space-y-4">
-                <div className="bg-[#2A1A1A] p-4 rounded-lg flex items-center cursor-pointer hover:bg-[#3A1A1A] transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-[#3A1A1A] flex items-center justify-center text-[#E9423A] mr-3">
-                    <Mail size={18} />
+                <div className="bg-[#2A1A1A] border border-gray-800 p-6 rounded-xl flex items-center cursor-pointer hover:bg-[#3A2A2A] hover:border-gray-700 transition-all duration-200 group">
+                  <div className="w-12 h-12 rounded-xl bg-[#E9423A] flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
+                    <Mail size={20} className="text-white" />
                   </div>
-                  <div>
-                    <div className="font-medium text-white">Email Support</div>
-                    <div className="text-xs text-gray-400">Response within 24 hours</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-white mb-1">Email Support</div>
+                    <div className="text-sm text-gray-400">Response within 24 hours</div>
                   </div>
-                  <ChevronRight size={16} className="ml-auto text-gray-400" />
+                  <ChevronRight size={20} className="text-gray-400 group-hover:text-white transition-colors" />
                 </div>
                 
-                <div className="bg-[#2A1A1A] p-4 rounded-lg flex items-center cursor-pointer hover:bg-[#3A1A1A] transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-[#3A1A1A] flex items-center justify-center text-[#E9423A] mr-3">
-                    <MessageCircle size={18} />
+                <div className="bg-[#2A1A1A] border border-gray-800 p-6 rounded-xl flex items-center cursor-pointer hover:bg-[#3A2A2A] hover:border-gray-700 transition-all duration-200 group">
+                  <div className="w-12 h-12 rounded-xl bg-[#E9423A] flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
+                    <MessageCircle size={20} className="text-white" />
                   </div>
-                  <div>
-                    <div className="font-medium text-white">Live Chat</div>
-                    <div className="text-xs text-gray-400">Available 9am-5pm ET</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-white mb-1">Live Chat</div>
+                    <div className="text-sm text-gray-400">Available 9am-5pm ET</div>
                   </div>
-                  <ChevronRight size={16} className="ml-auto text-gray-400" />
+                  <ChevronRight size={20} className="text-gray-400 group-hover:text-white transition-colors" />
                 </div>
               </div>
             </CardBody>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-none">
-            <CardBody className="p-6">
-              <h3 className="text-xl text-white font-medium mb-4">Documentation</h3>
+          <Card className="bg-[#1A1A1A] border-gray-800 border">
+            <CardBody className="p-8">
+              <h2 className="text-2xl text-white font-semibold mb-6">Documentation</h2>
               
               <div className="space-y-4">
-                <div className="bg-[#2A1A1A] p-4 rounded-lg flex items-center cursor-pointer hover:bg-[#3A1A1A] transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-[#3A1A1A] flex items-center justify-center text-[#E9423A] mr-3">
-                    <FileText size={18} />
+                <div className="bg-[#2A1A1A] border border-gray-800 p-6 rounded-xl flex items-center cursor-pointer hover:bg-[#3A2A2A] hover:border-gray-700 transition-all duration-200 group">
+                  <div className="w-12 h-12 rounded-xl bg-[#E9423A] flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
+                    <FileText size={20} className="text-white" />
                   </div>
-                  <div>
-                    <div className="font-medium text-white">User Guide</div>
-                    <div className="text-xs text-gray-400">Complete platform documentation</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-white mb-1">User Guide</div>
+                    <div className="text-sm text-gray-400">Complete platform documentation</div>
                   </div>
-                  <ChevronRight size={16} className="ml-auto text-gray-400" />
+                  <ChevronRight size={20} className="text-gray-400 group-hover:text-white transition-colors" />
                 </div>
                 
-                <div className="bg-[#2A1A1A] p-4 rounded-lg flex items-center cursor-pointer hover:bg-[#3A1A1A] transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-[#3A1A1A] flex items-center justify-center text-[#E9423A] mr-3">
-                    <FileText size={18} />
+                <div className="bg-[#2A1A1A] border border-gray-800 p-6 rounded-xl flex items-center cursor-pointer hover:bg-[#3A2A2A] hover:border-gray-700 transition-all duration-200 group">
+                  <div className="w-12 h-12 rounded-xl bg-[#E9423A] flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
+                    <FileText size={20} className="text-white" />
                   </div>
-                  <div>
-                    <div className="font-medium text-white">API Documentation</div>
-                    <div className="text-xs text-gray-400">For developers</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-white mb-1">API Documentation</div>
+                    <div className="text-sm text-gray-400">For developers</div>
                   </div>
-                  <ChevronRight size={16} className="ml-auto text-gray-400" />
+                  <ChevronRight size={20} className="text-gray-400 group-hover:text-white transition-colors" />
                 </div>
                 
-                <div className="bg-[#2A1A1A] p-4 rounded-lg flex items-center cursor-pointer hover:bg-[#3A1A1A] transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-[#3A1A1A] flex items-center justify-center text-[#E9423A] mr-3">
-                    <FileText size={18} />
+                <div className="bg-[#2A1A1A] border border-gray-800 p-6 rounded-xl flex items-center cursor-pointer hover:bg-[#3A2A2A] hover:border-gray-700 transition-all duration-200 group">
+                  <div className="w-12 h-12 rounded-xl bg-[#E9423A] flex items-center justify-center mr-4 group-hover:scale-105 transition-transform">
+                    <FileText size={20} className="text-white" />
                   </div>
-                  <div>
-                    <div className="font-medium text-white">Legal Documents</div>
-                    <div className="text-xs text-gray-400">Terms, privacy, and more</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-white mb-1">Legal Documents</div>
+                    <div className="text-sm text-gray-400">Terms, privacy, and more</div>
                   </div>
-                  <ChevronRight size={16} className="ml-auto text-gray-400" />
+                  <ChevronRight size={20} className="text-gray-400 group-hover:text-white transition-colors" />
                 </div>
               </div>
             </CardBody>
