@@ -2,7 +2,12 @@ import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Button, 
-  Tooltip
+  Tooltip,
+  Modal,
+  ModalContent,
+  ModalBody,
+  ModalHeader,
+  ModalFooter,
 } from "@nextui-org/react";
 import { 
   Wallet as WalletIcon, 
@@ -26,6 +31,7 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
   const navigate = useNavigate();
   const { publicKey, wallet, disconnect } = useWallet();
   const [username, setUsername] = useState<string | null>("John Doe");
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const storedUsername = localStorage.getItem("username");
@@ -34,12 +40,24 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     }
   }, []);
 
-  const handleLogout = async () => {
+   const handleLogout = async () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = async () => {
     if (disconnect) {
       await disconnect();
     }
+
     localStorage.removeItem("web3AuthSession");
+    localStorage.setItem("walletConnected", "false");
+
     navigate("/");
+    setIsLogoutModalOpen(false);
+  };
+
+  const cancelLogout = () => {
+    setIsLogoutModalOpen(false);
   };
 
   const handleBuyPanels = () => {
@@ -194,7 +212,36 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
           {/* Page content */}
           {children}
         </div>
-      </div>     
+      </div>   
+      {/* Logout Modal */}
+      <Modal
+        isOpen={isLogoutModalOpen}
+        onClose={cancelLogout}
+        className="bg-[#1A1A1A] text-white"
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            Confirm Logout
+          </ModalHeader>
+          <ModalBody>
+            <p>Are you sure do you want to logout?</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              className="bg-transparent text-gray-400 hover:bg-[#2A1A1A]"
+              onPress={cancelLogout}
+            >
+              No
+            </Button>
+            <Button
+              className="bg-[#E9423A] text-white"
+              onPress={confirmLogout}
+            >
+              Yes
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>  
     </div>
   );
 };
