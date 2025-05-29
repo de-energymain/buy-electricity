@@ -1,21 +1,12 @@
 import { useState, useEffect } from "react";
 import {
-  Card,
-  CardBody,
   Button,
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
   Input,
   Chip,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  Pagination
 } from "@nextui-org/react";
 import {
   ArrowDown,
