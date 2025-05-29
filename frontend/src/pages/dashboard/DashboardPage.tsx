@@ -37,7 +37,7 @@ function DashboardPage() {
   const [activeTab, setActiveTab] = useState("week");
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [nodes, setNodes] = useState<NodeData[]>([]);
-  const [username, setUsername] = useState<string | null>(null);
+  //const [username, setUsername] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [stats] = useState({
     energyGenerated: 900,
@@ -69,10 +69,11 @@ function DashboardPage() {
         if (data.userInfo && data.userInfo.email && data.userInfo.name) {
           // Store user info for potential future use
           console.log("User authenticated:", data.userInfo.name, data.userInfo.email);
-          setUsername(data.userInfo.name);
+          //setUsername(data.userInfo.name);
           localStorage.setItem("username", data.userInfo.name);
           if (data.publicKey) {
             console.log("Public key available:", data.publicKey);
+            localStorage.setItem("publicKey", data.publicKey);
           }
         }
       } catch (e) {
@@ -185,7 +186,7 @@ function DashboardPage() {
   return (
     <DashboardTemplate title="Dashboard" activePage="dashboard">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Welcome back, {username}</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Welcome Back!</h1>
         <p className="text-gray-400">Here are your solar investments at a glance.</p>
       </div>
 
@@ -501,5 +502,5 @@ function DashboardPage() {
     </DashboardTemplate>
   );
 }
-
+ 
 export default DashboardPage;
