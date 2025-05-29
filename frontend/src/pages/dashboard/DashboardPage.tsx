@@ -73,6 +73,7 @@ function DashboardPage() {
           localStorage.setItem("username", data.userInfo.name);
           if (data.publicKey) {
             console.log("Public key available:", data.publicKey);
+            localStorage.setItem("publicKey", data.publicKey);
           }
         }
       } catch (e) {

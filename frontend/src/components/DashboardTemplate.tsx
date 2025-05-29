@@ -31,12 +31,18 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
   const navigate = useNavigate();
   const { publicKey, wallet, disconnect } = useWallet();
   const [username, setUsername] = useState<string | null>("John Doe");
+  const [web3AuthPublicKey, setWeb3AuthPublicKey] = useState<string | null>(null);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const storedUsername = localStorage.getItem("username");
     if (storedUsername) {
       setUsername(storedUsername);
+    }
+    
+    const storedPublicKey = localStorage.getItem("publicKey");
+    if (storedPublicKey) {
+      setWeb3AuthPublicKey(storedPublicKey);
     }
   }, []);
 
@@ -97,7 +103,7 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
         
         <div className="flex items-center space-x-4">         
           {/* Connected Wallet Display */}
-          {publicKey && (
+          {(publicKey || web3AuthPublicKey) && (
             <div className="flex items-center bg-[#1A1A1A] rounded-lg p-2 pr-3">
               <div className="w-6 h-6 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A] mr-2">
                 <WalletIcon size={14} />
@@ -105,13 +111,13 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
               <div className="flex flex-col">
                 <div className="text-xs text-gray-400">{wallet?.adapter.name || "Wallet"}</div>
                 <div className="flex items-center">
-                  <span className="text-xs font-mono">{truncateAddress(publicKey.toString())}</span>
+                  <span className="text-xs font-mono">{publicKey ? truncateAddress(publicKey.toString()) : truncateAddress(web3AuthPublicKey || " ") }</span>
                   <Tooltip content="View on Explorer">
                     <Button
                       isIconOnly
                       size="sm"
                       className="ml-1 bg-transparent min-w-0 w-5 h-5 p-0"
-                      onPress={() => window.open(`https://explorer.solana.com/address/${publicKey.toString()}?cluster=devnet`, '_blank')}
+                      onPress={() => window.open(`https://explorer.solana.com/address/${publicKey || web3AuthPublicKey}?cluster=devnet`, '_blank')}
                     >
                       <ExternalLink size={12} className="text-gray-400" />
                     </Button>
