@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Button, 
@@ -25,6 +25,14 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 }) => {
   const navigate = useNavigate();
   const { publicKey, wallet, disconnect } = useWallet();
+  const [username, setUsername] = useState<string | null>("John Doe");
+
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
 
   const handleLogout = async () => {
     if (disconnect) {
@@ -64,7 +72,7 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
             <img src={logo} alt="NRG logo" className="h-16 w-16" />
           </div>
           <div className="flex flex-col">
-            <h2 className="text-lg font-medium">Hello John Doe</h2>
+            <h2 className="text-lg font-medium">Hello {username}</h2>
             <p className="text-xs text-gray-400">Last Updated: {getDate()}</p>
           </div>
         </div>
