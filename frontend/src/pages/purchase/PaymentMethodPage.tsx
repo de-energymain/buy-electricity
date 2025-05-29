@@ -92,6 +92,10 @@ export default function PaymentMethodPage() {
   const [lockSeconds, setLockSeconds] = useState(22);
   const [walletBalance, setWalletBalance] = useState<number>(0);
 
+  const walletAddress = publicKey
+  ? publicKey.toBase58()
+  : web3AuthWalletInfo?.publicKey ?? "Unknown";
+
   //Exchange rates
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ sol: 20, usdc: 1 });
   const [isLoadingRates, setIsLoadingRates] = useState(true);
@@ -345,6 +349,7 @@ export default function PaymentMethodPage() {
             paymentMethod: selectedPayment,
             tokenAmount,
             wallet: wallet?.adapter.name ?? "Unknown",
+            walletAddress: walletAddress,
             signature
           }
         });
