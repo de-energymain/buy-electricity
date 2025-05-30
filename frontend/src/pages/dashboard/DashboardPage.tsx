@@ -31,9 +31,17 @@ interface ChartData {
   value: number;
 }
 
+interface UserData {
+  loginMethod: string;
+  userEmail?: string;
+  userName?: string;
+  wallet?: string;
+  walletID?: string;
+}
+
 function DashboardPage() {
   const navigate = useNavigate();
-  const { disconnect, connected } = useWallet();
+  const { disconnect, connected, wallet } = useWallet();
   const [activeTab, setActiveTab] = useState("week");
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [nodes, setNodes] = useState<NodeData[]>([]);
@@ -53,6 +61,28 @@ function DashboardPage() {
     lowest: 59,
     highest: 72
   });
+
+  //Update user in database
+  const updateUserInDatabase = async (userData: UserData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user data');
+      }
+
+      const data = await response.json();
+      console.log('User data updated successfully:', data);
+    } catch (error) {
+      console.error('Error updating user data:', error);
+    }
+  };
 
   // Update authentication status when wallet connection changes
   useEffect(() => {
@@ -75,12 +105,28 @@ function DashboardPage() {
             console.log("Public key available:", data.publicKey);
             localStorage.setItem("publicKey", data.publicKey);
           }
+
+          updateUserInDatabase({
+            loginMethod: "email",
+            userName: data.userInfo.name,
+            userEmail: data.userInfo.email,
+            walletID: data.publicKey,
+          });
         }
       } catch (e) {
         console.error("Error parsing Web3Auth session", e);
       }
     }
-  }, []);
+        if (connected && wallet) {
+      const walletPublicKey = (wallet.adapter as { publicKey?: { toString: () => string } }).publicKey?.toString() || "";
+      updateUserInDatabase({
+        loginMethod: "wallet",
+        wallet: wallet.adapter?.name || "Unknown Wallet",
+        walletID: walletPublicKey,
+      });
+    }
+  }, [connected, wallet]);
+
 
   // Generate mock data on component mount
   useEffect(() => {
