@@ -20,7 +20,7 @@ const UserSchema : Schema = new Schema({
     },
     userName: { type: String},
     wallet: { type: String },
-    walletID: { type: String},
+    walletID: { type: String, unique: true},
 }, {
     timestamps: true,
 });
