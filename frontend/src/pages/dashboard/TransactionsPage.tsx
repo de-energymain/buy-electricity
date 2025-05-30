@@ -20,9 +20,20 @@ import {
   XCircle,
   Download,
   ExternalLink,
-  Wallet
+  Wallet,
+  EthernetPort
 } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
+
+// Token interface
+interface Token {
+  symbol: string;
+  name: string;
+  icon: string;
+  balance: number;
+  value: number;
+  priceChange: number;
+}
 
 // Transaction interface
 interface Transaction {
@@ -46,10 +57,43 @@ const TransactionsPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string[]>(["all"]);
   const [timeFilter, setTimeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalBalance, setTotalBalance] = useState<number>(0);
   const rowsPerPage = 10;
 
   // Generate mock data
   useEffect(() => {
+    //Mock tokens (from wallet page)
+    const mockTokens: Token[] = [
+      {
+        symbol: "NRG",
+        name: "Energy Token",
+        icon: "✨",
+        balance: 613.42,
+        value: 1226.84, // $2 per NRG
+        priceChange: 4.2
+      },
+      {
+        symbol: "SOL",
+        name: "Solana",
+        icon: "☀️",
+        balance: 2.85,
+        value: 371.05, // $130 per SOL
+        priceChange: -1.8
+      },
+      {
+        symbol: "USDC",
+        name: "USD Coin",
+        icon: "💵",
+        balance: 150.25,
+        value: 150.25, // 1:1 with USD
+        priceChange: 0.1
+      }
+    ];
+
+    // Calculate total balance
+    const total = mockTokens.reduce((sum, token) => sum + token.value, 0);
+    setTotalBalance(total);
+    
     const types: ("receive" | "send" | "swap" | "stake" | "unstake" | "reward")[] = [
       "receive", "send", "swap", "stake", "unstake", "reward"
     ];
@@ -224,7 +268,7 @@ const TransactionsPage: React.FC = () => {
           </div>         
         </div>
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-green-500/30">
             <div className="flex justify-between items-start mb-4">
               <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Received</div>
@@ -261,7 +305,7 @@ const TransactionsPage: React.FC = () => {
             <div className="flex justify-between items-start mb-4">
               <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Network Fees</div>
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20">
-                <Wallet size={20} className="text-blue-500" />
+                <EthernetPort size={20} className="text-blue-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-white mb-2">
@@ -270,6 +314,19 @@ const TransactionsPage: React.FC = () => {
                 .toFixed(4)}
             </div>
             <div className="text-sm text-gray-400">SOL Fees</div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-purple-500/30">
+            <div className="flex justify-between items-start mb-4">
+              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Balance</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-purple-500/10 rounded-xl flex items-center justify-center border border-purple-500/20">
+                <Wallet size={20} className="text-purple-500" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-white mb-2">
+              ${totalBalance.toFixed(2)}
+            </div>
+            <div className="text-sm text-gray-400">Available Balance</div>
           </div>
         </div>
       {/* Filters */}
