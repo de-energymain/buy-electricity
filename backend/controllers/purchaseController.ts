@@ -20,3 +20,21 @@ export const getAllPurchases = async ( req: Request, res: Response ) => {
         res.status(400).json({ message: (error as Error).message });
     }
 };
+
+export const deletePurchase = async ( req: Request, res: Response ) => {
+    try {
+        const { transactionHash } = req.params;
+        const deletePurchase = await Purchase.findOneAndDelete({
+            transactionHash : transactionHash
+        });
+        if( !deletePurchase ) {
+            res.status(404).json( {message : "Purchase not found."});
+        }
+        res.status(200).json({
+            message: "Purchase deletion successful.",
+            deletePurchase
+        });
+    } catch (error: unknown) {
+        res.status(500).json({ message: (error as Error).message });
+    }
+};
