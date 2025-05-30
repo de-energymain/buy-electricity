@@ -148,7 +148,7 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
               Dashboard
             </Button>
             <Button 
-              className={`px-4 py-2 ${activePage === 'analytics' ? 'text-white border-b-2 border-[#E9423A]' : 'text-gray-400 hover:text-white'} bg-transparent rounded-none`}
+              className={`hidden px-4 py-2 ${activePage === 'analytics' ? 'text-white border-b-2 border-[#E9423A]' : 'text-gray-400 hover:text-white'} bg-transparent rounded-none`}
               onPress={() => navigate("/dashboard/analytics")}
             >
               Analytics
@@ -166,13 +166,13 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
               Transactions
             </Button>
             <Button 
-              className={`px-4 py-2 ${activePage === 'wallet' ? 'text-white border-b-2 border-[#E9423A]' : 'text-gray-400 hover:text-white'} bg-transparent rounded-none`}
+              className={`hidden px-4 py-2 ${activePage === 'wallet' ? 'text-white border-b-2 border-[#E9423A]' : 'text-gray-400 hover:text-white'} bg-transparent rounded-none`}
               onPress={() => navigate("/dashboard/wallet")}
             >
               Wallet
             </Button>
             <Button 
-              className={`px-4 py-2 ${activePage === 'marketplace' ? 'text-white border-b-2 border-[#E9423A]' : 'text-gray-400 hover:text-white'} bg-transparent rounded-none`}
+              className={`hidden px-4 py-2 ${activePage === 'marketplace' ? 'text-white border-b-2 border-[#E9423A]' : 'text-gray-400 hover:text-white'} bg-transparent rounded-none`}
               onPress={() => navigate("/dashboard/marketplace")}
             >
               Marketplace

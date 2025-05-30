@@ -15,6 +15,7 @@ import {
   FormContainer, 
   cardClasses
 } from "../../shared/styles";
+import { createPurchase } from "../../services/purchaseApi";
 
 // Success page order details type
 interface SuccessDetails {
@@ -26,7 +27,22 @@ interface SuccessDetails {
   cost: number;
   paymentMethod: string;
   tokenAmount: number;
+  walletAddress: string;
   wallet: string;
+}
+
+interface PurchaseData {
+  farmName: string;
+  location: string,
+  walletAddress: string,
+  paymentMethod: string,
+  tokenAmount: number,
+  panelsPurchased: number,
+  cost: number,
+  capacity: number,
+  output: number,
+  transactionHash: string,
+  purchaseDate: string,
 }
 
 function PaymentSuccessPage() {
@@ -76,14 +92,49 @@ function PaymentSuccessPage() {
     navigate("/");
   };
 
-  // If no orderDetails, show nothing (will redirect)
-  if (!orderDetails) return null;
-
   const handleCopy = () => {
     navigator.clipboard.writeText(entireHash).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     })
+  }
+
+  useEffect(() => {
+    const savePurchase = async () => {
+      if (!orderDetails || !entireHash) return;
+      
+      try {
+        const purchaseData: PurchaseData = {
+          farmName: orderDetails.farm,
+          location: orderDetails.location,
+          walletAddress: orderDetails.walletAddress,
+          paymentMethod: orderDetails.paymentMethod,
+          tokenAmount: orderDetails.tokenAmount,
+          panelsPurchased: orderDetails.panels,
+          cost: orderDetails.cost,
+          capacity: orderDetails.capacity,
+          output: orderDetails.output,
+          transactionHash: entireHash,
+          purchaseDate: new Date().toISOString()
+        };
+        console.log("Purchase data:", purchaseData);
+        await createPurchase(purchaseData);
+      } catch (error) {
+        console.error('Failed to save purchase:', error);
+      }
+    };
+
+    savePurchase();
+
+  }, [location.state, entireHash, orderDetails]);
+
+  // If no orderDetails, show nothing (will redirect)
+  if (!orderDetails) {
+    return (
+      <FormContainer>
+        <div className="text-center text-white py-10">Loading order details...</div>
+      </FormContainer>
+    );
   }
 
   return (
@@ -214,20 +265,20 @@ function PaymentSuccessPage() {
             </div>
 
             {/* Buttons */}
-<div className="flex w-full gap-3">
-  <Button 
-    className="w-full bg-[#E9423A] text-white py-6 rounded-none"
-    onPress={handleViewDashboard}
-  >
-    View Dashboard
-  </Button>
-  <Button 
-    className="w-full bg-transparent text-white border border-white py-6 rounded-none"
-    onPress={handlePurchaseMore}
-  >
-    Purchase More Panels
-  </Button>
-</div>
+            <div className="flex w-full gap-3">
+              <Button 
+                className="w-full bg-[#E9423A] text-white py-6 rounded-none"
+                onPress={handleViewDashboard}
+              >
+                View Dashboard
+              </Button>
+              <Button 
+                className="w-full bg-transparent text-white border border-white py-6 rounded-none"
+                onPress={handlePurchaseMore}
+              >
+                Purchase More Panels
+              </Button>
+            </div>
           </CardBody>
         </Card>
       </div>
