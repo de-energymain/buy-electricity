@@ -29,6 +29,7 @@ export const deletePurchase = async ( req: Request, res: Response ) => {
         });
         if( !deletePurchase ) {
             res.status(404).json( {message : "Purchase not found."});
+            return; 
         }
         res.status(200).json({
             message: "Purchase deletion successful.",
