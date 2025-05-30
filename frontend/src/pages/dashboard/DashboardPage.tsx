@@ -195,6 +195,34 @@ function DashboardPage() {
         
         {/* Left Column */}
         <div className="lg:col-span-1 space-y-6">
+            <div>
+            <h2 className="text-xl font-semibold text-white mb-4">Your panels</h2>
+            <Card className="bg-[#1A1A1A] border-none">
+              <CardBody className="p-4">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium text-white">15 Panels</h3>
+                  <p className="text-sm text-gray-400">Multiple Solar Farms • India</p>
+                </div>
+                
+                <div className="flex items-center p-3 bg-[#2A1A1A] rounded-lg mb-4">
+                  <div className="w-8 h-8 mr-3 flex items-center justify-center text-lg">
+                    ⚡
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-white">Active solar farm investments</div>
+                    <div className="text-xs text-gray-400">Generating clean energy across {nodes.length} nodes.</div>
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full bg-transparent border border-[#E9423A] text-white hover:bg-[#2A1A1A]"
+                  onPress={() => navigate('/dashboard/panels')}
+                >
+                  View All Panels
+                </Button>
+              </CardBody>
+            </Card>
+          </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-4">Your solar impact</h2>
             <div className="grid grid-cols-1 gap-4">
@@ -230,35 +258,6 @@ function DashboardPage() {
                 </CardBody>
               </Card>
             </div>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold text-white mb-4">Your plan</h2>
-            <Card className="bg-[#1A1A1A] border-none">
-              <CardBody className="p-4">
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium text-white">Clean Energy Investment Portfolio</h3>
-                  <p className="text-sm text-gray-400">Multiple Solar Farms • India</p>
-                </div>
-                
-                <div className="flex items-center p-3 bg-[#2A1A1A] rounded-lg mb-4">
-                  <div className="w-8 h-8 mr-3 flex items-center justify-center text-lg">
-                    ⚡
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-white">Active solar farm investments</div>
-                    <div className="text-xs text-gray-400">Generating clean energy across {nodes.length} nodes.</div>
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full bg-transparent border border-[#E9423A] text-white hover:bg-[#2A1A1A]"
-                  onPress={() => navigate('/dashboard/panels')}
-                >
-                  View All Panels
-                </Button>
-              </CardBody>
-            </Card>
           </div>
         </div>
 
@@ -322,87 +321,28 @@ function DashboardPage() {
           </div>
 
           {/* Performance Metrics Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">            
-            <Card className="bg-[#1A1A1A] border-none">
-              <CardBody className="p-6 text-white">
-                <h3 className="text-lg font-medium mb-4">Efficiency</h3>
-
-                {/* Circular Gauge */}
-                <div className="relative flex items-center justify-center my-4">
-                  <svg width="160" height="160" viewBox="0 0 160 160" className="transform -rotate-90">
-                    <defs>
-                      <linearGradient id="efficiencyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#E9423A" />
-                        <stop offset="100%" stopColor="#c62828" />
-                      </linearGradient>
-                    </defs>
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="70"
-                      stroke="#333"
-                      strokeWidth="12"
-                      fill="none"
-                    />
-                    <circle
-                      cx="80"
-                      cy="80"
-                      r="70"
-                      stroke="url(#efficiencyGradient)"
-                      strokeWidth="12"
-                      fill="none"
-                      strokeDasharray={2 * Math.PI * 70}
-                      strokeDashoffset={(1 - stats.efficiency / 100) * 2 * Math.PI * 70}
-                      strokeLinecap="round"
-                      transform="rotate (75, 80, 80) scale(-1, 1) translate(-160, 0)"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="text-3xl font-bold">{stats.efficiency}%</div>
-                    <div className="text-xs text-gray-400">Current</div>
-                  </div>
-                </div>
-
-                {/* Efficiency Stats */}
-                <div className="grid grid-cols-3 gap-2 text-center mt-6">
-                  <div>
-                    <div className="text-xs text-gray-400">Target</div>
-                    <div className="font-medium">{stats.target}%</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400">Lowest</div>
-                    <div className="font-medium">{stats.lowest}%</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400">Highest</div>
-                    <div className="font-medium">{stats.highest}%</div>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-
+          <div className="grid grid-cols-1">
             {/* Performance & Earnings */}
             <Card className="bg-[#1A1A1A] border-none">
-              <CardBody className="p-6">
+              <CardBody className="p-6 flex flex-col">
                 <h3 className="text-lg font-medium text-white mb-4">Performance & Earnings</h3>
 
-               {/* NRG Earnings */}
-              <div className="mb-6">
-                <div className="text-sm text-gray-400 mb-2">NRG Earnings</div>
-
-                <div className="flex items-center justify-between">
-                  <div className="text-3xl text-white font-bold">{stats.nrgEarnings} NRG</div>
-                  <div className="w-16 h-16 bg-[#2A1A1A] rounded-lg flex items-center justify-center text-[#E9423A] text-2xl">
-                    💰
+                {/* NRG Earnings */}
+                <div className="mb-6 text-center">
+                  <div className="w-24 h-24 bg-[#2A1A1A] rounded-lg flex items-center justify-center text-[#E9423A] border-2 border-[#E9423A] text-2xl mt-2 mx-auto">
+                    <span className="text-4xl">💰</span>
                   </div>
+                  <div className="text-sm text-gray-400 mt-4 mb-2">NRG Earnings</div>
+
+                  <div className="flex items-center justify-center">
+                    <div className="text-3xl text-white font-bold">{stats.nrgEarnings} NRG</div>
+                  </div>
+
+                  <div className="text-xs text-green-500 mt-1">+{stats.earningsChange}% from last month</div>
                 </div>
 
-                <div className="text-xs text-green-500 mt-1">+{stats.earningsChange}% from last month</div>
-              </div>
-
-
                 {/* Production Metrics */}
-                <div className="mt-14 grid grid-cols-2 gap-4">
+                <div className="mt-14 grid grid-cols-2 gap-4 w-full">
                   <div className="text-center">
                     <div className="text-sm text-gray-400">Estimated homes powered annually</div>
                     <div className="text-xl font-bold text-white">{Math.floor(stats.energyGenerated / 10)}</div>
@@ -418,7 +358,7 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Solar Nodes Table */}
+      {/* Solar Nodes Table
       <Card className="bg-[#1A1A1A] border-none">
         <CardBody className="p-6 text-white">
           <h3 className="text-lg font-medium mb-4">Your Solar Nodes</h3>
@@ -468,7 +408,7 @@ function DashboardPage() {
             </table>
           </div>
         </CardBody>
-      </Card>
+      </Card>*/}
 
       {/* Logout Modal */}
       <Modal

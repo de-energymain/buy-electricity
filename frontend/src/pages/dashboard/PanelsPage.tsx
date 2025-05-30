@@ -4,7 +4,6 @@ import {
   CardBody,
   Button,
   Progress,
-  Switch,
   Input,
   Divider,
   Chip
@@ -17,7 +16,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  MoreVertical
 } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
@@ -99,7 +97,7 @@ const PanelsPage: React.FC = () => {
     setFilteredPanels(filtered);
   }, [searchQuery, panels]);
 
-  // Toggle panel active status
+  /* Toggle panel active status
   const handleTogglePanel = (id: string, active: boolean) => {
     setPanels(prevPanels => 
       prevPanels.map(panel => 
@@ -120,6 +118,7 @@ const PanelsPage: React.FC = () => {
     if (efficiency >= 65) return "warning";
     return "danger";
   };
+  */
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -240,14 +239,6 @@ const PanelsPage: React.FC = () => {
                       <p className="text-sm text-gray-400">{panel.farm}</p>
                     </div>
                   </div>
-                  
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    className="bg-transparent text-gray-400 hover:text-white hover:bg-[#3A3A3A]"
-                  >
-                    <MoreVertical size={16} />
-                  </Button>
                 </div>
                 
                 <div className="space-y-4">
@@ -263,7 +254,7 @@ const PanelsPage: React.FC = () => {
                     </Chip>
                   </div>
                   
-                  <div className="flex items-center justify-between">
+                  {/* <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-400">Efficiency</span>
                     <div className="flex items-center gap-2">
                       <Progress 
@@ -275,27 +266,11 @@ const PanelsPage: React.FC = () => {
                       />
                       <span className="text-sm font-medium text-white">{panel.efficiency}%</span>
                     </div>
-                  </div>
+                  </div> */}
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-400">Daily Output</span>
                     <span className="text-sm font-medium text-white">{panel.dailyOutput} kWh</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">Master Control</span>
-                    <div className="flex items-center gap-2">
-                      <Switch 
-                        size="sm"
-                        isSelected={panel.active}
-                        isDisabled={panel.status !== 'active'}
-                        onChange={(e) => handleTogglePanel(panel.id, e.target.checked)}
-                        classNames={{
-                          wrapper: "group-data-[selected=true]:bg-[#E9423A]"
-                        }}
-                      />
-                      <span className="text-sm text-white">{panel.active ? 'On' : 'Off'}</span>
-                    </div>
                   </div>
                 </div>
                 
@@ -308,7 +283,7 @@ const PanelsPage: React.FC = () => {
                   <Button
                     size="sm"
                     endContent={<ChevronRight size={14} />}
-                    className="bg-transparent text-[#E9423A] hover:bg-[#E9423A]/10 font-medium"
+                    className="hidden bg-transparent text-[#E9423A] hover:bg-[#E9423A]/10 font-medium"
                   >
                     Details
                   </Button>
@@ -320,7 +295,7 @@ const PanelsPage: React.FC = () => {
       </div>
       
       {/* Panel Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] border-none">
           <CardBody className="p-6">
             <h3 className="text-lg text-white font-medium mb-4">Performance by Location</h3>
