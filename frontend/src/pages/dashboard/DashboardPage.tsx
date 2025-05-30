@@ -160,10 +160,10 @@ function DashboardPage() {
     generateChartData(key as string);
   };
 
-  const handleNodeDetails = (nodeId: string) => {
+  /*const handleNodeDetails = (nodeId: string) => {
     console.log(`View details for node: ${nodeId}`);
     navigate(`/dashboard/node/${nodeId}`);
-  };
+  };*/
 
   const confirmLogout = async () => {
     if (disconnect) {
