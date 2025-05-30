@@ -41,21 +41,21 @@ const SettingsPage: React.FC = () => {
                   Notifications
                 </Button>
                 <Button 
-                  className={`w-full justify-start rounded-none p-4 text-white ${activeTab === 'security' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
+                  className={`hidden w-full justify-start rounded-none p-4 text-white ${activeTab === 'security' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
                   onPress={() => setActiveTab("security")}
                   startContent={<Lock size={16} />}
                 >
                   Security
                 </Button>
                 <Button 
-                  className={`w-full justify-start rounded-none p-4 text-white ${activeTab === 'language' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
+                  className={`hidden w-full justify-start rounded-none p-4 text-white ${activeTab === 'language' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
                   onPress={() => setActiveTab("language")}
                   startContent={<Globe size={16} />}
                 >
                   Language
                 </Button>
                 <Button 
-                  className={`w-full justify-start rounded-none p-4 text-white ${activeTab === 'privacy' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
+                  className={`hidden w-full justify-start rounded-none p-4 text-white ${activeTab === 'privacy' ? 'bg-[#2A1A1A] border-l-4 border-[#E9423A]' : 'bg-transparent hover:bg-[#2A1A1A]'}`}
                   onPress={() => setActiveTab("privacy")}
                   startContent={<Shield size={16} />}
                 >
@@ -103,11 +103,11 @@ const SettingsPage: React.FC = () => {
                   </Button>
                 </div>
                 
-                <Divider className="my-6 bg-gray-800" />
+                <Divider className="hidden my-6 bg-gray-800" />
                 
-                <h3 className="text-xl font-medium mb-4 text-white">Wallet Information</h3>
+                <h3 className=" hidden text-xl font-medium mb-4 text-white">Wallet Information</h3>
                 
-                <div className="p-4 bg-[#2A1A1A] rounded-lg mb-4">
+                <div className="hidden p-4 bg-[#2A1A1A] rounded-lg mb-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm text-gray-400">Connected Wallet</div>
@@ -122,7 +122,7 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="p-4 bg-[#2A1A1A] rounded-lg">
+                <div className="hidden p-4 bg-[#2A1A1A] rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm text-gray-400">Google Account</div>
@@ -163,7 +163,7 @@ const SettingsPage: React.FC = () => {
                     <Switch defaultSelected color="danger" />
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
+                  <div className="hidden flex items-center justify-between p-4 bg-[#2A1A1A] rounded-lg">
                     <div>
                       <div className="font-medium text-white">Performance Alerts</div>
                       <div className="text-sm text-gray-400">Receive alerts about panel performance</div>
