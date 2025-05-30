@@ -4,6 +4,15 @@ import User, { IUser } from '../models/User';
 export const createUser = async (req : Request, res: Response ) => {
     try {
         const userData : IUser = req.body;
+
+        //check if user exists
+        const existingUser = await User.findOne({ walletID : userData.walletID });
+        if (existingUser) {
+            console.log('User with this Wallet ID already exists:', userData.walletID);
+            res.status(200).json(existingUser);
+            return;
+        }
+
         const newUser = new User(userData);
         const savedUser = await newUser.save();
         res.status(201).json(savedUser);
