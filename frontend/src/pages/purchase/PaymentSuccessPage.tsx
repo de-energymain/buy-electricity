@@ -29,6 +29,8 @@ interface SuccessDetails {
   tokenAmount: number;
   walletAddress: string;
   wallet: string;
+  dollarAmount?: number; // Add original dollar amount
+  calculatedKWh?: number; // Add calculated kWh
 }
 
 interface PurchaseData {
@@ -59,7 +61,8 @@ function PaymentSuccessPage() {
   useEffect(() => {
     // Make sure we have order details from the previous page
     if (location.state) {
-      setOrderDetails(location.state as SuccessDetails);
+      const stateData = location.state as SuccessDetails;
+      setOrderDetails(stateData);
       
       // Generate transaction hash
       const characters = "0123456789abcdef";
@@ -73,11 +76,11 @@ function PaymentSuccessPage() {
       setTransactionHash(displayHash);
       
       // Generate node token ID
-      const farmPrefix = (location.state as SuccessDetails).farm
+      const farmPrefix = stateData.farm
         .split(" ")
         .map(word => word.substring(0, 3).toUpperCase())
         .join("-");
-      setNodeToken(`${farmPrefix}-${(location.state as SuccessDetails).panels}`);
+      setNodeToken(`${farmPrefix}-${stateData.panels}`);
     } else {
       // If no state was passed, redirect to home
       navigate("/");
@@ -182,6 +185,25 @@ function PaymentSuccessPage() {
             <p className="text-white text-center mb-8">
               Your solar panel purchase was successful.
             </p>
+
+            {/* Show original dollar amount if available */}
+            {orderDetails.dollarAmount && (
+              <div className="w-full mb-4">
+                <Card className="w-full bg-[#222]">
+                  <CardBody className="p-4">
+                    <div className="text-sm text-gray-400 mb-1">Original Monthly Bill</div>
+                    <div className="text-white font-medium">
+                      ${orderDetails.dollarAmount}/month
+                      {orderDetails.calculatedKWh && (
+                        <span className="text-gray-400 text-sm ml-2">
+                          ({orderDetails.calculatedKWh.toFixed(0)} kWh)
+                        </span>
+                      )}
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
+            )}
 
             {/* Transaction Details */}
             <div className="w-full mb-8">

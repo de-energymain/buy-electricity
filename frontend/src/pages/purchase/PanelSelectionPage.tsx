@@ -93,12 +93,33 @@ const PanelSelectionPage: React.FC = () => {
     checkAuth();
   }, [connected]);
 
-  // Extract panels from query params if available
+  // Extract panels from query params if available, with support for both dollarAmount and kwh
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const panels = parseFloat(queryParams.get("panels") || "0");
+    
+    // Try to get dollarAmount first (new format), fallback to kwh (old format)
+    const dollarAmount = parseFloat(queryParams.get("dollarAmount") || "0");
+    const kwh = parseFloat(queryParams.get("kwh") || "0");
+    
     if (panels > 0) {
       setPanelQuantity(panels);
+    } else if (dollarAmount > 0) {
+      // Calculate panels from dollar amount if no panel count is provided
+      // Convert dollars to kWh first
+      const averageElectricityRate = 0.12;
+      const monthlyUsageKWh = dollarAmount / averageElectricityRate;
+      // Calculate panels needed
+      const effectiveMonthlyProduction = 3.75 * 0.8 * 30; // = 90
+      const requiredCapacity = monthlyUsageKWh / effectiveMonthlyProduction;
+      const requiredPanels = Math.ceil(requiredCapacity);
+      setPanelQuantity(requiredPanels);
+    } else if (kwh > 0) {
+      // Fallback for old kwh-based calculation
+      const effectiveMonthlyProduction = 3.75 * 0.8 * 30; // = 90
+      const requiredCapacity = kwh / effectiveMonthlyProduction;
+      const requiredPanels = Math.ceil(requiredCapacity);
+      setPanelQuantity(requiredPanels);
     }
   }, [location.search]);
 

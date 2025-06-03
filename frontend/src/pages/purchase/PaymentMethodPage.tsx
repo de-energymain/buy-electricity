@@ -11,7 +11,8 @@ import { ArrowLeft, Clock, Copy, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   FormContainer,
-  cardClasses
+  cardClasses,
+  secondaryButtonClasses
 } from "../../shared/styles";
 
 // Import wallet connection libraries
@@ -24,6 +25,7 @@ import { LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram, Keypair } from
 import nrgIcon from "../../assets/crypto/nrg-icon.svg";
 import solIcon from "../../assets/crypto/sol-icon.svg";
 import usdcIcon from "../../assets/crypto/usdc-icon.svg";
+import logo from "../../assets/logo.svg";
 
 // Payment method types
 type PaymentMethod = "NRG" | "SOL" | "USDC";
@@ -303,11 +305,6 @@ export default function PaymentMethodPage() {
     showToast("Copied", "Address copied to clipboard", "success", 2000);
   };
 
-  // const openExplorer = (address: string) => {
-  //   // Solana explorer URL for Devnet
-  //   window.open(`https://explorer.solana.com/address/${address}?cluster=devnet`, '_blank');
-  // };
-
   // Handle action based on authentication state
   const handlePaymentAction = () => {
     // If using Solana wallet or Web3Auth
@@ -369,15 +366,6 @@ export default function PaymentMethodPage() {
           if (!sessionData.privateKey) {
             throw new Error("Private key not available in session");
           }
-
-          // Debug the private key format
-          console.log("Private key type:", typeof sessionData.privateKey);
-          console.log("Private key length:",
-            typeof sessionData.privateKey === 'string'
-              ? sessionData.privateKey.length
-              : Array.isArray(sessionData.privateKey)
-                ? sessionData.privateKey.length
-                : Object.keys(sessionData.privateKey).length);
 
           // Handle different private key formats
           let privateKeyBytes;
@@ -509,11 +497,18 @@ export default function PaymentMethodPage() {
 
   return (
     <FormContainer>
-      <div className="w-full max-w-[420px] mx-auto relative z-10 h-full flex flex-col">
+      {/* Logo */}
+      <div className="flex justify-center relative z-10 mb-3">
+        <div className="w-20">
+          <img src={logo} alt="Renrg logo" />
+        </div>
+      </div>
+
+      <div className="w-full max-w-[420px] mx-auto relative z-10 flex flex-col">
         {/* Navigation Bar with Back button */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-start items-center mb-3">
           <Button
-            className="bg-transparent text-white px-0 min-w-0 h-8 justify-start"
+            className={secondaryButtonClasses}
             onPress={handleBack}
             startContent={<ArrowLeft size={20} />}
             disabled={isProcessingPayment}
@@ -523,29 +518,42 @@ export default function PaymentMethodPage() {
         </div>
 
         <Card className={`${cardClasses} w-full overflow-hidden`}>
-          <div className="p-4 bg-[#000000]">
-            <h2 className="text-2xl font-bold text-white mb-1 font-electrolize">Payment</h2>
-            <p className="text-sm text-gray-300 font-inter">Choose your payment method</p>
+          {/* Header */}
+          <div className="mt-3 p-3 bg-[#2F2F2F] rounded-lg shadow-inner w-full text-center">
+            <h2 className="text-2xl font-bold text-white mb-1 font-electrolize">
+              Payment
+            </h2>
+            <p className="text-xs text-white font-inter">
+              Choose your payment method
+            </p>
           </div>
-          <CardBody className="p-0 space-y-0 divide-y divide-gray-800 no-scrollbar">
-            {/* Order details section - more compact */}
-            <div className="p-4 bg-[#111111]">
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="flex justify-between"><span className="text-gray-400 text-sm">Panels:</span><span className="text-white">{orderDetails.panels}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400 text-sm">Capacity:</span><span className="text-white">{orderDetails.capacity.toFixed(2)} kW</span></div>
+
+          <CardBody className="p-4 bg-[#2F2F2F] space-y-4">
+            {/* Order details section - Improved layout */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-2 bg-[#1A1A1A] rounded">
+                  <div className="text-xs text-gray-400 mb-1">Solar Panels</div>
+                  <div className="text-lg font-bold text-white">{orderDetails.panels}</div>
+                </div>
+                <div className="p-2 bg-[#1A1A1A] rounded">
+                  <div className="text-xs text-gray-400 mb-1">Total Capacity</div>
+                  <div className="text-lg font-bold text-white">{orderDetails.capacity.toFixed(2)} kW</div>
+                </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-gray-800">
+              
+              <div className="p-3 bg-[#1A1A1A] rounded border-t-2 border-[#E9423A]">
                 <div className="flex justify-between items-center">
-                  <span className="text-white font-medium">Total:</span>
-                  <span className="text-white font-bold">${orderDetails.cost.toFixed(2)}</span>
+                  <span className="text-white font-medium">Total Amount</span>
+                  <span className="text-lg font-bold text-white">${orderDetails.cost.toFixed(2)}</span>
                 </div>
               </div>
             </div>
             
             {/* Payment method selection */}
-            <div className="p-4 bg-[#111111]">
-              <h3 className="text-xl font-bold text-white mb-3">Payment Method</h3>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-white mb-3">Payment Method</h3>
+              <div className="grid grid-cols-3 gap-2 mb-4">
                 {[
                   { method: 'NRG', icon: nrgIcon },
                   { method: 'SOL', icon: solIcon },
@@ -553,57 +561,63 @@ export default function PaymentMethodPage() {
                 ].map(({ method, icon }) => (
                   <div
                     key={method}
-                    className={`cursor-pointer transition-all border ${selectedPayment === method ? 'border-[#E9423A] bg-[#3A1A18]' : 'border-gray-700 bg-[#252525]'}`}
+                    className={`cursor-pointer transition-all border-2 rounded p-2 ${selectedPayment === method ? 'border-[#E9423A] bg-[#2A1A1A]' : 'border-gray-600 bg-[#1A1A1A] hover:border-gray-500'}`}
                     onClick={() => handleSelectPayment(method as PaymentMethod)}
                   >
-                    <div className="p-3 flex flex-col items-center justify-center h-full">
-                      <img src={icon} alt={method} className="w-8 h-8 mb-2" />
-                      <div className="text-sm font-bold text-white">{method}</div>
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <img src={icon} alt={method} className="w-6 h-6 mb-1" />
+                      <div className="text-xs font-bold text-white">{method}</div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mb-3 text-center">
-                <p className="text-sm text-gray-300">Amount Due in {selectedPayment}</p>
-                <p className="text-3xl font-bold text-white">{tokenAmount.toFixed(2)} {selectedPayment}</p>
-                <p className="text-sm text-gray-400">≈ ${orderDetails.cost.toFixed(2)} USD</p>
-                <div className="inline-block px-2 py-1 bg-yellow-500 bg-opacity-20 rounded text-xs text-yellow-400 mt-2">Devnet</div>
+              
+              {/* Amount display */}
+              <div className="text-center mb-3">
+                <p className="text-xs text-gray-300 mb-1">Amount Due in {selectedPayment}</p>
+                <p className="text-2xl font-bold text-white mb-1">{tokenAmount.toFixed(2)} {selectedPayment}</p>
+                <p className="text-xs text-gray-400">≈ ${orderDetails.cost.toFixed(2)} USD</p>
+                <div className="inline-block px-2 py-1 bg-yellow-600 bg-opacity-20 rounded-full text-xs text-yellow-400 mt-1">
+                  Devnet
+                </div>
               </div>
-              <div className="flex items-center justify-center text-sm text-[#E9423A]">
-                <Clock size={14} className="mr-1" />
+              
+              {/* Price lock timer */}
+              <div className="flex items-center justify-center text-xs text-[#E9423A] mb-4">
+                <Clock size={12} className="mr-1" />
                 <span>Price locked for {lockMinutes}:{lockSeconds < 10 ? `0${lockSeconds}` : lockSeconds}</span>
               </div>
             </div>
             
-            {/* Wallet connection section - UPDATED */}
-            <div className="bg-[#111111] p-4">
-              {/* Connected wallet with clickable address & copy button */}
+            {/* Wallet connection section */}
+            <div>
+              {/* Connected wallet display */}
               {(connected && publicKey) ? (
-                <div className="px-3 py-2 bg-[#1A1A1A] rounded mb-3">
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center mb-2">
+                <div className="p-3 bg-[#1A1A1A] rounded mb-3">
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex justify-between items-center">
                       <span className="text-gray-400 text-xs">Connected to</span>
-                      <span className="text-white text-sm">{wallet?.adapter.name || 'Unknown Wallet'}</span>
+                      <span className="text-white text-xs font-medium">{wallet?.adapter.name || 'Unknown Wallet'}</span>
                     </div>
                     
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex justify-between items-center">
                       <span className="text-gray-400 text-xs">Address</span>
                       <div className="flex items-center gap-1">
                         <a 
                           href={`https://explorer.solana.com/address/${publicKey.toString()}?cluster=devnet`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-white text-sm hover:text-[#E9423A] transition-colors flex items-center"
+                          className="text-white text-xs hover:text-[#E9423A] transition-colors flex items-center font-mono"
                         >
-                          <span className="font-mono">{truncateAddress(publicKey.toString())}</span>
-                          <ExternalLink size={12} className="ml-1" />
+                          <span>{truncateAddress(publicKey.toString())}</span>
+                          <ExternalLink size={10} className="ml-1" />
                         </a>
                         <Tooltip content={copied ? "Copied!" : "Copy Address"}>
                           <button 
                             onClick={() => copyAddress(publicKey.toString())}
-                            className="text-gray-400 hover:text-white transition-colors ml-1"
+                            className="text-gray-400 hover:text-white transition-colors"
                           >
-                            <Copy size={14} />
+                            <Copy size={12} />
                           </button>
                         </Tooltip>
                       </div>
@@ -611,7 +625,7 @@ export default function PaymentMethodPage() {
                     
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400 text-xs">Balance</span>
-                      <span className="text-white text-sm">{walletBalance.toFixed(4)} {selectedPayment}</span>
+                      <span className="text-white text-xs font-medium">{walletBalance.toFixed(4)} {selectedPayment}</span>
                     </div>
                   </div>
                   
@@ -622,32 +636,32 @@ export default function PaymentMethodPage() {
                   </div>
                 </div>
               ) : web3AuthWalletInfo && (
-                <div className="px-3 py-2 bg-[#1A1A1A] rounded mb-3">
-                  <div className="flex flex-col">
-                    <div className="flex justify-between items-center mb-2">
+                <div className="p-3 bg-[#1A1A1A] rounded mb-3">
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex justify-between items-center">
                       <span className="text-gray-400 text-xs">Connected via</span>
-                      <span className="text-white text-sm">{web3AuthWalletInfo.provider}</span>
+                      <span className="text-white text-xs font-medium">{web3AuthWalletInfo.provider}</span>
                     </div>
                     
                     {web3AuthWalletInfo.publicKey && (
-                      <div className="flex justify-between items-center mb-2">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-400 text-xs">Address</span>
                         <div className="flex items-center gap-1">
                           <a 
                             href={`https://explorer.solana.com/address/${web3AuthWalletInfo.publicKey}?cluster=devnet`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-white text-sm hover:text-[#E9423A] transition-colors flex items-center"
+                            className="text-white text-xs hover:text-[#E9423A] transition-colors flex items-center font-mono"
                           >
-                            <span className="font-mono">{truncateAddress(web3AuthWalletInfo.publicKey)}</span>
-                            <ExternalLink size={12} className="ml-1" />
+                            <span>{truncateAddress(web3AuthWalletInfo.publicKey)}</span>
+                            <ExternalLink size={10} className="ml-1" />
                           </a>
                           <Tooltip content={copied ? "Copied!" : "Copy Address"}>
                             <button 
                               onClick={() => copyAddress(web3AuthWalletInfo.publicKey!)}
-                              className="text-gray-400 hover:text-white transition-colors ml-1"
+                              className="text-gray-400 hover:text-white transition-colors"
                             >
-                              <Copy size={14} />
+                              <Copy size={12} />
                             </button>
                           </Tooltip>
                         </div>
@@ -657,7 +671,7 @@ export default function PaymentMethodPage() {
                     {web3AuthWalletInfo.email && (
                       <div className="flex justify-between items-center">
                         <span className="text-gray-400 text-xs">Email</span>
-                        <span className="text-white text-sm">{web3AuthWalletInfo.email}</span>
+                        <span className="text-white text-xs">{web3AuthWalletInfo.email}</span>
                       </div>
                     )}
                   </div>
@@ -670,8 +684,9 @@ export default function PaymentMethodPage() {
                 </div>
               )}
 
+              {/* Action Button */}
               <Button
-                className="w-full bg-[#E9423A] text-white font-medium h-14 rounded-none relative"
+                className="w-full bg-[#E9423A] text-white font-medium h-10 rounded-none relative"
                 onPress={isAuthenticated ? handlePaymentAction : handleLoginButtonClick}
                 disabled={isProcessingPayment || isLoadingRates}
               >
@@ -730,18 +745,6 @@ export default function PaymentMethodPage() {
           to {transform: translateX(0); opacity: 1;}
         }
         .animate-slideIn {animation: slideIn 0.2s ease-out forwards;}
-        
-        /* hides scrollbar */
-        .no-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
-          overflow-y: auto;
-        }
-        
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
       `}</style>
     </FormContainer>
   );

@@ -21,28 +21,28 @@ import {
 } from "../../shared/styles";
 
 interface FormData {
-  kwh: string;
+  dollarAmount: string;
 }
 
 interface ErrorState {
-  kwh: boolean;
+  dollarAmount: boolean;
 }
 
 interface TouchedState {
-  kwh: boolean;
+  dollarAmount: boolean;
 }
 
 const ElectricityEstimateForm: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
-    kwh: "",
+    dollarAmount: "",
   });
 
   const [errors, setErrors] = useState<ErrorState>({
-    kwh: false,
+    dollarAmount: false,
   });
 
   const [touched, setTouched] = useState<TouchedState>({
-    kwh: false,
+    dollarAmount: false,
   });
 
   const [isFormValid, setIsFormValid] = useState<boolean>(false);
@@ -77,16 +77,16 @@ const ElectricityEstimateForm: React.FC = () => {
   // Validate form whenever formData changes
   useEffect(() => {
     const newErrors = {
-      kwh: !formData.kwh.trim(),
+      dollarAmount: !formData.dollarAmount.trim() || parseFloat(formData.dollarAmount) <= 0,
     };
 
     setErrors(newErrors);
-    setIsFormValid(!newErrors.kwh);
+    setIsFormValid(!newErrors.dollarAmount);
   }, [formData]);
 
   const handleEstimate = (): void => {
     // Mark all fields as touched when attempting to submit
-    setTouched({ kwh: true });
+    setTouched({ dollarAmount: true });
 
     if (isFormValid) {
       setIsSubmitting(true);
@@ -94,14 +94,20 @@ const ElectricityEstimateForm: React.FC = () => {
       // Add a subtle loading delay for better UX
       setTimeout(() => {
         setIsSubmitting(false);
-        // Pass the monthly usage (kWh) as query parameter
-        navigate(`/by-panels?kwh=${formData.kwh}`);
+        // Pass the monthly bill amount (dollars) as query parameter
+        navigate(`/by-panels?dollarAmount=${formData.dollarAmount}`);
       }, 800);
     }
   };
 
   const handleInputChange = (field: keyof FormData, value: string): void => {
-    setFormData({ ...formData, [field]: value });
+    // Only allow numbers and decimal point
+    const numericValue = value.replace(/[^0-9.]/g, '');
+    // Prevent multiple decimal points
+    const parts = numericValue.split('.');
+    const formattedValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+    
+    setFormData({ ...formData, [field]: formattedValue });
     setTouched({ ...touched, [field]: true });
   };
 
@@ -147,13 +153,13 @@ const ElectricityEstimateForm: React.FC = () => {
 
             <div className="relative font-electrolize pl-4 pr-4">
               <Input
-                type="number"
+                type="text"
                 size="lg"
-                placeholder="Enter your monthly usage in kWh"
-                value={formData.kwh}
+                placeholder="Enter your monthly electricity bill"
+                value={formData.dollarAmount}
                 variant="flat"
-                isInvalid={touched.kwh && errors.kwh}
-                errorMessage={touched.kwh && errors.kwh ? "Usage is required" : ""}
+                isInvalid={touched.dollarAmount && errors.dollarAmount}
+                errorMessage={touched.dollarAmount && errors.dollarAmount ? "Please enter a valid amount" : ""}
                 classNames={{
                   ...inputClasses,
                   input: [
@@ -176,9 +182,10 @@ const ElectricityEstimateForm: React.FC = () => {
                   errorMessage: "text-red-500",
                   base: "group"
                 }}
-                endContent={<div className="text-default-400">kWh</div>}
-                onChange={(e) => handleInputChange("kwh", e.target.value)}
-                onBlur={() => setTouched({ ...touched, kwh: true })}
+                startContent={<div className="text-default-400">$</div>}
+                endContent={<div className="text-default-400">/month</div>}
+                onChange={(e) => handleInputChange("dollarAmount", e.target.value)}
+                onBlur={() => setTouched({ ...touched, dollarAmount: true })}
                 isDisabled={isSubmitting}
               />
             </div>
