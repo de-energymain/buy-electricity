@@ -6,7 +6,7 @@ import {
   Progress,
   Input,
   Divider,
-  Chip
+  //Chip
 } from "@nextui-org/react";
 import {
   Search,
@@ -120,14 +120,14 @@ const PanelsPage: React.FC = () => {
   };
   */
 
-  const getStatusColor = (status: string) => {
+  /*const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'success';
       case 'maintenance': return 'warning';
       case 'offline': return 'danger';
       default: return 'default';
     }
-  };
+  };*/
 
   // Format date
 //   const formatDate = (dateString: string) => {
@@ -242,7 +242,7 @@ const PanelsPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  {/*<div className="flex items-center justify-between">
                     <span className="text-sm text-gray-400">Status</span>
                     <Chip
                       size="sm"
@@ -252,7 +252,7 @@ const PanelsPage: React.FC = () => {
                     >
                       {panel.status}
                     </Chip>
-                  </div>
+                  </div>*/}
                   
                   {/* <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-400">Efficiency</span>
@@ -283,7 +283,7 @@ const PanelsPage: React.FC = () => {
                   <Button
                     size="sm"
                     endContent={<ChevronRight size={14} />}
-                    className="hidden bg-transparent text-[#E9423A] hover:bg-[#E9423A]/10 font-medium"
+                    className="bg-transparent text-[#E9423A] hover:bg-[#E9423A]/10 font-medium"
                   >
                     Details
                   </Button>
