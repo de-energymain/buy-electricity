@@ -34,6 +34,7 @@ interface FormDataType {
   phoneCode: string;
   phone: string;
   properties: string;
+  dollarAmount?: string;
   kwh?: string;
   panels?: string;
   cost?: string;
@@ -233,7 +234,7 @@ function ContactForm() {
     const newErrors: ErrorsType = {};
     Object.keys(formData).forEach((key) => {
       if (key === "properties") return;
-      if (key === "kwh" || key === "panels" || key === "cost") return;
+      if (key === "dollarAmount" || key === "kwh" || key === "panels" || key === "cost") return;
       const error = validateField(key as keyof FormDataType, formData[key as keyof FormDataType]);
       if (error) {
         newErrors[key] = error;
@@ -242,16 +243,18 @@ function ContactForm() {
     return newErrors;
   };
 
-  // Add monthly usage, panel count, and cost to form data from query parameters
+  // Add monthly bill amount, calculated kWh, panel count, and cost to form data from query parameters
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    const usageInput = parseFloat(queryParams.get("kwh") || "0");
+    const dollarAmount = parseFloat(queryParams.get("dollarAmount") || "0");
+    const calculatedKWh = parseFloat(queryParams.get("kwh") || "0");
     const panelCount = parseInt(queryParams.get("panels") || "0", 10);
     const totalCost = parseFloat(queryParams.get("cost") || "0");
 
     setFormData((prevData) => ({
       ...prevData,
-      kwh: usageInput.toString(),
+      dollarAmount: dollarAmount.toString(),
+      kwh: calculatedKWh.toString(),
       panels: panelCount.toString(),
       cost: totalCost.toString(),
     }));
@@ -318,9 +321,10 @@ function ContactForm() {
                     </ul>
                     <p>Here are our panel estimates:</p>
                     <ul>
-                      <li><strong>Your monthly usage:</strong> ${formData.kwh} kWh</li>
+                      <li><strong>Your monthly bill:</strong> ${formData.dollarAmount}</li>
+                      <li><strong>Calculated usage:</strong> ${parseFloat(formData.kwh || "0").toFixed(0)} kWh</li>
                       <li><strong>Panel Count:</strong> ${formData.panels}</li>
-                      <li><strong>Estimated Cost:</strong> $${formData.cost}</li>
+                      <li><strong>Estimated Cost:</strong> ${formData.cost}</li>
                     </ul>
                     <p>Our team will review your information and contact you shortly to discuss how we can assist you.</p>
                     <p>If you have any immediate questions, please don't hesitate to contact us.</p>

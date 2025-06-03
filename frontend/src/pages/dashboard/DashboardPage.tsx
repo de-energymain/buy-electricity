@@ -13,6 +13,7 @@ import {
   ModalFooter
 } from "@nextui-org/react";
 import { useWallet } from '@solana/wallet-adapter-react';
+import { ArrowRight, CreditCard, Zap, Leaf, DollarSign } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
 interface NodeData {
@@ -237,39 +238,110 @@ function DashboardPage() {
         <p className="text-gray-400">Here are your solar investments at a glance.</p>
       </div>
 
+
+
+      {/* Top Row - Panels and Key Metrics Cards on same line */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        
+        {/* Left - Your panels section */}
+        <div className="lg:col-span-1">
+          <h2 className="text-xl font-semibold text-white mb-4">Your panels</h2>
+          <Card className="bg-[#1A1A1A] border-none">
+            <CardBody className="p-4">
+              <div className="mb-4">
+                <h3 className="text-lg font-medium text-white">15 Panels</h3>
+                <p className="text-sm text-gray-400">Multiple Solar Farms • India</p>
+              </div>
+              
+              <div className="flex items-center p-3 bg-[#2A1A1A] rounded-lg mb-4">
+                <div className="w-8 h-8 mr-3 flex items-center justify-center text-lg">
+                  ⚡
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-white">Active solar farm investments</div>
+                  <div className="text-xs text-gray-400">Generating clean energy across {nodes.length} nodes.</div>
+                </div>
+              </div>
+
+              <Button
+                className="w-full bg-transparent border border-[#E9423A] text-white hover:bg-[#2A1A1A]"
+                onPress={() => navigate('/dashboard/panels')}
+              >
+                View All Panels
+              </Button>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Right - Key Metrics Cards */}
+        <div className="lg:col-span-2">
+          <h2 className="text-xl font-semibold text-white mb-4">Key Metrics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* NRG Earnings - Same color as panels */}
+            <Card 
+              className="bg-[#1A1A1A] border-none cursor-pointer hover:bg-[#2A1A1A] transition-all duration-300"
+              isPressable
+              onPress={() => navigate("/dashboard/wallet")}
+            >
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 bg-[#E9423A] rounded-lg flex items-center justify-center">
+                    <DollarSign size={20} className="text-white" />
+                  </div>
+                  <ArrowRight size={16} className="text-[#E9423A]" />
+                </div>
+                <div className="text-2xl font-bold text-white mb-1">{stats.nrgEarnings} NRG</div>
+                <div className="text-sm text-gray-400 mb-2">Total Earnings</div>
+                <div className="text-xs text-green-400">+{stats.earningsChange}% this month</div>
+              </CardBody>
+            </Card>
+
+            {/* Transactions */}
+            <Card 
+              className="bg-[#1A1A1A] border-none hover:bg-[#2A1A1A] transition-all duration-300 cursor-pointer"
+              isPressable
+              onPress={() => navigate("/dashboard/transactions")}
+            >
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <CreditCard size={20} className="text-blue-400" />
+                  </div>
+                  <ArrowRight size={16} className="text-blue-400" />
+                </div>
+                <div className="text-2xl font-bold text-white mb-1">${Math.ceil(stats.yield)}</div>
+                <div className="text-sm text-gray-400 mb-2">Monthly Savings</div>
+                <div className="text-xs text-green-400">+1.5% this month</div>
+              </CardBody>
+            </Card>
+
+            {/* Energy Generated */}
+            <Card 
+              className="bg-[#1A1A1A] border-none hover:bg-[#2A1A1A] transition-all duration-300 cursor-pointer"
+              isPressable
+              onPress={() => navigate("/dashboard/analytics")}
+            >
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <Zap size={20} className="text-green-400" />
+                  </div>
+                  <ArrowRight size={16} className="text-green-400" />
+                </div>
+                <div className="text-2xl font-bold text-white mb-1">{stats.energyGenerated} kWh</div>
+                <div className="text-sm text-gray-400 mb-2">Energy Generated</div>
+                <div className="text-xs text-green-400">+{stats.energyChange}% this month</div>
+              </CardBody>
+            </Card>
+          </div>
+        </div>
+      </div>
+
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         
         {/* Left Column */}
         <div className="lg:col-span-1 space-y-6">
-            <div>
-            <h2 className="text-xl font-semibold text-white mb-4">Your panels</h2>
-            <Card className="bg-[#1A1A1A] border-none">
-              <CardBody className="p-4">
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium text-white">15 Panels</h3>
-                  <p className="text-sm text-gray-400">Multiple Solar Farms • India</p>
-                </div>
-                
-                <div className="flex items-center p-3 bg-[#2A1A1A] rounded-lg mb-4">
-                  <div className="w-8 h-8 mr-3 flex items-center justify-center text-lg">
-                    ⚡
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-white">Active solar farm investments</div>
-                    <div className="text-xs text-gray-400">Generating clean energy across {nodes.length} nodes.</div>
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full bg-transparent border border-[#E9423A] text-white hover:bg-[#2A1A1A]"
-                  onPress={() => navigate('/dashboard/panels')}
-                >
-                  View All Panels
-                </Button>
-              </CardBody>
-            </Card>
-          </div>
           <div>
             <h2 className="text-xl font-semibold text-white mb-4">Your solar impact</h2>
             <div className="grid grid-cols-1 gap-4">
@@ -381,96 +453,8 @@ function DashboardPage() {
               </CardBody>
             </Card>
           </div>
-
-          {/* Performance Metrics Row */}
-          <div className="grid grid-cols-1">
-            {/* Performance & Earnings */}
-            <Card className="bg-[#1A1A1A] border-none">
-              <CardBody className="p-6 flex flex-col">
-                <h3 className="text-lg font-medium text-white mb-4">Performance & Earnings</h3>
-
-                {/* NRG Earnings */}
-                <div className="mb-6 text-center">
-                  <div className="w-24 h-24 bg-[#2A1A1A] rounded-lg flex items-center justify-center text-[#E9423A] border-2 border-[#E9423A] text-2xl mt-2 mx-auto">
-                    <span className="text-4xl">💰</span>
-                  </div>
-                  <div className="text-sm text-gray-400 mt-4 mb-2">NRG Earnings</div>
-
-                  <div className="flex items-center justify-center">
-                    <div className="text-3xl text-white font-bold">{stats.nrgEarnings} NRG</div>
-                  </div>
-
-                  <div className="text-xs text-green-500 mt-1">+{stats.earningsChange}% from last month</div>
-                </div>
-
-                {/* Production Metrics */}
-                <div className="mt-14 grid grid-cols-2 gap-4 w-full">
-                  <div className="text-center">
-                    <div className="text-sm text-gray-400">Estimated homes powered annually</div>
-                    <div className="text-xl font-bold text-white">{Math.floor(stats.energyGenerated / 10)}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-gray-400">MWh produced annually</div>
-                    <div className="text-xl font-bold text-white">{(stats.energyGenerated / 1000).toFixed(1)}</div>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
         </div>
       </div>
-
-      {/* Solar Nodes Table
-      <Card className="bg-[#1A1A1A] border-none">
-        <CardBody className="p-6 text-white">
-          <h3 className="text-lg font-medium mb-4">Your Solar Nodes</h3>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="py-3 text-left text-xs text-gray-400 font-normal">Node</th>
-                  <th className="py-3 text-center text-xs text-gray-400 font-normal">Panels</th>
-                  <th className="py-3 text-center text-xs text-gray-400 font-normal">Capacity</th>
-                  <th className="py-3 text-center text-xs text-gray-400 font-normal">Daily Output</th>
-                  <th className="py-3 text-center text-xs text-gray-400 font-normal">Earnings (NRG)</th>
-                  <th className="py-3 text-right text-xs text-gray-400 font-normal">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {nodes.map((node) => (
-                  <tr key={node.id} className="border-b border-gray-800">
-                    <td className="py-4">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-[#2A1A1A] rounded-md flex items-center justify-center text-[#E9423A] mr-2">
-                          {node.icon}
-                        </div>
-                        <div>
-                          <div className="font-medium">{node.name}</div>
-                          <div className="text-xs text-gray-400">{node.location}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-center">{node.panels}</td>
-                    <td className="py-4 text-center">{node.capacity.toFixed(2)} kW</td>
-                    <td className="py-4 text-center">{node.dailyOutput} kWh</td>
-                    <td className="py-4 text-center">{node.earnings}</td>
-                    <td className="py-4 text-right">
-                      <Button
-                        size="sm"
-                        className="text-white bg-transparent border border-[#E9423A] hover:bg-[#2A1A1A]"
-                        onPress={() => handleNodeDetails(node.id)}
-                      >
-                        Details
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardBody>
-      </Card>*/}
 
       {/* Logout Modal */}
       <Modal

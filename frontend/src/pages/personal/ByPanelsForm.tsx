@@ -23,8 +23,12 @@ const ByPanelsForm: React.FC = () => {
   const [estimatedCost, setEstimatedCost] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
-  const [usageInput, setUsageInput] = useState<number>(0);
+  const [dollarInput, setDollarInput] = useState<number>(0);
+  const [calculatedKWh, setCalculatedKWh] = useState<number>(0);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Electricity rate (US average)
+  const averageElectricityRate = 0.12; // $0.12 per kWh
 
   // Check authentication status when component mounts and when wallet connection changes
   useEffect(() => {
@@ -49,16 +53,21 @@ const ByPanelsForm: React.FC = () => {
   }, [connected]);
 
   useEffect(() => {
-    // Extract monthly usage from query params
+    // Extract monthly bill amount from query params
     const queryParams = new URLSearchParams(location.search);
-    const usage = parseFloat(queryParams.get("kwh") || "0");
-    setUsageInput(usage);
+    const dollarAmount = parseFloat(queryParams.get("dollarAmount") || "0");
+    setDollarInput(dollarAmount);
 
     // Show a loading state while calculating
     setIsLoading(true);
 
     setTimeout(() => {
-      if (usage > 0) {
+      if (dollarAmount > 0) {
+        // Step 1: Convert dollars to kWh
+        const monthlyUsageKWh = dollarAmount / averageElectricityRate;
+        setCalculatedKWh(monthlyUsageKWh);
+
+        // Step 2: Calculate panels needed using existing formula
         /*
           Calculation using the formula:
           - 3.75 kWh per kW per day × 80% = 3.0 kWh per day per kW
@@ -67,7 +76,7 @@ const ByPanelsForm: React.FC = () => {
           - For simplicity, 1 kW = 1 "panel"
         */
         const effectiveMonthlyProduction = 3.75 * 0.8 * 30; // = 90
-        const requiredCapacity = usage / effectiveMonthlyProduction;
+        const requiredCapacity = monthlyUsageKWh / effectiveMonthlyProduction;
         const requiredPanels = Math.ceil(requiredCapacity);
         setPanelCount(requiredPanels);
 
@@ -77,13 +86,14 @@ const ByPanelsForm: React.FC = () => {
       }
       setIsLoading(false);
     }, 1000); // Slight delay for loading effect
-  }, [location.search]);
+  }, [location.search, averageElectricityRate]);
 
   const handleBuyPanels = (): void => {
     setIsNavigating(true);
     setTimeout(() => {
       const queryParams = new URLSearchParams({
-        kwh: usageInput.toString(),
+        dollarAmount: dollarInput.toString(),
+        kwh: calculatedKWh.toString(),
         panels: panelCount.toString(),
         cost: estimatedCost.toString(),
       });
@@ -119,12 +129,12 @@ const ByPanelsForm: React.FC = () => {
 
         <Card className={cardClasses}>
           <CardHeader className="bg-[#2F2F2F]">
-            <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner">
-              <h2 className="text-3xl font-bold text-center text-white mb-2 font-electrolize">
+            <div className="mt-3 p-4 bg-[#2F2F2F] rounded-lg shadow-inner w-full text-center">
+              <h2 className="text-3xl font-bold text-white mb-2 font-electrolize">
                 Electricity Estimate
               </h2>
-              <p className="text-sm text-white text-center font-inter">
-                Based on your monthly usage and utility service, you need:
+              <p className="text-sm text-white font-inter">
+                Based on your monthly bill of ${dollarInput}, you need:
               </p>
             </div>
           </CardHeader>
@@ -143,6 +153,8 @@ const ByPanelsForm: React.FC = () => {
                   <p className="text-white">Processing...</p>
                 </div>
               )}
+
+              {/* Show calculated kWh for transparency - REMOVED */}
 
               <div className="flex gap-4">
                 {/* Panels Required */}
