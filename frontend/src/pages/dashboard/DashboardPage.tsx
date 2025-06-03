@@ -59,7 +59,8 @@ function DashboardPage() {
     efficiency: 68,
     target: 75,
     lowest: 59,
-    highest: 72
+    highest: 72,
+    yield: 55.44,
   });
 
   //Update user in database
@@ -283,6 +284,21 @@ function DashboardPage() {
                     </div>
                     <div className="w-12 h-12 bg-[#2A1A1A] rounded-lg flex items-center justify-center text-2xl">
                       🔋
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card className="bg-[#1A1A1A] border-none">
+                <CardBody className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                        <div className="text-sm text-gray-400 mb-1">View your effective electricity savings for this month here.</div>
+                        <div className="text-2xl font-bold text-white">${Math.ceil(stats.yield)}</div>
+                        <div className="text-xs text-green-500">+1.5% from last month</div>
+                    </div>
+                    <div className="w-12 h-12 bg-[#2A1A1A] rounded-lg flex items-center justify-center text-2xl">
+                      👛
                     </div>
                   </div>
                 </CardBody>
