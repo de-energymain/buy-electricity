@@ -13,7 +13,7 @@ import {
   ModalFooter
 } from "@nextui-org/react";
 import { useWallet } from '@solana/wallet-adapter-react';
-import { ArrowRight, CreditCard, Zap, Leaf, DollarSign } from "lucide-react";
+import { ArrowRight, CreditCard, Zap, DollarSign } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
 interface NodeData {
