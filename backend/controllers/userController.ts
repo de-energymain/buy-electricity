@@ -30,6 +30,66 @@ export const getAllUsers = async ( req: Request, res: Response) => {
     }
 };
 
+
+export const getUserByWalletID = async (req: Request, res: Response) => {
+    try {
+        const { walletId } = req.params;
+
+        const user = await User.findOne({ walletID: walletId });
+        
+        if (!user) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+
+        res.status(200).json({
+            message: "User retrieved successfully",
+            user: {
+                walletID: user.walletID,
+                userEmail: user.userEmail,
+                userName: user.userName,
+                panelDetails: user.panelDetails 
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: (error as Error).message });
+    }
+};
+
+export const updatePanelDetails = async ( req: Request, res : Response) => {
+    try{
+        const { walletId } = req.params;
+        const { panelsPurchased, cost } = req.body;
+
+        if (!panelsPurchased || !cost) {
+            res.status(400).json({ message: "panelsPurchased and cost are required" });
+        }
+
+        const updatedUser = await User.findOneAndUpdate(
+            {walletID: walletId},
+            {
+                $inc : {
+                    'panelDetails.purchasedPanels' : panelsPurchased,
+                    'panelDetails.purchasedCost': cost
+                }
+            },
+            { new : true }
+        );
+
+        if (! updatedUser ) {
+            res.status(404).json({ message : "User not found"});
+            return;
+        }
+
+        res.status(200).json({
+            message: "Panel details updation successfull",
+            user: updatedUser
+        });
+    } catch (error) {
+        res.status(500).json({ message: (error as Error).message });
+    }
+};
+
 export const deleteUser = async ( req: Request, res: Response) => {
     try{
         const { walletId } = req.params;
