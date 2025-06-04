@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useWallet } from '@solana/wallet-adapter-react';
 import {
   Card,
   CardBody,
@@ -35,19 +36,81 @@ interface PanelData {
 }
 
 const PanelsPage: React.FC = () => {
+  const { connected, wallet } = useWallet();
+  const [walletID, setWalletID] = useState<string | null>(null);
   const [panels, setPanels] = useState<PanelData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredPanels, setFilteredPanels] = useState<PanelData[]>([]);
   const [totalPower, setTotalPower] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [maintenanceCount, setMaintenanceCount] = useState(0);
-  const [offlineCount, setOfflineCount] = useState(0);
+  const [offlineCount, setOfflineCount] = useState(0);  
+  const [purchasedPanels, setPurchasedPanels] = useState<number>(0);
+
+   useEffect(() => {
+    if (connected) {
+      localStorage.setItem("walletConnected", "true");
+    }
+  }, [connected]);
+
+
+  useEffect(() => {
+    const session = localStorage.getItem("web3AuthSession");
+    if (session) {
+      try {
+        const data = JSON.parse(session);
+        if (data.userInfo && data.userInfo.email && data.userInfo.name) {
+          // Store user info for potential future use
+          console.log("User authenticated:", data.userInfo.name, data.userInfo.email);
+          //setUsername(data.userInfo.name);
+          if (data.publicKey) {
+            console.log("Public key available:", data.publicKey);
+            setWalletID(data.publicKey);
+          }          
+        }
+      } catch (e) {
+        console.error("Error parsing Web3Auth session", e);
+      }
+    }
+        if (connected && wallet) {
+      const walletPublicKey = (wallet.adapter as { publicKey?: { toString: () => string } }).publicKey?.toString() || "";
+      setWalletID(walletPublicKey);
+    }
+  }, [connected, wallet]);
+
+
+  useEffect(() => {
+  const getStats = async () => {
+    if (!walletID) {
+      console.error("Wallet ID is not available");
+      return;
+    }
+    try {
+      console.log(`GET to http://localhost:5000/api/users/${walletID}`);
+      const response = await fetch(`http://localhost:5000/api/users/${walletID}`);
+      const data = await response.json();
+
+      if (data) {
+        const purchasedPanels = data.user.panelDetails.purchasedPanels;
+        setPurchasedPanels(purchasedPanels); // Update the purchasedPanels state
+      }
+    } catch (error) {
+      console.error('Error fetching panels data:', error);
+    }
+  };
+
+  getStats();
+}, [walletID]);
+
 
   // Generate mock data
   useEffect(() => {
-    const mockPanels: PanelData[] = Array.from({ length: 15 }, (_, i) => {
+    const mockPanels: PanelData[] = Array.from({ length: purchasedPanels }, (_, i) => {
       const status: "active" | "maintenance" | "offline" = 
         i % 8 === 0 ? "maintenance" : i % 12 === 0 ? "offline" : "active";
+
+      const totalPwr = (purchasedPanels * 3.75 * 0.8); // no. of panels * (effective monthly production/30)
+      const dailyOutput = totalPwr/purchasedPanels;
       
       return {
         id: `panel-${i + 1}`,
@@ -57,7 +120,7 @@ const PanelsPage: React.FC = () => {
         power: 450, // Watts
         status,
         efficiency: Math.floor(Math.random() * 15) + 65, // 65-80%
-        dailyOutput: Math.floor(Math.random() * 2) + 4, // 4-6 kWh
+        dailyOutput,//PreviouslyMath.floor(Math.random() * 2) + 4, // 4-6 kWh
         totalGenerated: Math.floor(Math.random() * 500) + 1000, // 1000-1500 kWh
         lastMaintenance: "2024-04-15",
         warranty: "2026-12-31",
@@ -69,7 +132,8 @@ const PanelsPage: React.FC = () => {
     setFilteredPanels(mockPanels);
     
     // Calculate stats
-    const totalPwr = mockPanels.reduce((sum, panel) => sum + panel.power, 0) / 1000; // Convert to kW
+    //const totalPwr = mockPanels.reduce((sum, panel) => sum + panel.power, 0) / 1000; // Convert to kW
+    const totalPwr = (purchasedPanels * 3.75 * 0.8); // no. of panels * (effective monthly production/30)
     const activePanels = mockPanels.filter(p => p.status === "active").length;
     const maintenancePanels = mockPanels.filter(p => p.status === "maintenance").length;
     const offlinePanels = mockPanels.filter(p => p.status === "offline").length;
@@ -78,7 +142,7 @@ const PanelsPage: React.FC = () => {
     setActiveCount(activePanels);
     setMaintenanceCount(maintenancePanels);
     setOfflineCount(offlinePanels);
-  }, []);
+  }, [purchasedPanels]);
 
   // Search filter
   useEffect(() => {
@@ -155,7 +219,7 @@ const PanelsPage: React.FC = () => {
               <Sun size={20} className="text-[#E9423A]" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-white mb-2">{panels.length}</div>
+          <div className="text-3xl font-bold text-white mb-2">{purchasedPanels}</div>
           <div className="text-sm text-gray-400">Total Power: <span className="text-white font-semibold">{totalPower.toFixed(2)} kW</span></div>
         </div>
         
