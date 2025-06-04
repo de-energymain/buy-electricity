@@ -39,3 +39,28 @@ export const deletePurchase = async ( req: Request, res: Response ) => {
         res.status(500).json({ message: (error as Error).message });
     }
 };
+
+export const getPurchasesByWallet = async (req: Request, res: Response) => {
+    try {
+        const { walletAddress } = req.params;
+        
+        if (!walletAddress) {
+            res.status(400).json({ message: "Wallet address is required" });
+            return;
+        }
+
+        const purchases = await Purchase.find({ walletAddress: walletAddress });
+        
+        if (!purchases || purchases.length === 0) {
+            res.status(404).json({ message: "No purchases found for this wallet address" });
+            return;
+        }
+
+        res.status(200).json({
+            message: "Purchases retrieved successfully",
+            data: purchases
+        });
+    } catch (error: unknown) {
+        res.status(500).json({ message: (error as Error).message });
+    }
+};

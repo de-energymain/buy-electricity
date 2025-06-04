@@ -1,3 +1,5 @@
+// Update backend/models/Purchase.ts to ensure purchaseDate is included
+
 import mongoose, {Document, Schema} from 'mongoose';
 
 //TS interface
@@ -12,7 +14,7 @@ export interface IPurchase extends Document {
     capacity: number;
     output: number;
     transactionHash: string;
-    transactionDate: Date;
+    purchaseDate: Date;  // Make sure this is included
     createdAt: Date;
     updatedAt: Date;
 }
@@ -29,7 +31,7 @@ const PurchaseSchema: Schema = new Schema({
     capacity: { type: Number },
     output: { type: Number },
     transactionHash: { type: String, required: true , unique: true },
-    purchaseDate: { type: Date },
+    purchaseDate: { type: Date, default: Date.now },  // Add default if not provided
  }, {
     timestamps: true,
 });
