@@ -7,6 +7,7 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  Spinner,
 } from "@nextui-org/react";
 import {
   ArrowDown,
@@ -21,24 +22,35 @@ import {
   Download,
   ExternalLink,
   Wallet,
-  EthernetPort
+  EthernetPort,
+  ShoppingCart
 } from "lucide-react";
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, PublicKey, ParsedTransactionWithMeta } from '@solana/web3.js';
 import DashboardTemplate from "../../components/DashboardTemplate";
 
-// Token interface
-interface Token {
-  symbol: string;
-  name: string;
-  icon: string;
-  balance: number;
-  value: number;
-  priceChange: number;
+// Purchase interface from your API
+interface PurchaseData {
+  _id: string;
+  farmName: string;
+  location: string;
+  walletAddress: string;
+  paymentMethod: string;
+  tokenAmount: number;
+  panelsPurchased: number;
+  cost: number;
+  capacity: number;
+  output: number;
+  transactionHash: string;
+  purchaseDate: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Transaction interface
+// Enhanced transaction interface
 interface Transaction {
   id: string;
-  type: "receive" | "send" | "swap" | "stake" | "unstake" | "reward";
+  type: "purchase" | "yield" | "send" | "receive" | "swap" | "stake" | "unstake" | "reward";
   token: string;
   amount: number;
   timestamp: number;
@@ -47,9 +59,22 @@ interface Transaction {
   status: "confirmed" | "pending" | "failed";
   fee?: number;
   blockHash?: string;
+  signature?: string;
+  // Additional fields for purchase transactions
+  farmName?: string;
+  panels?: number;
+  source: "api" | "chain"; // To distinguish data sources
+}
+
+interface WalletBalance {
+  sol: number;
+  nrg: number; // This would need to be calculated from your yield system
+  usdc: number;
 }
 
 const TransactionsPage: React.FC = () => {
+  const { publicKey, connected } = useWallet();
+  const [walletID, setWalletID] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,80 +82,223 @@ const TransactionsPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string[]>(["all"]);
   const [timeFilter, setTimeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalBalance, setTotalBalance] = useState<number>(0);
+  const [walletBalance, setWalletBalance] = useState<WalletBalance>({ sol: 0, nrg: 0, usdc: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [userPanelData, setUserPanelData] = useState({ generatedYield: 0 });
+  
   const rowsPerPage = 10;
+  
+  // Solana connection
+  const connection = new Connection("https://api.devnet.solana.com");
+  
+  // Constants
+  const DOLLAR_TO_NRG_RATE = 0.03; // $0.03 per NRG token
 
-  // Generate mock data
+  // Extract wallet ID from wallet or Web3Auth
   useEffect(() => {
-    //Mock tokens (from wallet page)
-    const mockTokens: Token[] = [
-      {
-        symbol: "NRG",
-        name: "Energy Token",
-        icon: "✨",
-        balance: 613.42,
-        value: 1226.84, // $2 per NRG
-        priceChange: 4.2
-      },
-      {
-        symbol: "SOL",
-        name: "Solana",
-        icon: "☀️",
-        balance: 2.85,
-        value: 371.05, // $130 per SOL
-        priceChange: -1.8
-      },
-      {
-        symbol: "USDC",
-        name: "USD Coin",
-        icon: "💵",
-        balance: 150.25,
-        value: 150.25, // 1:1 with USD
-        priceChange: 0.1
+    const session = localStorage.getItem("web3AuthSession");
+    if (session) {
+      try {
+        const data = JSON.parse(session);
+        if (data.publicKey) {
+          setWalletID(data.publicKey);
+        }
+      } catch (e) {
+        console.error("Error parsing Web3Auth session", e);
       }
-    ];
+    }
+    if (connected && publicKey) {
+      setWalletID(publicKey.toString());
+    }
+  }, [connected, publicKey]);
 
-    // Calculate total balance
-    const total = mockTokens.reduce((sum, token) => sum + token.value, 0);
-    setTotalBalance(total);
-    
-    const types: ("receive" | "send" | "swap" | "stake" | "unstake" | "reward")[] = [
-      "receive", "send", "swap", "stake", "unstake", "reward"
-    ];
-    
-    const tokens = ["NRG", "SOL", "USDC"];
-   // const statuses: ("confirmed" | "pending" | "failed")[] = ["confirmed", "pending", "failed"];
-    
-    // Generate 50 random transactions
-    const now = Date.now();
-    const day = 24 * 60 * 60 * 1000;
-    
-    const mockTransactions: Transaction[] = Array.from({ length: 50 }, (_, i) => {
-      const type = types[Math.floor(Math.random() * types.length)];
-      const token = tokens[Math.floor(Math.random() * tokens.length)];
-      const status = i < 40 ? "confirmed" : i < 45 ? "pending" : "failed";
-      const daysAgo = Math.floor(Math.random() * 30);
+  // Fetch purchase data from your API
+  const fetchPurchaseData = async (walletAddress: string): Promise<Transaction[]> => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/purchases/wallet/${walletAddress}`);
+      if (response.ok) {
+        const result = await response.json();
+        const purchases: PurchaseData[] = result.data || [];
+        
+        // Convert purchases to transactions
+        return purchases.map(purchase => ({
+          id: purchase.transactionHash,
+          type: "purchase" as const,
+          token: purchase.paymentMethod,
+          amount: purchase.tokenAmount,
+          timestamp: new Date(purchase.purchaseDate || purchase.createdAt).getTime(),
+          to: "Solar Panel Purchase",
+          status: "confirmed" as const,
+          signature: purchase.transactionHash,
+          farmName: purchase.farmName,
+          panels: purchase.panelsPurchased,
+          source: "api" as const
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching purchase data:', error);
+      return [];
+    }
+  };
+
+  // Fetch user data for yield calculations
+  const fetchUserData = async (walletAddress: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${walletAddress}`);
+      if (response.ok) {
+        const userData = await response.json();
+        setUserPanelData({
+          generatedYield: userData.user.panelDetails.generatedYield
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  // Scan blockchain for yield transactions
+  const scanWalletTransactions = async (walletAddress: string): Promise<Transaction[]> => {
+    try {
+      const pubKey = new PublicKey(walletAddress);
       
-      return {
-        id: `tx-${(1000 + i).toString()}`,
-        type,
-        token,
-        amount: +(Math.random() * 100).toFixed(2),
-        timestamp: now - (daysAgo * day) - Math.floor(Math.random() * day),
-        from: type === "receive" ? "Solar Farm Rewards" : undefined,
-        to: type === "send" ? "External Wallet" : undefined,
-        status,
-        fee: +(Math.random() * 0.01).toFixed(4),
-        blockHash: status === "confirmed" ? `0x${Math.random().toString(16).substring(2, 14)}` : undefined
-      };
-    });
+      // Get transaction signatures (limited to recent ones due to API limits)
+      const signatures = await connection.getSignaturesForAddress(pubKey, { limit: 50 });
+      
+      const chainTransactions: Transaction[] = [];
+      
+      // Process each signature to get transaction details
+      for (const sigInfo of signatures) {
+        try {
+          const transaction = await connection.getParsedTransaction(sigInfo.signature, {
+            maxSupportedTransactionVersion: 0
+          });
+          
+          if (transaction && transaction.meta && !transaction.meta.err) {
+            // Analyze transaction to determine if it's a yield payment
+            const isYieldTransaction = await analyzeTransactionForYield(transaction, walletAddress);
+            
+            if (isYieldTransaction) {
+              chainTransactions.push({
+                id: sigInfo.signature,
+                type: "yield",
+                token: "NRG", // Assuming yield is paid in NRG
+                amount: isYieldTransaction.amount,
+                timestamp: (sigInfo.blockTime || 0) * 1000,
+                from: "Yield Distribution",
+                status: "confirmed",
+                signature: sigInfo.signature,
+                source: "chain"
+              });
+            }
+          }
+        } catch (error) {
+          // Skip failed transaction parsing
+          console.warn(`Failed to parse transaction ${sigInfo.signature}:`, error);
+        }
+      }
+      
+      return chainTransactions;
+    } catch (error) {
+      console.error('Error scanning wallet transactions:', error);
+      return [];
+    }
+  };
+
+  // Analyze transaction to determine if it's a yield payment
+  const analyzeTransactionForYield = async (
+    transaction: ParsedTransactionWithMeta, 
+    walletAddress: string
+  ): Promise<{ amount: number } | null> => {
+    if (!transaction.meta?.postBalances || !transaction.meta?.preBalances) {
+      return null;
+    }
+
+    // Look for SOL balance changes (assuming yield is paid in SOL for now)
+    const accountIndex = transaction.transaction.message.accountKeys.findIndex(
+      key => key.pubkey.toString() === walletAddress
+    );
+
+    if (accountIndex !== -1) {
+      const preBalance = transaction.meta.preBalances[accountIndex];
+      const postBalance = transaction.meta.postBalances[accountIndex];
+      const balanceChange = (postBalance - preBalance) / 1e9; // Convert lamports to SOL
+
+      // If there's a positive balance change and it's a small amount (likely yield)
+      if (balanceChange > 0 && balanceChange < 1) {
+        // Convert SOL to NRG equivalent for display
+        const nrgEquivalent = balanceChange / DOLLAR_TO_NRG_RATE;
+        return { amount: nrgEquivalent };
+      }
+    }
+
+    return null;
+  };
+
+  // Fetch wallet balance
+  const fetchWalletBalance = async (walletAddress: string) => {
+    try {
+      const pubKey = new PublicKey(walletAddress);
+      const solBalance = await connection.getBalance(pubKey);
+      
+      // Calculate NRG balance from user yield data
+      const nrgBalance = userPanelData.generatedYield / DOLLAR_TO_NRG_RATE;
+      
+      setWalletBalance({
+        sol: solBalance / 1e9, // Convert lamports to SOL
+        nrg: nrgBalance,
+        usdc: 0 // Would need token account parsing for USDC
+      });
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+    }
+  };
+
+  // Main data fetching function
+  const fetchAllTransactions = async () => {
+    if (!walletID) return;
     
-    // Sort by timestamp (newest first)
-    mockTransactions.sort((a, b) => b.timestamp - a.timestamp);
-    
-    setTransactions(mockTransactions);
-    setFilteredTransactions(mockTransactions);
-  }, []);
+    setIsLoading(true);
+    try {
+      // Fetch data in parallel
+      const [purchaseTransactions, chainTransactions] = await Promise.all([
+        fetchPurchaseData(walletID),
+        scanWalletTransactions(walletID)
+      ]);
+      
+      // Also fetch user data for yield calculations
+      await fetchUserData(walletID);
+      
+      // Combine and sort by timestamp
+      const allTransactions = [...purchaseTransactions, ...chainTransactions]
+        .sort((a, b) => b.timestamp - a.timestamp);
+      
+      setTransactions(allTransactions);
+      setFilteredTransactions(allTransactions);
+      
+      // Fetch wallet balance
+      await fetchWalletBalance(walletID);
+      
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    if (walletID) {
+      fetchAllTransactions();
+    }
+  }, [walletID]);
+
+  // Update balance when user data changes
+  useEffect(() => {
+    if (walletID && userPanelData.generatedYield > 0) {
+      fetchWalletBalance(walletID);
+    }
+  }, [userPanelData, walletID]);
 
   // Apply filters and search
   useEffect(() => {
@@ -143,7 +311,8 @@ const TransactionsPage: React.FC = () => {
         tx.id.toLowerCase().includes(query) ||
         tx.token.toLowerCase().includes(query) ||
         (tx.from && tx.from.toLowerCase().includes(query)) ||
-        (tx.to && tx.to.toLowerCase().includes(query))
+        (tx.to && tx.to.toLowerCase().includes(query)) ||
+        (tx.farmName && tx.farmName.toLowerCase().includes(query))
       );
     }
     
@@ -176,8 +345,33 @@ const TransactionsPage: React.FC = () => {
     }
     
     setFilteredTransactions(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [searchQuery, statusFilter, typeFilter, timeFilter, transactions]);
+
+  // Calculate summary statistics
+  const calculateSummaryStats = () => {
+    const totalReceived = transactions
+      .filter(tx => tx.type === "purchase" || tx.type === "yield")
+      .reduce((sum, tx) => sum + (tx.amount * (tx.token === "SOL" ? 20 : tx.token === "USDC" ? 1 : 0.03)), 0);
+    
+    const totalSent = transactions
+      .filter(tx => tx.type === "send")
+      .reduce((sum, tx) => sum + (tx.amount * (tx.token === "SOL" ? 20 : tx.token === "USDC" ? 1 : 0.03)), 0);
+    
+    const totalFees = transactions
+      .reduce((sum, tx) => sum + (tx.fee || 0), 0);
+    
+    const totalBalance = (walletBalance.sol * 20) + walletBalance.nrg * 0.03 + walletBalance.usdc;
+
+    return {
+      totalReceived,
+      totalSent,
+      totalFees,
+      totalBalance
+    };
+  };
+
+  const summaryStats = calculateSummaryStats();
 
   // Format timestamp
   const formatDate = (timestamp: number) => {
@@ -197,6 +391,10 @@ const TransactionsPage: React.FC = () => {
     if (status === "pending") return <Clock className="text-yellow-500" size={20} />;
     
     switch (type) {
+      case "purchase":
+        return <ShoppingCart className="text-blue-500" size={20} />;
+      case "yield":
+        return <ArrowDown className="text-green-500" size={20} />;
       case "receive":
         return <ArrowDown className="text-green-500" size={20} />;
       case "send":
@@ -231,6 +429,10 @@ const TransactionsPage: React.FC = () => {
   // Transaction description
   const getTransactionDescription = (tx: Transaction) => {
     switch (tx.type) {
+      case "purchase":
+        return `Solar Panel Purchase${tx.farmName ? ` - ${tx.farmName}` : ''}`;
+      case "yield":
+        return "Yield Payment";
       case "receive":
         return `Received from ${tx.from || 'Unknown'}`;
       case "send":
@@ -242,7 +444,7 @@ const TransactionsPage: React.FC = () => {
       case "unstake":
         return `Unstaked ${tx.token}`;
       case "reward":
-        return `Reward Payment`;
+        return "Reward Payment";
       default:
         return tx.type;
     }
@@ -257,6 +459,20 @@ const TransactionsPage: React.FC = () => {
     currentPage * rowsPerPage
   );
 
+  if (isLoading) {
+    return (
+      <DashboardTemplate title="Transactions" activePage="transactions">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Spinner size="lg" color="danger" className="mb-4" />
+            <div className="text-xl mb-2 text-white">Loading transactions...</div>
+            <div className="text-sm text-gray-400">Fetching purchase history and blockchain data</div>
+          </div>
+        </div>
+      </DashboardTemplate>
+    );
+  }
+
   return (
     <DashboardTemplate title="Transactions" activePage="transactions">
       {/* Header Section */}
@@ -264,54 +480,54 @@ const TransactionsPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Transactions</h1>
-            <p className="text-gray-400">View and manage all your transactions, including rewards.</p>
-          </div>         
+            <p className="text-gray-400">View and manage all your transactions, including purchases and rewards.</p>
+          </div>
+          <Button
+            className="bg-[#E9423A] text-white"
+            startContent={<RefreshCw size={16} />}
+            onPress={fetchAllTransactions}
+          >
+            Refresh
+          </Button>
         </div>
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-green-500/30">
             <div className="flex justify-between items-start mb-4">
-              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Received</div>
+              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Spent</div>
               <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-green-500/10 rounded-xl flex items-center justify-center border border-green-500/20">
-                <ArrowDown size={20} className="text-green-500" />
+                <ShoppingCart size={20} className="text-green-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-green-500 mb-2">
-              +{transactions
-                .filter(tx => tx.type === "receive" || tx.type === "reward")
-                .reduce((sum, tx) => sum + tx.amount, 0)
-                .toFixed(2)}
+              ${summaryStats.totalReceived.toFixed(2)}
             </div>
-            <div className="text-sm text-gray-400">Tokens Received</div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-red-500/30">
-            <div className="flex justify-between items-start mb-4">
-              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total Sent</div>
-              <div className="w-12 h-12 bg-gradient-to-br from-red-500/20 to-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
-                <ArrowUp size={20} className="text-red-500" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-white mb-2">
-              -{transactions
-                .filter(tx => tx.type === "send")
-                .reduce((sum, tx) => sum + tx.amount, 0)
-                .toFixed(2)}
-            </div>
-            <div className="text-sm text-gray-400">Tokens Sent</div>
+            <div className="text-sm text-gray-400">Panel Purchases</div>
           </div>
           
           <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-blue-500/30">
             <div className="flex justify-between items-start mb-4">
-              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Network Fees</div>
+              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Yield Earned</div>
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20">
-                <EthernetPort size={20} className="text-blue-500" />
+                <ArrowDown size={20} className="text-blue-500" />
               </div>
             </div>
             <div className="text-3xl font-bold text-white mb-2">
-              {transactions
-                .reduce((sum, tx) => sum + (tx.fee || 0), 0)
-                .toFixed(4)}
+              {walletBalance.nrg.toFixed(2)} NRG
+            </div>
+            <div className="text-sm text-gray-400">Total Rewards</div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-yellow-500/30">
+            <div className="flex justify-between items-start mb-4">
+              <div className="text-sm font-medium text-gray-400 uppercase tracking-wide">Network Fees</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 rounded-xl flex items-center justify-center border border-yellow-500/20">
+                <EthernetPort size={20} className="text-yellow-500" />
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-white mb-2">
+              {summaryStats.totalFees.toFixed(4)}
             </div>
             <div className="text-sm text-gray-400">SOL Fees</div>
           </div>
@@ -324,130 +540,133 @@ const TransactionsPage: React.FC = () => {
               </div>
             </div>
             <div className="text-3xl font-bold text-white mb-2">
-              ${totalBalance.toFixed(2)}
+              ${summaryStats.totalBalance.toFixed(2)}
             </div>
             <div className="text-sm text-gray-400">Available Balance</div>
           </div>
         </div>
-      {/* Filters */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        <Input
-          placeholder="Search transactions..."
-          startContent={<Search size={18} />}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="md:max-w-xs"
-          classNames={{
-            base: "bg-[#1A1A1A]",
-            inputWrapper: "bg-[#1A1A1A] border-1 border-gray-700 hover:border-white focus-within:border-[#E9423A]",
-            input: "text-white placeholder:text-gray-400"
-          }}
-        />
-        
-        <div className="flex flex-wrap gap-2 md:ml-auto">
-          <Dropdown>
-            <DropdownTrigger>
-              <Button 
-                className="bg-[#1A1A1A] text-white border-1 border-gray-700"
-                startContent={<Filter size={16} />}
-              >
-                Status: {statusFilter.includes("all") ? "All" : statusFilter.join(", ")}
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu 
-              aria-label="Status Filter"
-              closeOnSelect={false}
-              selectedKeys={new Set(statusFilter)}
-              selectionMode="multiple"
-              onSelectionChange={(keys) => {
-                const selectedKeys = Array.from(keys as Set<string>);
-                if (selectedKeys.includes("all")) {
-                  setStatusFilter(["all"]);
-                } else {
-                  setStatusFilter(selectedKeys);
-                }
-              }}
-              className="bg-[#1A1A1A] text-white border border-gray-700"
-            >
-              <DropdownItem key="all">All</DropdownItem>
-              <DropdownItem key="confirmed">Confirmed</DropdownItem>
-              <DropdownItem key="pending">Pending</DropdownItem>
-              <DropdownItem key="failed">Failed</DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
+
+        {/* Filters */}
+        <div className="mb-6 flex flex-col md:flex-row gap-4">
+          <Input
+            placeholder="Search transactions..."
+            startContent={<Search size={18} />}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="md:max-w-xs"
+            classNames={{
+              base: "bg-[#1A1A1A]",
+              inputWrapper: "bg-[#1A1A1A] border-1 border-gray-700 hover:border-white focus-within:border-[#E9423A]",
+              input: "text-white placeholder:text-gray-400"
+            }}
+          />
           
-          <Dropdown>
-            <DropdownTrigger>
-              <Button 
-                className="bg-[#1A1A1A] text-white border-1 border-gray-700"
-                startContent={<Filter size={16} />}
+          <div className="flex flex-wrap gap-2 md:ml-auto">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button 
+                  className="bg-[#1A1A1A] text-white border-1 border-gray-700"
+                  startContent={<Filter size={16} />}
+                >
+                  Status: {statusFilter.includes("all") ? "All" : statusFilter.join(", ")}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu 
+                aria-label="Status Filter"
+                closeOnSelect={false}
+                selectedKeys={new Set(statusFilter)}
+                selectionMode="multiple"
+                onSelectionChange={(keys) => {
+                  const selectedKeys = Array.from(keys as Set<string>);
+                  if (selectedKeys.includes("all")) {
+                    setStatusFilter(["all"]);
+                  } else {
+                    setStatusFilter(selectedKeys);
+                  }
+                }}
+                className="bg-[#1A1A1A] text-white border border-gray-700"
               >
-                Type: {typeFilter.includes("all") ? "All" : typeFilter.join(", ")}
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu 
-              aria-label="Type Filter"
-              closeOnSelect={false}
-              selectedKeys={new Set(typeFilter)}
-              selectionMode="multiple"
-              onSelectionChange={(keys) => {
-                const selectedKeys = Array.from(keys as Set<string>);
-                if (selectedKeys.includes("all")) {
-                  setTypeFilter(["all"]);
-                } else {
-                  setTypeFilter(selectedKeys);
-                }
-              }}
-              className="bg-[#1A1A1A] text-white border border-gray-700"
-            >
-              <DropdownItem key="all">All</DropdownItem>
-              <DropdownItem key="receive">Receive</DropdownItem>
-              <DropdownItem key="send">Send</DropdownItem>
-              <DropdownItem key="swap">Swap</DropdownItem>
-              <DropdownItem key="stake">Stake</DropdownItem>
-              <DropdownItem key="unstake">Unstake</DropdownItem>
-              <DropdownItem key="reward">Reward</DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-          
-          <Dropdown>
-            <DropdownTrigger>
-              <Button 
-                className="bg-[#1A1A1A] text-white border-1 border-gray-700"
-                startContent={<Calendar size={16} />}
+                <DropdownItem key="all">All</DropdownItem>
+                <DropdownItem key="confirmed">Confirmed</DropdownItem>
+                <DropdownItem key="pending">Pending</DropdownItem>
+                <DropdownItem key="failed">Failed</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            
+            <Dropdown>
+              <DropdownTrigger>
+                <Button 
+                  className="bg-[#1A1A1A] text-white border-1 border-gray-700"
+                  startContent={<Filter size={16} />}
+                >
+                  Type: {typeFilter.includes("all") ? "All" : typeFilter.join(", ")}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu 
+                aria-label="Type Filter"
+                closeOnSelect={false}
+                selectedKeys={new Set(typeFilter)}
+                selectionMode="multiple"
+                onSelectionChange={(keys) => {
+                  const selectedKeys = Array.from(keys as Set<string>);
+                  if (selectedKeys.includes("all")) {
+                    setTypeFilter(["all"]);
+                  } else {
+                    setTypeFilter(selectedKeys);
+                  }
+                }}
+                className="bg-[#1A1A1A] text-white border border-gray-700"
               >
-                Time: {timeFilter === "all" ? "All Time" : 
-                       timeFilter === "today" ? "Today" : 
-                       timeFilter === "week" ? "This Week" : "This Month"}
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu 
-              aria-label="Time Filter"
-              selectedKeys={new Set([timeFilter])}
-              selectionMode="single"
-              onSelectionChange={(keys) => {
-                const selected = Array.from(keys)[0];
-                if (selected) setTimeFilter(selected.toString());
-              }}
-              className="bg-[#1A1A1A] text-white border border-gray-700"
+                <DropdownItem key="all">All</DropdownItem>
+                <DropdownItem key="purchase">Purchase</DropdownItem>
+                <DropdownItem key="yield">Yield</DropdownItem>
+                <DropdownItem key="receive">Receive</DropdownItem>
+                <DropdownItem key="send">Send</DropdownItem>
+                <DropdownItem key="swap">Swap</DropdownItem>
+                <DropdownItem key="stake">Stake</DropdownItem>
+                <DropdownItem key="unstake">Unstake</DropdownItem>
+                <DropdownItem key="reward">Reward</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            
+            <Dropdown>
+              <DropdownTrigger>
+                <Button 
+                  className="bg-[#1A1A1A] text-white border-1 border-gray-700"
+                  startContent={<Calendar size={16} />}
+                >
+                  Time: {timeFilter === "all" ? "All Time" : 
+                         timeFilter === "today" ? "Today" : 
+                         timeFilter === "week" ? "This Week" : "This Month"}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu 
+                aria-label="Time Filter"
+                selectedKeys={new Set([timeFilter])}
+                selectionMode="single"
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)[0];
+                  if (selected) setTimeFilter(selected.toString());
+                }}
+                className="bg-[#1A1A1A] text-white border border-gray-700"
+              >
+                <DropdownItem key="all">All Time</DropdownItem>
+                <DropdownItem key="today">Today</DropdownItem>
+                <DropdownItem key="week">This Week</DropdownItem>
+                <DropdownItem key="month">This Month</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            
+            <Button
+              className="bg-[#1A1A1A] text-white border-1 border-gray-700"
+              startContent={<Download size={16} />}
             >
-              <DropdownItem key="all">All Time</DropdownItem>
-              <DropdownItem key="today">Today</DropdownItem>
-              <DropdownItem key="week">This Week</DropdownItem>
-              <DropdownItem key="month">This Month</DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-          
-          <Button
-            className="bg-[#1A1A1A] text-white border-1 border-gray-700"
-            startContent={<Download size={16} />}
-          >
-            Export
-          </Button>
+              Export
+            </Button>
+          </div>
         </div>
-      </div>
-      
-      {/* Transactions Table */}
+        
+        {/* Transactions Table */}
         <div className="bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] backdrop-blur-sm border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -476,15 +695,23 @@ const TransactionsPage: React.FC = () => {
                           <div className="text-xs text-gray-400 mt-1">
                             ID: {tx.id.substring(0, 12)}...
                           </div>
+                          {tx.panels && (
+                            <div className="text-xs text-blue-400 mt-1">
+                              {tx.panels} panels
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <span className="capitalize text-white font-medium">{tx.type}</span>
+                      {tx.source === "chain" && (
+                        <div className="text-xs text-green-400">Blockchain</div>
+                      )}
                     </td>
                     <td className="py-4 px-6">
-                      <div className={`font-semibold ${tx.type === "receive" || tx.type === "reward" ? "text-green-500" : "text-white"}`}>
-                        {tx.type === "receive" || tx.type === "reward" ? "+" : tx.type === "send" ? "-" : ""}{tx.amount.toFixed(2)} {tx.token}
+                      <div className={`font-semibold ${tx.type === "yield" || tx.type === "receive" ? "text-green-500" : "text-white"}`}>
+                        {tx.type === "yield" || tx.type === "receive" ? "+" : tx.type === "send" ? "-" : ""}{tx.amount.toFixed(2)} {tx.token}
                       </div>
                       {tx.fee && (
                         <div className="text-xs text-gray-400 mt-1">
@@ -496,7 +723,12 @@ const TransactionsPage: React.FC = () => {
                     <td className="py-4 px-6">{getStatusChip(tx.status)}</td>
                     <td className="py-4 px-6">
                       <button
-                        onClick={() => window.open(`https://explorer.solana.com/tx/${tx.id}?cluster=devnet`, '_blank')}
+                        onClick={() => {
+                          const explorerUrl = tx.source === "chain" 
+                            ? `https://explorer.solana.com/tx/${tx.signature}?cluster=devnet`
+                            : `https://explorer.solana.com/tx/${tx.id}?cluster=devnet`;
+                          window.open(explorerUrl, '_blank');
+                        }}
                         className="w-10 h-10 bg-gradient-to-br from-[#1A1A1A] to-[#2A1A1A] hover:from-gray-600 hover:to-gray-500 rounded-lg flex items-center justify-center text-white transition-all border border-gray-600/30 hover:border-gray-500/50"
                       >
                         <ExternalLink size={14} />
