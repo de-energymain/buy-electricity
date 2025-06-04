@@ -75,7 +75,7 @@ const SettingsPage: React.FC = () => {
     setIsLoadingUserData(true);
     try {
       // Use the correct endpoint that matches your backend routes
-      const response = await fetch(`http://localhost:5000/api/users/${walletID}`);
+      const response = await fetch(`https://buy-electricity-production.up.railway.app/api/users/${walletID}`);
       
       if (response.ok) {
         const result = await response.json();
@@ -105,7 +105,7 @@ const SettingsPage: React.FC = () => {
     if (!walletID) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${walletID}/notifications`);
+      const response = await fetch(`https://buy-electricity-production.up.railway.app/api/users/${walletID}/notifications`);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -132,7 +132,7 @@ const SettingsPage: React.FC = () => {
     setUpdateMessage('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${walletID}`, {
+      const response = await fetch(`https://buy-electricity-production.up.railway.app/api/users/${walletID}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -221,7 +221,7 @@ const SettingsPage: React.FC = () => {
     if (walletID) {
       setIsUpdatingNotifications(true);
       try {
-        const response = await fetch(`http://localhost:5000/api/users/${walletID}/notifications`, {
+        const response = await fetch(`https://buy-electricity-production.up.railway.app/api/users/${walletID}/notifications`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

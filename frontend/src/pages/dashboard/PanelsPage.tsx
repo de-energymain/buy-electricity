@@ -267,7 +267,7 @@ const PanelsPage: React.FC = () => {
     setErrorState(prev => ({ ...prev, user: null }));
     
     try {
-      const userResponse = await fetch(`http://localhost:5000/api/users/${walletID}`);
+      const userResponse = await fetch(`https://buy-electricity-production.up.railway.app/api/users/${walletID}`);
       if (userResponse.ok) {
         const userData = await userResponse.json();
         setUserPanelData({
@@ -296,7 +296,7 @@ const PanelsPage: React.FC = () => {
   if (!walletID) return;
   
   try {
-    const purchaseResponse = await fetch(`http://localhost:5000/api/purchases/wallet/${walletID}`);
+    const purchaseResponse = await fetch(`https://buy-electricity-production.up.railway.app/api/purchases/wallet/${walletID}`);
     if (purchaseResponse.ok) {
       const purchaseResult = await purchaseResponse.json();
       setPurchaseData(purchaseResult.data || []);

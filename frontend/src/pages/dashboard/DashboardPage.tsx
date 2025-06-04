@@ -447,7 +447,7 @@ function DashboardPage() {
   // Update user in database
   const updateUserInDatabase = async (userData: UserData) => {
     try {
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch('https://buy-electricity-production.up.railway.app/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -469,7 +469,7 @@ function DashboardPage() {
   // Fetch purchase data
   const fetchPurchaseData = async (walletAddress: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/purchases/wallet/${walletAddress}`);
+      const response = await fetch(`https://buy-electricity-production.up.railway.app/api/purchases/wallet/${walletAddress}`);
       if (response.ok) {
         const result = await response.json();
         setPurchaseData(result.data || []);
@@ -486,7 +486,7 @@ function DashboardPage() {
   // Fetch user data
   const fetchUserData = async (walletAddress: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${walletAddress}`);
+      const response = await fetch(`https://buy-electricity-production.up.railway.app/api/users/${walletAddress}`);
       if (response.ok) {
         const userData = await response.json();
         setUserPanelData({
