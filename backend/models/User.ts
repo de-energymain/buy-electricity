@@ -7,6 +7,11 @@ export interface IUser extends Document {
     userName: string,
     wallet: string,
     walletID: string,
+    panelDetails : {
+        purchasedPanels : number,
+        purchasedCost: number,
+        generaterdYield: number
+    }
     createdAt: Date,
     updatedAt: Date,
 }
@@ -21,6 +26,11 @@ const UserSchema : Schema = new Schema({
     userName: { type: String},
     wallet: { type: String },
     walletID: { type: String, unique: true},
+    panelDetails: {
+        purchasedPanels: { type: Number, default : 0 },
+        purchasedCost: { type: Number, default : 0 },
+        generatedYield: { type: Number, default : 0 },
+    }
 }, {
     timestamps: true,
 });

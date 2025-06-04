@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useWallet } from '@solana/wallet-adapter-react';
 import { Card, CardBody, Switch, Input, Button, Divider, Tabs, Tab } from "@nextui-org/react";
 import { Bell, Lock, Globe, User, Shield, Check, Eye, EyeOff } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
@@ -7,6 +8,39 @@ import { inputClasses } from "../../shared/styles";
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("account");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const { connected, wallet } = useWallet();
+  //const [walletID, setWalletID] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>('john.doe@example.com');
+  const [name, setName] = useState<string>('John Doe');
+
+   useEffect(() => {
+      const session = localStorage.getItem("web3AuthSession");
+      if (session) {
+        try {
+          const data = JSON.parse(session);
+          if (data.userInfo && data.userInfo.email && data.userInfo.name) {
+            console.log("User authenticated:", data.userInfo.name, data.userInfo.email);
+            /*if (data.publicKey) {
+              console.log("Public key available:", data.publicKey);
+              setWalletID(data.publicKey);
+            }*/
+            if (data.userInfo.email) {
+              setEmail(data.userInfo.email);
+            }
+            if (data.userInfo.name) {
+              setName(data.userInfo.name);
+            }                    
+          }
+        } catch (e) {
+          console.error("Error parsing Web3Auth session", e);
+        }
+      }
+          if (connected && wallet) {
+        //const walletPublicKey = (wallet.adapter as { publicKey?: { toString: () => string } }).publicKey?.toString() || "";
+        //setWalletID(walletPublicKey);
+      }
+    }, [connected, wallet]);
+  
   
   return (
     <DashboardTemplate title="Settings" activePage="settings">
@@ -77,7 +111,7 @@ const SettingsPage: React.FC = () => {
                   <div>
                     <div className="text-sm text-gray-400 mb-1">Name</div>
                     <Input
-                      defaultValue="John Doe"
+                      value={name}
                       classNames={inputClasses}
                     />
                   </div>
@@ -85,7 +119,7 @@ const SettingsPage: React.FC = () => {
                   <div>
                     <div className="text-sm text-gray-400 mb-1">Email</div>
                     <Input
-                      defaultValue="john.doe@example.com"
+                      value={email}
                       classNames={inputClasses}
                     />
                   </div>
@@ -93,7 +127,7 @@ const SettingsPage: React.FC = () => {
                   <div>
                     <div className="text-sm text-gray-400 mb-1">Username</div>
                     <Input
-                      defaultValue="johndoe"
+                      defaultValue="Enter a username of your choice"
                       classNames={inputClasses}
                     />
                   </div>

@@ -16,6 +16,7 @@ import {
   cardClasses
 } from "../../shared/styles";
 import { createPurchase } from "../../services/purchaseApi";
+import { updateUserPanels } from "../../services/userApi";
 
 // Success page order details type
 interface SuccessDetails {
@@ -122,6 +123,12 @@ function PaymentSuccessPage() {
         };
         console.log("Purchase data:", purchaseData);
         await createPurchase(purchaseData);
+        //update user data
+        await updateUserPanels(orderDetails.walletAddress, {
+          panelsPurchased: orderDetails.panels,
+          cost: orderDetails.cost,
+        });
+
       } catch (error) {
         console.error('Failed to save purchase:', error);
       }

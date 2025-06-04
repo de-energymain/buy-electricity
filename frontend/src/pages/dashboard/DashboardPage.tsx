@@ -47,8 +47,9 @@ function DashboardPage() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [nodes, setNodes] = useState<NodeData[]>([]);
   //const [username, setUsername] = useState<string | null>(null);
+  const [walletID, setWalletID] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [stats] = useState({
+  const [stats, setStats] = useState({
     energyGenerated: 900,
     energyChange: 12,
     nrgEarnings: 613,
@@ -62,6 +63,7 @@ function DashboardPage() {
     lowest: 59,
     highest: 72,
     yield: 55.44,
+    totalPanels: 15,
   });
 
   //Update user in database
@@ -106,6 +108,7 @@ function DashboardPage() {
           if (data.publicKey) {
             console.log("Public key available:", data.publicKey);
             localStorage.setItem("publicKey", data.publicKey);
+            setWalletID(data.publicKey);
           }
 
           updateUserInDatabase({
@@ -121,13 +124,43 @@ function DashboardPage() {
     }
         if (connected && wallet) {
       const walletPublicKey = (wallet.adapter as { publicKey?: { toString: () => string } }).publicKey?.toString() || "";
+
       updateUserInDatabase({
         loginMethod: "wallet",
         wallet: wallet.adapter?.name || "Unknown Wallet",
         walletID: walletPublicKey,
       });
+      setWalletID(walletPublicKey);
     }
   }, [connected, wallet]);
+
+  useEffect(() => {
+    const getStats = async() => {
+    if (!walletID) {
+      console.error("Wallet ID is not available");
+      return;
+    }
+    try {
+      console.log(`GET to http://localhost:5000/api/users/${walletID}`)
+      const response = await fetch(`http://localhost:5000/api/users/${walletID}`);
+      const data = await response.json();
+
+      if(data) {
+        const generatedYield = data.user.panelDetails.generatedYield;
+        const purchasedPanels = data.user.panelDetails.purchasedPanels;
+        setStats(prevStats => ({
+          ...prevStats,
+          yield: generatedYield,
+          totalPanels: purchasedPanels
+        }));      
+      } 
+    } catch (error) {
+      console.error('Error fetching panels data:', error);
+    }
+  };
+
+  getStats();
+  }, [walletID]);
 
 
   // Generate mock data on component mount
@@ -249,7 +282,7 @@ function DashboardPage() {
           <Card className="bg-[#1A1A1A] border-none">
             <CardBody className="p-4">
               <div className="mb-4">
-                <h3 className="text-lg font-medium text-white">15 Panels</h3>
+                <h3 className="text-lg font-medium text-white">{stats.totalPanels} Panels</h3>
                 <p className="text-sm text-gray-400">Multiple Solar Farms • India</p>
               </div>
               
@@ -309,7 +342,7 @@ function DashboardPage() {
                   </div>
                   <ArrowRight size={16} className="text-blue-400" />
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">${Math.ceil(stats.yield)}</div>
+                <div className="text-2xl font-bold text-white mb-1">${(stats.yield).toFixed(4)}</div>
                 <div className="text-sm text-gray-400 mb-2">Monthly Savings</div>
                 <div className="text-xs text-green-400">+1.5% this month</div>
               </CardBody>
@@ -366,7 +399,7 @@ function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div>
                         <div className="text-sm text-gray-400 mb-1">View your effective electricity savings for this month here.</div>
-                        <div className="text-2xl font-bold text-white">${Math.ceil(stats.yield)}</div>
+                        <div className="text-2xl font-bold text-white">${(stats.yield).toFixed(4)}</div>
                         <div className="text-xs text-green-500">+1.5% from last month</div>
                     </div>
                     <div className="w-12 h-12 bg-[#2A1A1A] rounded-lg flex items-center justify-center text-2xl">
