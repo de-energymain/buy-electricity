@@ -1,6 +1,6 @@
 export const createPurchase = async (purchaseData: any) => {
   try {
-    const response = await fetch('http://localhost:5000/api/purchases', {
+    const response = await fetch('https://buy-electricity-production.up.railway.app/api/purchases', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -21,7 +21,7 @@ export const createPurchase = async (purchaseData: any) => {
 
 export const getPurchasesByWallet = async (walletAddress: string) => {
   try {
-    const response = await fetch(`http://localhost:5000/api/purchases/wallet/${walletAddress}`, {
+    const response = await fetch(`https://buy-electricity-production.up.railway.app/api/purchases/wallet/${walletAddress}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

@@ -115,7 +115,7 @@ const TransactionsPage: React.FC = () => {
   // Fetch purchase data from your API
   const fetchPurchaseData = async (walletAddress: string): Promise<Transaction[]> => {
     try {
-      const response = await fetch(`http://localhost:5000/api/purchases/wallet/${walletAddress}`);
+      const response = await fetch(`https://buy-electricity-production.up.railway.app/api/purchases/wallet/${walletAddress}`);
       if (response.ok) {
         const result = await response.json();
         const purchases: PurchaseData[] = result.data || [];
@@ -145,7 +145,7 @@ const TransactionsPage: React.FC = () => {
   // Fetch user data for yield calculations
   const fetchUserData = async (walletAddress: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${walletAddress}`);
+      const response = await fetch(`https://buy-electricity-production.up.railway.app/api/users/${walletAddress}`);
       if (response.ok) {
         const userData = await response.json();
         setUserPanelData({
