@@ -10,7 +10,8 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter
+  ModalFooter,
+  Spinner
 } from "@nextui-org/react";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { ArrowRight, CreditCard, Zap, DollarSign } from "lucide-react";
@@ -40,33 +41,410 @@ interface UserData {
   walletID?: string;
 }
 
+interface PlantData {
+  _id: string;
+  plantName: string;
+  gridStatus: string;
+  plantLocation: string;
+  plantSize: number;
+  proposalType: {
+    type: string;
+    tariff: string;
+    tariffEscalation: string;
+  };
+  projectCode: string;
+  plantType: string;
+  industryType: string;
+  latitude: number;
+  longitude: number;
+  tenure: number;
+  currency: string;
+  commissionDate: string;
+  completionDate: string;
+  estimatedGeneration: {
+    [year: string]: {
+      [month: string]: number;
+    };
+  };
+  estimatedYield: {
+    [year: string]: {
+      [month: string]: number;
+    };
+  };
+  degradationFactor: number;
+}
+
+interface InverterData {
+  _id: string;
+  date_time: string;
+  inverterId: string;
+  plantId: string;
+  roofId: string;
+  value: number;
+  tillLifeTIme: number;
+}
+
+interface PurchaseData {
+  _id: string;
+  farmName: string;
+  location: string;
+  walletAddress: string;
+  paymentMethod: string;
+  tokenAmount: number;
+  panelsPurchased: number;
+  cost: number;
+  capacity: number;
+  output: number;
+  transactionHash: string;
+  purchaseDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserPanelData {
+  purchasedPanels: number;
+  purchasedCost: number;
+  generatedYield: number;
+}
+
 function DashboardPage() {
   const navigate = useNavigate();
   const { disconnect, connected, wallet } = useWallet();
   const [activeTab, setActiveTab] = useState("week");
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [nodes, setNodes] = useState<NodeData[]>([]);
-  //const [username, setUsername] = useState<string | null>(null);
   const [walletID, setWalletID] = useState<string | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [stats, setStats] = useState({
-    energyGenerated: 900,
-    energyChange: 12,
-    nrgEarnings: 613,
-    earningsChange: 9,
-    carbonImpact: 4.93,
-    carbonChange: 15,
-    cleanPoints: 437,
-    pointsChange: 5,
-    efficiency: 68,
-    target: 75,
-    lowest: 59,
-    highest: 72,
-    yield: 55.44,
-    totalPanels: 15,
+  const [purchaseData, setPurchaseData] = useState<PurchaseData[]>([]);
+  const [plantData, setPlantData] = useState<PlantData | null>(null);
+  const [inverterData, setInverterData] = useState<InverterData[]>([]);
+  const [userPanelData, setUserPanelData] = useState<UserPanelData>({
+    purchasedPanels: 0,
+    purchasedCost: 0,
+    generatedYield: 0
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastYieldUpdate, setLastYieldUpdate] = useState<Date | null>(null);
 
-  //Update user in database
+  // Constants
+  const DOLLAR_TO_NRG_RATE = 0.03; // $0.03 per NRG token
+  const DAILY_GENERATION_PER_PANEL = 2.8; // kWh per panel per day
+  const CO2_SAVINGS_PER_KWH = 0.0004; // tons CO2 saved per kWh
+  const PLANT_ID = "6750afc5df6b8bbf630e3154"; // Plant ID for API calls
+
+  // Calculate user's share of plant capacity
+  const calculateUserCapacityShare = () => {
+    if (!plantData || userPanelData.purchasedPanels === 0) return 0;
+    
+    // Each panel is 0.45 kW (450W)
+    const userCapacity = userPanelData.purchasedPanels * 0.45;
+    const plantCapacity = plantData.plantSize;
+    
+    return userCapacity / plantCapacity; // Returns percentage as decimal (0.1 = 10%)
+  };
+
+  // Calculate user's generation based on plant data and their capacity share
+  const calculateUserGenerationFromPlant = () => {
+    const userShare = calculateUserCapacityShare();
+    
+    if (inverterData.length === 0 || userShare === 0) return 0;
+    
+    // Get latest reading for current generation
+    const latestReading = inverterData[inverterData.length - 1];
+    return latestReading ? latestReading.value * userShare : 0;
+  };
+
+  // Calculate today's total generation for user
+  const calculateTodayGeneration = () => {
+    const userShare = calculateUserCapacityShare();
+    
+    if (inverterData.length === 0 || userShare === 0) return 0;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const todayData = inverterData.filter(d => d.date_time.startsWith(today));
+    const plantTodayTotal = todayData.reduce((sum, d) => sum + d.value, 0);
+    
+    return plantTodayTotal * userShare;
+  };
+
+  // Fetch plant data
+  const fetchPlantData = async () => {
+    try {
+      const response = await fetch(`https://de-express-backend.onrender.com/api/plant/${PLANT_ID}`, {
+        headers: { 'accept': '*/*' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch plant data: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setPlantData(data);
+    } catch (error) {
+      console.error('Error fetching plant data:', error);
+    }
+  };
+
+  // Fetch inverter data for today
+  const fetchTodayInverterData = async () => {
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      
+      const response = await fetch(
+        `https://de-express-backend.onrender.com/api/inverterquarterhourlydata/plant/${PLANT_ID}?startDate=${encodeURIComponent(startDate.toISOString())}&endDate=${encodeURIComponent(endDate.toISOString())}`,
+        { headers: { 'accept': '*/*' } }
+      );
+      
+      if (response.ok) {
+        const result = await response.json();
+        setInverterData(result.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching inverter data:', error);
+    }
+  };
+
+  // Generate chart data from real inverter data based on user's share
+  const generateRealChartData = (period: string) => {
+    const userShare = calculateUserCapacityShare();
+    
+    if (inverterData.length === 0 || userShare === 0) {
+      return [];
+    }
+
+    let data: ChartData[] = [];
+    
+    switch (period) {
+      case "day":
+        // Group by hour for today
+        const hourlyData: { [key: string]: number } = {};
+        
+        inverterData.forEach(d => {
+          const date = new Date(d.date_time);
+          const hour = date.getHours();
+          const key = `${hour.toString().padStart(2, '0')}:00`;
+          hourlyData[key] = (hourlyData[key] || 0) + d.value;
+        });
+        
+        // Convert to array and apply user share
+        data = Object.entries(hourlyData)
+          .map(([time, value]) => ({
+            day: time,
+            value: parseFloat((value * userShare).toFixed(2))
+          }))
+          .sort((a, b) => parseInt(a.day.split(':')[0]) - parseInt(b.day.split(':')[0]));
+        break;
+        
+      case "week":
+        // For week, month, year - use simulated data based on user's current capacity
+        // since we only have today's real data
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const todayTotal = calculateTodayGeneration();
+        
+        data = days.map(day => ({
+          day,
+          value: parseFloat((todayTotal * (0.7 + Math.random() * 0.6)).toFixed(1))
+        }));
+        break;
+        
+      case "month":
+        const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
+        const weeklyAvg = calculateTodayGeneration() * 7;
+        
+        data = weeks.map(week => ({
+          day: week,
+          value: parseFloat((weeklyAvg * (0.8 + Math.random() * 0.4)).toFixed(1))
+        }));
+        break;
+        
+      case "year":
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthlyAvg = calculateTodayGeneration() * 30;
+        const seasonalFactors = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.1, 1.0, 0.9, 0.8, 0.6, 0.5];
+        
+        data = months.map((month, index) => ({
+          day: month,
+          value: parseFloat((monthlyAvg * seasonalFactors[index] * (0.8 + Math.random() * 0.4)).toFixed(1))
+        }));
+        break;
+    }
+    
+    return data;
+  };
+
+  // Calculate total energy generated based on purchase dates
+  const calculateTotalGenerated = () => {
+    if (purchaseData.length === 0) {
+      // Fallback calculation if no purchase data
+      return userPanelData.purchasedPanels * DAILY_GENERATION_PER_PANEL * 30;
+    }
+
+    let totalGenerated = 0;
+    const currentDate = new Date();
+
+    purchaseData.forEach(purchase => {
+      const purchaseDate = new Date(purchase.purchaseDate || purchase.createdAt);
+      const daysSincePurchase = Math.floor((currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Calculate generation: panels × 2.8 kWh/day × days since purchase
+      const generatedFromThisPurchase = purchase.panelsPurchased * DAILY_GENERATION_PER_PANEL * Math.max(daysSincePurchase, 0);
+      totalGenerated += generatedFromThisPurchase;
+    });
+
+    return totalGenerated;
+  };
+
+  // Calculate real-time stats from actual data
+  const calculateRealStats = () => {
+    const totalPanels = userPanelData.purchasedPanels;
+    const dollarYield = userPanelData.generatedYield;
+    const nrgEarnings = dollarYield / DOLLAR_TO_NRG_RATE;
+    
+    // Calculate total energy generated based on purchase history
+    const totalEnergyGenerated = calculateTotalGenerated();
+    
+    // Get current generation from plant data
+    const currentGeneration = calculateUserGenerationFromPlant();
+    
+    // Get today's total generation
+    const todayGeneration = calculateTodayGeneration();
+    
+    // Calculate carbon impact
+    const carbonImpact = totalEnergyGenerated * CO2_SAVINGS_PER_KWH;
+    
+    // Calculate clean points (arbitrary multiplier for gamification)
+    const cleanPoints = Math.round(carbonImpact * 100);
+    
+    // Calculate daily potential
+    const dailyPotential = totalPanels * DAILY_GENERATION_PER_PANEL;
+    
+    // Calculate efficiency (comparing actual vs potential)
+    const efficiency = dailyPotential > 0 ? Math.min((totalEnergyGenerated / (totalPanels * DAILY_GENERATION_PER_PANEL * 30)) * 100, 100) : 0;
+
+    // Calculate previous month for trend calculation
+    const previousMonthYield = dollarYield * 0.9; // Simulated 10% growth
+    const earningsChange = previousMonthYield > 0 ? ((dollarYield - previousMonthYield) / previousMonthYield) * 100 : 0;
+    
+    return {
+      energyGenerated: Math.round(totalEnergyGenerated),
+      energyChange: Math.round(Math.random() * 15 + 5), // Simulated growth
+      nrgEarnings: Math.round(nrgEarnings),
+      earningsChange: Math.round(earningsChange),
+      carbonImpact: parseFloat(carbonImpact.toFixed(2)),
+      carbonChange: Math.round(Math.random() * 20 + 5), // Simulated growth
+      cleanPoints,
+      pointsChange: Math.round(Math.random() * 10 + 2), // Simulated growth
+      efficiency: Math.round(efficiency),
+      target: 75,
+      lowest: Math.max(Math.round(efficiency - 15), 45),
+      highest: Math.min(Math.round(efficiency + 10), 85),
+      yield: dollarYield,
+      totalPanels,
+      currentGeneration: parseFloat(currentGeneration.toFixed(3)), // Real-time generation
+      todayGeneration: parseFloat(todayGeneration.toFixed(2)), // Today's total
+    };
+  };
+
+  const stats = calculateRealStats();
+
+  // Generate chart data based on user's actual panels
+  const generateUserChartData = (period: string) => {
+    // Use real inverter data if available, otherwise fallback to simulated
+    const realData = generateRealChartData(period);
+    if (realData.length > 0) {
+      return realData;
+    }
+    
+    // Fallback to simulated data if no real data available
+    const totalPanels = userPanelData.purchasedPanels;
+    if (totalPanels === 0) return [];
+
+    let data: ChartData[] = [];
+    const dailyGeneration = totalPanels * DAILY_GENERATION_PER_PANEL;
+
+    switch (period) {
+      case "day":
+        // Hourly generation pattern (solar panels produce more during day)
+        const hours = ["12AM", "3AM", "6AM", "9AM", "12PM", "3PM", "6PM", "9PM"];
+        const hourlyPattern = [0, 0, 0.1, 0.8, 1.0, 0.9, 0.3, 0]; // Solar generation pattern
+        data = hours.map((hour, index) => ({
+          day: hour,
+          value: parseFloat((dailyGeneration * hourlyPattern[index] * (0.8 + Math.random() * 0.4)).toFixed(1))
+        }));
+        break;
+
+      case "week":
+        // Daily generation for the week
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        data = days.map(day => ({
+          day,
+          value: parseFloat((dailyGeneration * (0.7 + Math.random() * 0.6)).toFixed(1))
+        }));
+        break;
+
+      case "month":
+        // Weekly averages for the month
+        const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
+        data = weeks.map(week => ({
+          day: week,
+          value: parseFloat((dailyGeneration * 7 * (0.8 + Math.random() * 0.4)).toFixed(1))
+        }));
+        break;
+
+      case "year":
+        // Monthly generation (accounting for seasonal variation)
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const seasonalFactors = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.1, 1.0, 0.9, 0.8, 0.6, 0.5];
+        data = months.map((month, index) => ({
+          day: month,
+          value: parseFloat((dailyGeneration * 30 * seasonalFactors[index] * (0.8 + Math.random() * 0.4)).toFixed(1))
+        }));
+        break;
+    }
+
+    return data;
+  };
+
+  // Create nodes from user's purchase data
+  const createNodesFromPurchases = () => {
+    if (purchaseData.length === 0) return [];
+
+    // Group purchases by farm
+    const farmGroups: { [key: string]: PurchaseData[] } = {};
+    purchaseData.forEach(purchase => {
+      if (!farmGroups[purchase.farmName]) {
+        farmGroups[purchase.farmName] = [];
+      }
+      farmGroups[purchase.farmName].push(purchase);
+    });
+
+    // Create nodes from grouped data
+    return Object.entries(farmGroups).map(([farmName, purchases], index) => {
+      const totalPanels = purchases.reduce((sum, p) => sum + p.panelsPurchased, 0);
+      const totalCapacity = purchases.reduce((sum, p) => sum + p.capacity, 0);
+      const location = purchases[0].location;
+      
+      // Calculate earnings for this farm
+      const farmCost = purchases.reduce((sum, p) => sum + p.cost, 0);
+      const farmYield = (farmCost / userPanelData.purchasedCost) * userPanelData.generatedYield;
+      const farmNRGEarnings = farmYield / DOLLAR_TO_NRG_RATE;
+
+      return {
+        id: `farm-${index + 1}`,
+        name: farmName,
+        location,
+        icon: index === 0 ? "🏭" : "🔋",
+        panels: totalPanels,
+        capacity: parseFloat(totalCapacity.toFixed(2)),
+        dailyOutput: Math.round(totalPanels * DAILY_GENERATION_PER_PANEL),
+        earnings: Math.round(farmNRGEarnings)
+      };
+    });
+  };
+
+  // Update user in database
   const updateUserInDatabase = async (userData: UserData) => {
     try {
       const response = await fetch('http://localhost:5000/api/users', {
@@ -88,6 +466,43 @@ function DashboardPage() {
     }
   };
 
+  // Fetch purchase data
+  const fetchPurchaseData = async (walletAddress: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/purchases/wallet/${walletAddress}`);
+      if (response.ok) {
+        const result = await response.json();
+        setPurchaseData(result.data || []);
+      } else {
+        console.log('No purchase data found for wallet:', walletAddress);
+        setPurchaseData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching purchase data:', error);
+      setPurchaseData([]);
+    }
+  };
+
+  // Fetch user data
+  const fetchUserData = async (walletAddress: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${walletAddress}`);
+      if (response.ok) {
+        const userData = await response.json();
+        setUserPanelData({
+          purchasedPanels: userData.user.panelDetails.purchasedPanels,
+          purchasedCost: userData.user.panelDetails.purchasedCost,
+          generatedYield: userData.user.panelDetails.generatedYield
+        });
+        setLastYieldUpdate(new Date(userData.user.updatedAt));
+      } else if (response.status === 404) {
+        console.log('User not found, using default values');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
   // Update authentication status when wallet connection changes
   useEffect(() => {
     if (connected) {
@@ -101,9 +516,7 @@ function DashboardPage() {
       try {
         const data = JSON.parse(session);
         if (data.userInfo && data.userInfo.email && data.userInfo.name) {
-          // Store user info for potential future use
           console.log("User authenticated:", data.userInfo.name, data.userInfo.email);
-          //setUsername(data.userInfo.name);
           localStorage.setItem("username", data.userInfo.name);
           if (data.publicKey) {
             console.log("Public key available:", data.publicKey);
@@ -122,7 +535,7 @@ function DashboardPage() {
         console.error("Error parsing Web3Auth session", e);
       }
     }
-        if (connected && wallet) {
+    if (connected && wallet) {
       const walletPublicKey = (wallet.adapter as { publicKey?: { toString: () => string } }).publicKey?.toString() || "";
 
       updateUserInDatabase({
@@ -134,117 +547,50 @@ function DashboardPage() {
     }
   }, [connected, wallet]);
 
+  // Fetch all data when wallet ID is available
   useEffect(() => {
-    const getStats = async() => {
-    if (!walletID) {
-      console.error("Wallet ID is not available");
-      return;
-    }
-    try {
-      console.log(`GET to http://localhost:5000/api/users/${walletID}`)
-      const response = await fetch(`http://localhost:5000/api/users/${walletID}`);
-      const data = await response.json();
+    const fetchAllData = async () => {
+      if (!walletID) return;
+      
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchUserData(walletID),
+          fetchPurchaseData(walletID),
+          fetchPlantData(),
+          fetchTodayInverterData()
+        ]);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      if(data) {
-        const generatedYield = data.user.panelDetails.generatedYield;
-        const purchasedPanels = data.user.panelDetails.purchasedPanels;
-        setStats(prevStats => ({
-          ...prevStats,
-          yield: generatedYield,
-          totalPanels: purchasedPanels
-        }));      
-      } 
-    } catch (error) {
-      console.error('Error fetching panels data:', error);
-    }
-  };
-
-  getStats();
+    fetchAllData();
   }, [walletID]);
 
-
-  // Generate mock data on component mount
+  // Update nodes when purchase data changes
   useEffect(() => {
-    const mockNodes: NodeData[] = [
-      {
-        id: "jaipur-01",
-        name: "Jaipur Solar Farm",
-        location: "Jaipur, India",
-        icon: "🏭",
-        panels: 17,
-        capacity: 7.65,
-        dailyOutput: 112,
-        earnings: 434
-      },
-      {
-        id: "gujarat-01",
-        name: "Gujarat Solar Park",
-        location: "Charanka, India",
-        icon: "🔋",
-        panels: 8,
-        capacity: 3.44,
-        dailyOutput: 48,
-        earnings: 179
-      }
-    ];
-    setNodes(mockNodes);
+    const newNodes = createNodesFromPurchases();
+    setNodes(newNodes);
+  }, [purchaseData, userPanelData]);
 
-    generateChartData("week");
-  }, []);
-
-  const generateChartData = (period: string) => {
-    let data: ChartData[] = [];
-
-    switch (period) {
-      case "day":
-        const hours = ["12AM", "3AM", "6AM", "9AM", "12PM", "3PM", "6PM", "9PM"];
-        data = hours.map(hour => ({
-          day: hour,
-          value: Math.floor(Math.random() * 6) + 2
-        }));
-        break;
-
-      case "week":
-        data = [
-          { day: "Mon", value: 20 },
-          { day: "Tue", value: 30 },
-          { day: "Wed", value: 35 },
-          { day: "Thu", value: 45 },
-          { day: "Fri", value: 40 },
-          { day: "Sat", value: 28 },
-          { day: "Sun", value: 25 }
-        ];
-        break;
-
-      case "month":
-        const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
-        data = weeks.map(week => ({
-          day: week,
-          value: Math.floor(Math.random() * 150) + 100
-        }));
-        break;
-
-      case "year":
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        data = months.map(month => ({
-          day: month,
-          value: Math.floor(Math.random() * 500) + 300
-        }));
-        break;
+  // Update chart data when relevant data changes
+  useEffect(() => {
+    if (userPanelData.purchasedPanels > 0 || inverterData.length > 0) {
+      const newChartData = generateUserChartData(activeTab);
+      setChartData(newChartData);
     }
-
-    setChartData(data);
-  };
+  }, [userPanelData, inverterData, activeTab]);
 
   const handleTabChange = (key: React.Key) => {
     setActiveTab(key as string);
-    generateChartData(key as string);
+    if (userPanelData.purchasedPanels > 0 || inverterData.length > 0) {
+      const newChartData = generateUserChartData(key as string);
+      setChartData(newChartData);
+    }
   };
-
-  /*const handleNodeDetails = (nodeId: string) => {
-    console.log(`View details for node: ${nodeId}`);
-    navigate(`/dashboard/node/${nodeId}`);
-  };*/
 
   const confirmLogout = async () => {
     if (disconnect) {
@@ -262,16 +608,50 @@ function DashboardPage() {
     setIsLogoutModalOpen(false);
   };
 
-  const maxValue = Math.max(...chartData.map(item => item.value));
+  const maxValue = Math.max(...chartData.map(item => item.value), 1);
+
+  // Calculate summary statistics from actual data
+  const calculateSummaryStats = () => {
+    if (chartData.length === 0) return { avgDaily: 0, peakOutput: 0, totalPeriod: 0 };
+
+    const total = chartData.reduce((sum, item) => sum + item.value, 0);
+    const avg = total / chartData.length;
+    const peak = Math.max(...chartData.map(item => item.value));
+
+    return {
+      avgDaily: Math.round(avg),
+      peakOutput: Math.round(peak),
+      totalPeriod: Math.round(total)
+    };
+  };
+
+  const summaryStats = calculateSummaryStats();
+
+  if (isLoading) {
+    return (
+      <DashboardTemplate title="Dashboard" activePage="dashboard">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Spinner size="lg" color="danger" className="mb-4" />
+            <div className="text-xl mb-2 text-white">Loading your dashboard...</div>
+            <div className="text-sm text-gray-400">Fetching panel data and calculations</div>
+          </div>
+        </div>
+      </DashboardTemplate>
+    );
+  }
 
   return (
     <DashboardTemplate title="Dashboard" activePage="dashboard">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Welcome Back!</h1>
         <p className="text-gray-400">Here are your solar investments at a glance.</p>
+        {lastYieldUpdate && (
+          <p className="text-xs text-gray-500 mt-1">
+            Last updated: {lastYieldUpdate.toLocaleString()}
+          </p>
+        )}
       </div>
-
-
 
       {/* Top Row - Panels and Key Metrics Cards on same line */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -283,7 +663,9 @@ function DashboardPage() {
             <CardBody className="p-4">
               <div className="mb-4">
                 <h3 className="text-lg font-medium text-white">{stats.totalPanels} Panels</h3>
-                <p className="text-sm text-gray-400">Multiple Solar Farms • India</p>
+                <p className="text-sm text-gray-400">
+                  {nodes.length > 0 ? `${nodes.length} Solar Farm${nodes.length > 1 ? 's' : ''} • India` : 'Multiple Solar Farms • India'}
+                </p>
               </div>
               
               <div className="flex items-center p-3 bg-[#2A1A1A] rounded-lg mb-4">
@@ -292,7 +674,9 @@ function DashboardPage() {
                 </div>
                 <div>
                   <div className="text-sm font-medium text-white">Active solar farm investments</div>
-                  <div className="text-xs text-gray-400">Generating clean energy across {nodes.length} nodes.</div>
+                  <div className="text-xs text-gray-400">
+                    Generating {Math.round(stats.totalPanels * DAILY_GENERATION_PER_PANEL)} kWh daily across {Math.max(nodes.length, 1)} node{nodes.length !== 1 ? 's' : ''}.
+                  </div>
                 </div>
               </div>
 
@@ -310,7 +694,7 @@ function DashboardPage() {
         <div className="lg:col-span-2">
           <h2 className="text-xl font-semibold text-white mb-4">Key Metrics</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* NRG Earnings - Same color as panels */}
+            {/* NRG Earnings */}
             <Card 
               className="bg-[#1A1A1A] border-none cursor-pointer hover:bg-[#2A1A1A] transition-all duration-300"
               isPressable
@@ -329,11 +713,11 @@ function DashboardPage() {
               </CardBody>
             </Card>
 
-            {/* Transactions */}
+            {/* Current Generation (Real-time from Plant API) */}
             <Card 
               className="bg-[#1A1A1A] border-none hover:bg-[#2A1A1A] transition-all duration-300 cursor-pointer"
               isPressable
-              onPress={() => navigate("/dashboard/transactions")}
+              onPress={() => navigate("/dashboard/panels")}
             >
               <CardBody className="p-6">
                 <div className="flex items-center justify-between mb-3">
@@ -342,9 +726,9 @@ function DashboardPage() {
                   </div>
                   <ArrowRight size={16} className="text-blue-400" />
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">${(stats.yield).toFixed(4)}</div>
-                <div className="text-sm text-gray-400 mb-2">Monthly Savings</div>
-                <div className="text-xs text-green-400">+1.5% this month</div>
+                <div className="text-2xl font-bold text-white mb-1">{stats.currentGeneration} kW</div>
+                <div className="text-sm text-gray-400 mb-2">Current Generation</div>
+                <div className="text-xs text-green-400">Today: {stats.todayGeneration} kWh</div>
               </CardBody>
             </Card>
 
@@ -399,7 +783,7 @@ function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div>
                         <div className="text-sm text-gray-400 mb-1">View your effective electricity savings for this month here.</div>
-                        <div className="text-2xl font-bold text-white">${(stats.yield).toFixed(4)}</div>
+                        <div className="text-2xl font-bold text-white">${stats.yield.toFixed(4)}</div>
                         <div className="text-xs text-green-500">+1.5% from last month</div>
                     </div>
                     <div className="w-12 h-12 bg-[#2A1A1A] rounded-lg flex items-center justify-center text-2xl">
@@ -456,31 +840,45 @@ function DashboardPage() {
                 </div>
 
                 <div className="h-64 relative">
-                  <div className="absolute inset-0 flex items-end">
-                    {chartData.map((item, index) => (
-                      <div key={index} className="flex-1 flex flex-col items-center space-y-2">
-                        <div
-                          className="w-6 bg-gradient-to-t from-red-800 to-[#E9423A] rounded-sm"
-                          style={{ height: `${(item.value / maxValue) * 180}px` }}
-                        ></div>
-                        <div className="text-xs text-gray-400">{item.day}</div>
+                  {stats.totalPanels === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="text-gray-400 mb-4">No panels purchased yet</div>
+                        <Button 
+                          className="bg-[#E9423A] text-white"
+                          onPress={() => navigate('/')}
+                        >
+                          Buy Your First Panels
+                        </Button>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex items-end">
+                      {chartData.map((item, index) => (
+                        <div key={index} className="flex-1 flex flex-col items-center space-y-2">
+                          <div
+                            className="w-6 bg-gradient-to-t from-red-800 to-[#E9423A] rounded-sm"
+                            style={{ height: `${(item.value / maxValue) * 180}px` }}
+                          ></div>
+                          <div className="text-xs text-gray-400">{item.day}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between mt-6 pt-4 border-t border-gray-800">
                   <div className="text-center">
                     <div className="text-xs text-gray-400">Avg. Daily</div>
-                    <div className="font-medium text-white">32 kWh</div>
+                    <div className="font-medium text-white">{summaryStats.avgDaily} kWh</div>
                   </div>
                   <div className="text-center">
                     <div className="text-xs text-gray-400">Peak Output</div>
-                    <div className="font-medium text-white">45 kWh</div>
+                    <div className="font-medium text-white">{summaryStats.peakOutput} kWh</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xs text-gray-400">Total Week</div>
-                    <div className="font-medium text-white">224 kWh</div>
+                    <div className="text-xs text-gray-400">Total {activeTab === 'week' ? 'Week' : activeTab === 'month' ? 'Month' : activeTab === 'year' ? 'Year' : 'Day'}</div>
+                    <div className="font-medium text-white">{summaryStats.totalPeriod} kWh</div>
                   </div>
                 </div>
               </CardBody>
