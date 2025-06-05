@@ -846,7 +846,7 @@ function DashboardPage() {
                     <div>
                       <div className="text-sm font-medium text-white">{stats.todayGeneration} kWh</div>
                       <div className="text-xs text-gray-400">
-                        Today's generation from API data.
+                        Daily generation from all assets.
                       </div>
                     </div>
                   </div>
@@ -912,7 +912,7 @@ function DashboardPage() {
                 </div>
                 <div className="text-2xl font-bold text-white mb-1">{stats.energyGenerated} kWh</div>
                 <div className="text-sm text-gray-400 mb-2">Energy Generated</div>
-                <div className="text-xs text-green-400">Since purchase • Real API data</div>
+                <div className="text-xs text-green-400">Lifetime</div>
               </CardBody>
             </Card>
           </div>
