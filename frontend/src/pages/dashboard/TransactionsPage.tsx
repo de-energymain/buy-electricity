@@ -429,7 +429,7 @@ const TransactionsPage: React.FC = () => {
     
     // Include yield from both blockchain transactions AND user panel data
     const blockchainYield = yields.reduce((sum, tx) => sum + tx.amount, 0);
-    const totalYield = blockchainYield + (userPanelData.generatedYield / DOLLAR_TO_NRG_RATE);
+    const totalYield = blockchainYield;
     
     const totalTransfers = transfers.reduce((sum, tx) => sum + tx.amount, 0);
 
