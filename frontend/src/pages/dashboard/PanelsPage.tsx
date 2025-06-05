@@ -29,6 +29,7 @@ import {
   AlertCircle,
   WifiOff
 } from "lucide-react";
+import LineChart from "../../components/LineChart";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
 interface PlantData {
@@ -327,14 +328,18 @@ const PanelsPage: React.FC = () => {
 
   // Calculate real-time metrics
   const calculateMetrics = () => {
+    console.log("inverterData:", inverterData);
     // Always return metrics, even with empty data
     const latestReading = inverterData.length > 0 ? inverterData[inverterData.length - 1] : null;
     const currentGeneration = latestReading?.value || 0;
 
-    // Today's total generation
+    // Today's total generation (entire plant)
     const today = new Date().toISOString().split('T')[0];
     const todayData = inverterData.filter(d => d.date_time.startsWith(today));
     const todayTotal = todayData.reduce((sum, d) => sum + d.value, 0);
+
+    // Today's user total generation
+    const todayTotalUser = (todayTotal/plantData?.plantSize) * (userPanelData.purchasedPanels * 1.0);
 
     // Period total
     const periodTotal = inverterData.reduce((sum, d) => sum + d.value, 0);
@@ -364,7 +369,8 @@ const PanelsPage: React.FC = () => {
       plantEfficiency,
       performanceRatio,
       dailyEstimate,
-      monthlyEstimate
+      monthlyEstimate,
+      todayTotalUser
     };
   };
 
@@ -588,7 +594,7 @@ const PanelsPage: React.FC = () => {
           }}
         >
           <Tab key="overview" title="Overview" />
-          <Tab key="performance" title="Performance" />
+          <Tab key="performance" className="hidden" title="Performance" />
           <Tab key="investment" title="Your Panels" />
         </Tabs>
 
@@ -599,56 +605,78 @@ const PanelsPage: React.FC = () => {
             {plantData && (
               <Card className="bg-[#1A1A1A] border-none">
                 <CardBody className="p-6">
-                  <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
                     <Building size={24} className="text-[#E9423A]" />
                     {plantData.plantName}
                   </h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div className="flex items-center gap-3">
-                      <MapPin size={20} className="text-gray-400" />
-                      <div>
-                        <div className="text-sm text-gray-400">Location</div>
-                        <div className="text-white font-medium">{plantData.plantLocation}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Zap size={20} className="text-yellow-500" />
-                      <div>
-                        <div className="text-sm text-gray-400">Total Capacity</div>
-                        <div className="text-white font-medium">{plantData.plantSize} kW</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar size={20} className="text-blue-400" />
-                      <div>
-                        <div className="text-sm text-gray-400">Commissioned</div>
-                        <div className="text-white font-medium">{formatDate(plantData.commissionDate)}</div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-[#2A1A1A] rounded-lg">
-                    <div className="text-center">
-                      <div className="text-sm text-gray-400">Project Code</div>
-                      <div className="text-white font-mono">{plantData.projectCode}</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="px-16 py-12 space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="flex items-start gap-3">
+                          <MapPin size={20} className="text-gray-400 mt-1" />
+                          <div>
+                            <div className="text-sm text-gray-400">Location</div>
+                            <div className="text-white font-medium">{plantData.plantLocation}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Zap size={20} className="text-yellow-500 mt-1" />
+                          <div>
+                            <div className="text-sm text-gray-400">Total Capacity</div>
+                            <div className="text-white font-medium">{plantData.plantSize} kW</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Calendar size={20} className="text-blue-400 mt-1" />
+                          <div>
+                            <div className="text-sm text-gray-400">Commissioned</div>
+                            <div className="text-white font-medium">{formatDate(plantData.commissionDate)}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="text-gray-400 mt-1 text-[20px] font-bold">#</div>
+                          <div>
+                            <div className="text-sm text-gray-400">Project Code</div>
+                            <div className="text-white font-mono">{plantData.projectCode}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="text-gray-400 mt-1 text-[20px] font-bold">⚡</div>
+                          <div>
+                            <div className="text-sm text-gray-400">Grid Status</div>
+                            <div className="text-white">{plantData.gridStatus}</div>
+                          </div>
+                        </div>
+                        <div className="hidden flex items-start gap-3">
+                          <div className="text-gray-400 mt-1 text-[20px] font-bold">🏭</div>
+                          <div>
+                            <div className="text-sm text-gray-400">Plant Type</div>
+                            <div className="text-white">{plantData.plantType}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="text-gray-400 mt-1 text-[20px] font-bold">🏢</div>
+                          <div>
+                            <div className="text-sm text-gray-400">Industry</div>
+                            <div className="text-white">{plantData.industryType}</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-sm text-gray-400">Grid Status</div>
-                      <div className="text-white">{plantData.gridStatus}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm text-gray-400">Plant Type</div>
-                      <div className="text-white">{plantData.plantType}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm text-gray-400">Industry</div>
-                      <div className="text-white">{plantData.industryType}</div>
+
+                    <div className="flex items-center justify-center">
+                      <img 
+                        src="https://meil.in/sites/default/files/2024-11/Solar%20Power%20Plant.jpg" 
+                        alt="Solar Panel Farm"
+                        className="rounded-lg object-cover w-full h-full max-h-[300px]"
+                      />
                     </div>
                   </div>
                 </CardBody>
               </Card>
             )}
+
 
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -905,22 +933,32 @@ const PanelsPage: React.FC = () => {
                     <Sun size={20} className="text-[#E9423A]" />
                     Your Panel Portfolio
                   </h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Panels Owned</span>
-                      <span className="text-white font-semibold">{userPanelData.purchasedPanels}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Generated Yield</span>
-                      <span className="text-green-500 font-semibold">${userPanelData.generatedYield.toFixed(4)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Total Capacity</span>
-                      <span className="text-white font-semibold">{(userPanelData.purchasedPanels * 0.45).toFixed(2)} kW</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Total Generated</span>
-                      <span className="text-white font-semibold">{totalGenerated.toFixed(0)} kWh</span>
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div className="space-y-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Panels Owned</span>
+                        <span className="text-white font-semibold">{userPanelData.purchasedPanels}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Generated Yield</span>
+                        <span className="text-green-500 font-semibold">${userPanelData.generatedYield.toFixed(4)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Total Capacity</span>
+                        <span className="text-white font-semibold">{(userPanelData.purchasedPanels * 1.0).toFixed(2)} kW</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Total Generated</span>
+                        <span className="text-white font-semibold">{totalGenerated.toFixed(0)} kWh</span>
+                      </div>
+                      <div className="mt-8">
+                        <div className="flex justify-center">
+                          <span className="text-gray-400">Today's Chart</span>
+                        </div>
+                        <div className="h-64">
+                          <LineChart data={prepareChartData()} />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardBody>
@@ -935,7 +973,7 @@ const PanelsPage: React.FC = () => {
                   <div className="space-y-4">
                     <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
                       <div className="text-2xl font-bold text-green-500 mb-1">
-                        {(metrics.todayTotal * 0.0004).toFixed(3)}
+                        {(metrics.todayTotalUser * 0.0004).toFixed(3)}
                       </div>
                       <div className="text-sm text-gray-400">Tons CO₂ Saved Today</div>
                     </div>
