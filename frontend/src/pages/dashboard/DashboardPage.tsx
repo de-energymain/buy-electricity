@@ -119,6 +119,7 @@ function DashboardPage() {
   const [purchaseData, setPurchaseData] = useState<PurchaseData[]>([]);
   const [plantData, setPlantData] = useState<PlantData | null>(null);
   const [inverterData, setInverterData] = useState<InverterData[]>([]);
+  const [historicalInverterData, setHistoricalInverterData] = useState<InverterData[]>([]);
   const [userPanelData, setUserPanelData] = useState<UserPanelData>({
     purchasedPanels: 0,
     purchasedCost: 0,
@@ -129,19 +130,71 @@ function DashboardPage() {
 
   // Constants
   const DOLLAR_TO_NRG_RATE = 0.03; // $0.03 per NRG token
-  const DAILY_GENERATION_PER_PANEL = 2.8; // kWh per panel per day
+  const PANEL_CAPACITY_KW = 1; // 1 kW per panel (updated from 0.45)
   const CO2_SAVINGS_PER_KWH = 0.0004; // tons CO2 saved per kWh
   const PLANT_ID = "6750afc5df6b8bbf630e3154"; // Plant ID for API calls
 
-  // Calculate user's share of plant capacity
+  // Get earliest purchase date to determine data fetch range
+  const getEarliestPurchaseDate = (): Date => {
+    if (purchaseData.length === 0) {
+      // If no purchases, default to 30 days ago
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() - 30);
+      return defaultDate;
+    }
+
+    const dates = purchaseData.map(purchase => 
+      new Date(purchase.purchaseDate || purchase.createdAt)
+    );
+    return new Date(Math.min(...dates.map(d => d.getTime())));
+  };
+
+  // Calculate user's share of plant capacity based on actual ownership
   const calculateUserCapacityShare = () => {
     if (!plantData || userPanelData.purchasedPanels === 0) return 0;
     
-    // Each panel is 0.45 kW (450W)
-    const userCapacity = userPanelData.purchasedPanels * 0.45;
+    // Each panel is 1 kW
+    const userCapacity = userPanelData.purchasedPanels * PANEL_CAPACITY_KW;
     const plantCapacity = plantData.plantSize;
     
-    return userCapacity / plantCapacity; // Returns percentage as decimal (0.1 = 10%)
+    return userCapacity / plantCapacity; // Returns percentage as decimal
+  };
+
+  // Calculate today's actual generation for user based on real plant data
+  const calculateTodayActualGeneration = (): number => {
+    const userShare = calculateUserCapacityShare();
+    
+    if (inverterData.length === 0 || userShare === 0) return 0;
+    
+    // Sum all generation data for today
+    const todayTotal = inverterData.reduce((sum, d) => sum + d.value, 0);
+    
+    // Apply user's ownership share
+    return todayTotal * userShare;
+  };
+
+  // Calculate total energy generated since purchase based on real API data
+  const calculateTotalEnergyFromAPI = (): number => {
+    const userShare = calculateUserCapacityShare();
+    
+    if (historicalInverterData.length === 0 || userShare === 0 || purchaseData.length === 0) {
+      return 0;
+    }
+
+    // Get the earliest purchase date
+    const earliestPurchase = getEarliestPurchaseDate();
+    
+    // Filter inverter data to only include data after earliest purchase
+    const relevantData = historicalInverterData.filter(d => {
+      const dataDate = new Date(d.date_time);
+      return dataDate >= earliestPurchase;
+    });
+    
+    // Sum all generation since earliest purchase
+    const totalPlantGeneration = relevantData.reduce((sum, d) => sum + d.value, 0);
+    
+    // Apply user's ownership share
+    return totalPlantGeneration * userShare;
   };
 
   // Calculate user's generation based on plant data and their capacity share
@@ -214,19 +267,38 @@ function DashboardPage() {
     }
   };
 
-  // Generate chart data from real inverter data based on user's share
-  const generateRealChartData = (period: string) => {
+  // Fetch historical inverter data since earliest purchase
+  const fetchHistoricalInverterData = async () => {
+    if (purchaseData.length === 0) return;
+
+    try {
+      const endDate = new Date();
+      const startDate = getEarliestPurchaseDate();
+      
+      console.log(`Fetching historical data from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      
+      const response = await fetch(
+        `https://de-express-backend.onrender.com/api/inverterquarterhourlydata/plant/${PLANT_ID}?startDate=${encodeURIComponent(startDate.toISOString())}&endDate=${encodeURIComponent(endDate.toISOString())}`,
+        { headers: { 'accept': '*/*' } }
+      );
+      
+      if (response.ok) {
+        const result = await response.json();
+        setHistoricalInverterData(result.data || []);
+        console.log(`Fetched ${result.data?.length || 0} historical data points`);
+      }
+    } catch (error) {
+      console.error('Error fetching historical inverter data:', error);
+    }
+  };
+
+  // Generate chart data from real API data based on user's ownership and purchase timeline
+  const generateRealChartData = (period: string): ChartData[] => {
     const userShare = calculateUserCapacityShare();
     
-    if (inverterData.length === 0 || userShare === 0) {
-      return [];
-    }
-
-    let data: ChartData[] = [];
-    
-    switch (period) {
-      case "day":
-        // Group by hour for today
+    if (historicalInverterData.length === 0 || userShare === 0 || purchaseData.length === 0) {
+      // Fallback to today's data for day view
+      if (period === "day" && inverterData.length > 0) {
         const hourlyData: { [key: string]: number } = {};
         
         inverterData.forEach(d => {
@@ -236,7 +308,43 @@ function DashboardPage() {
           hourlyData[key] = (hourlyData[key] || 0) + d.value;
         });
         
-        // Convert to array and apply user share
+        return Object.entries(hourlyData)
+          .map(([time, value]) => ({
+            day: time,
+            value: parseFloat((value * userShare).toFixed(2))
+          }))
+          .sort((a, b) => parseInt(a.day.split(':')[0]) - parseInt(b.day.split(':')[0]));
+      }
+      return [];
+    }
+
+    const earliestPurchase = getEarliestPurchaseDate();
+    
+    // Filter data to only include generation after earliest purchase
+    const relevantData = historicalInverterData.filter(d => {
+      const dataDate = new Date(d.date_time);
+      return dataDate >= earliestPurchase;
+    });
+
+    if (relevantData.length === 0) return [];
+
+    let data: ChartData[] = [];
+    
+    switch (period) {
+      case "day":
+        // Use today's data
+        const hourlyData: { [key: string]: number } = {};
+        
+        const today = new Date().toISOString().split('T')[0];
+        const todayData = relevantData.filter(d => d.date_time.startsWith(today));
+        
+        todayData.forEach(d => {
+          const date = new Date(d.date_time);
+          const hour = date.getHours();
+          const key = `${hour.toString().padStart(2, '0')}:00`;
+          hourlyData[key] = (hourlyData[key] || 0) + d.value;
+        });
+        
         data = Object.entries(hourlyData)
           .map(([time, value]) => ({
             day: time,
@@ -246,35 +354,75 @@ function DashboardPage() {
         break;
         
       case "week":
-        // For week, month, year - use simulated data based on user's current capacity
-        // since we only have today's real data
-        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-        const todayTotal = calculateTodayGeneration();
+        // Group by day for last 7 days
+        const dailyData: { [key: string]: number } = {};
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
         
-        data = days.map(day => ({
+        const weekData = relevantData.filter(d => {
+          const dataDate = new Date(d.date_time);
+          return dataDate >= weekAgo;
+        });
+        
+        weekData.forEach(d => {
+          const date = new Date(d.date_time);
+          const key = date.toLocaleDateString('en-US', { weekday: 'short' });
+          dailyData[key] = (dailyData[key] || 0) + d.value;
+        });
+        
+        const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        data = dayOrder.map(day => ({
           day,
-          value: parseFloat((todayTotal * (0.7 + Math.random() * 0.6)).toFixed(1))
+          value: parseFloat(((dailyData[day] || 0) * userShare).toFixed(1))
         }));
         break;
         
       case "month":
-        const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
-        const weeklyAvg = calculateTodayGeneration() * 7;
+        // Group by week for last 4 weeks
+        const weeklyData: { [key: string]: number } = {};
+        const monthAgo = new Date();
+        monthAgo.setDate(monthAgo.getDate() - 30);
         
+        const monthData = relevantData.filter(d => {
+          const dataDate = new Date(d.date_time);
+          return dataDate >= monthAgo;
+        });
+        
+        monthData.forEach(d => {
+          const date = new Date(d.date_time);
+          const weekNumber = Math.ceil((date.getDate()) / 7);
+          const key = `Week ${weekNumber}`;
+          weeklyData[key] = (weeklyData[key] || 0) + d.value;
+        });
+        
+        const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
         data = weeks.map(week => ({
           day: week,
-          value: parseFloat((weeklyAvg * (0.8 + Math.random() * 0.4)).toFixed(1))
+          value: parseFloat(((weeklyData[week] || 0) * userShare).toFixed(1))
         }));
         break;
         
       case "year":
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const monthlyAvg = calculateTodayGeneration() * 30;
-        const seasonalFactors = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.1, 1.0, 0.9, 0.8, 0.6, 0.5];
+        // Group by month for last 12 months
+        const monthlyData: { [key: string]: number } = {};
+        const yearAgo = new Date();
+        yearAgo.setFullYear(yearAgo.getFullYear() - 1);
         
-        data = months.map((month, index) => ({
+        const yearData = relevantData.filter(d => {
+          const dataDate = new Date(d.date_time);
+          return dataDate >= yearAgo;
+        });
+        
+        yearData.forEach(d => {
+          const date = new Date(d.date_time);
+          const key = date.toLocaleDateString('en-US', { month: 'short' });
+          monthlyData[key] = (monthlyData[key] || 0) + d.value;
+        });
+        
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        data = months.map(month => ({
           day: month,
-          value: parseFloat((monthlyAvg * seasonalFactors[index] * (0.8 + Math.random() * 0.4)).toFixed(1))
+          value: parseFloat(((monthlyData[month] || 0) * userShare).toFixed(1))
         }));
         break;
     }
@@ -284,9 +432,15 @@ function DashboardPage() {
 
   // Calculate total energy generated based on purchase dates
   const calculateTotalGenerated = () => {
+    // Use API data if available
+    const apiTotal = calculateTotalEnergyFromAPI();
+    if (apiTotal > 0) {
+      return apiTotal;
+    }
+
+    // Fallback calculation if no API data
     if (purchaseData.length === 0) {
-      // Fallback calculation if no purchase data
-      return userPanelData.purchasedPanels * DAILY_GENERATION_PER_PANEL * 30;
+      return userPanelData.purchasedPanels * 2.8 * 30;
     }
 
     let totalGenerated = 0;
@@ -297,7 +451,7 @@ function DashboardPage() {
       const daysSincePurchase = Math.floor((currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
       
       // Calculate generation: panels × 2.8 kWh/day × days since purchase
-      const generatedFromThisPurchase = purchase.panelsPurchased * DAILY_GENERATION_PER_PANEL * Math.max(daysSincePurchase, 0);
+      const generatedFromThisPurchase = purchase.panelsPurchased * 2.8 * Math.max(daysSincePurchase, 0);
       totalGenerated += generatedFromThisPurchase;
     });
 
@@ -316,8 +470,8 @@ function DashboardPage() {
     // Get current generation from plant data
     const currentGeneration = calculateUserGenerationFromPlant();
     
-    // Get today's total generation
-    const todayGeneration = calculateTodayGeneration();
+    // Get today's total generation (use API data)
+    const todayGeneration = calculateTodayActualGeneration();
     
     // Calculate carbon impact
     const carbonImpact = totalEnergyGenerated * CO2_SAVINGS_PER_KWH;
@@ -326,10 +480,10 @@ function DashboardPage() {
     const cleanPoints = Math.round(carbonImpact * 100);
     
     // Calculate daily potential
-    const dailyPotential = totalPanels * DAILY_GENERATION_PER_PANEL;
+    const dailyPotential = totalPanels * 2.8;
     
     // Calculate efficiency (comparing actual vs potential)
-    const efficiency = dailyPotential > 0 ? Math.min((totalEnergyGenerated / (totalPanels * DAILY_GENERATION_PER_PANEL * 30)) * 100, 100) : 0;
+    const efficiency = dailyPotential > 0 ? Math.min((totalEnergyGenerated / (totalPanels * 2.8 * 30)) * 100, 100) : 0;
 
     // Calculate previous month for trend calculation
     const previousMonthYield = dollarYield * 0.9; // Simulated 10% growth
@@ -351,7 +505,7 @@ function DashboardPage() {
       yield: dollarYield,
       totalPanels,
       currentGeneration: parseFloat(currentGeneration.toFixed(3)), // Real-time generation
-      todayGeneration: parseFloat(todayGeneration.toFixed(2)), // Today's total
+      todayGeneration: parseFloat(todayGeneration.toFixed(2)), // Today's total from API
     };
   };
 
@@ -359,18 +513,18 @@ function DashboardPage() {
 
   // Generate chart data based on user's actual panels
   const generateUserChartData = (period: string) => {
-    // Use real inverter data if available, otherwise fallback to simulated
+    // Use real API data
     const realData = generateRealChartData(period);
     if (realData.length > 0) {
       return realData;
     }
     
-    // Fallback to simulated data if no real data available
+    // Fallback to original logic if no real data available
     const totalPanels = userPanelData.purchasedPanels;
     if (totalPanels === 0) return [];
 
     let data: ChartData[] = [];
-    const dailyGeneration = totalPanels * DAILY_GENERATION_PER_PANEL;
+    const dailyGeneration = totalPanels * 2.8;
 
     switch (period) {
       case "day":
@@ -446,7 +600,7 @@ function DashboardPage() {
         icon: index === 0 ? "🏭" : "🔋",
         panels: totalPanels,
         capacity: parseFloat(totalCapacity.toFixed(2)),
-        dailyOutput: Math.round(totalPanels * DAILY_GENERATION_PER_PANEL),
+        dailyOutput: Math.round(totalPanels * 2.8),
         earnings: Math.round(farmNRGEarnings)
       };
     });
@@ -578,6 +732,13 @@ function DashboardPage() {
     fetchAllData();
   }, [walletID]);
 
+  // Fetch historical data after purchase data is loaded
+  useEffect(() => {
+    if (purchaseData.length > 0 && plantData) {
+      fetchHistoricalInverterData();
+    }
+  }, [purchaseData, plantData]);
+
   // Update nodes when purchase data changes
   useEffect(() => {
     const newNodes = createNodesFromPurchases();
@@ -590,7 +751,7 @@ function DashboardPage() {
       const newChartData = generateUserChartData(activeTab);
       setChartData(newChartData);
     }
-  }, [userPanelData, inverterData, activeTab]);
+  }, [userPanelData, inverterData, historicalInverterData, activeTab]);
 
   const handleTabChange = (key: React.Key) => {
     setActiveTab(key as string);
@@ -683,9 +844,9 @@ function DashboardPage() {
                       ⚡
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-white">{Math.round(stats.totalPanels * DAILY_GENERATION_PER_PANEL)} kWh</div>
+                      <div className="text-sm font-medium text-white">{stats.todayGeneration} kWh</div>
                       <div className="text-xs text-gray-400">
-                        Daily generation across all assets.
+                        Today's generation from API data.
                       </div>
                     </div>
                   </div>
@@ -723,7 +884,6 @@ function DashboardPage() {
             <Card 
               className="bg-[#1A1A1A] border-none cursor-pointer hover:bg-[#2A1A1A] transition-all duration-300"
               isPressable
-              onPress={() => navigate("/dashboard/wallet")}
             >
               <CardBody className="p-6">
                 <div className="flex items-center justify-between mb-3">
@@ -738,30 +898,10 @@ function DashboardPage() {
               </CardBody>
             </Card>
 
-            {/* Current Generation (Real-time from Plant API) 
-            <Card 
-              className="bg-[#1A1A1A] border-none hover:bg-[#2A1A1A] transition-all duration-300 cursor-pointer"
-              isPressable
-              onPress={() => navigate("/dashboard/panels")}
-            >
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                    <CreditCard size={20} className="text-blue-400" />
-                  </div>
-                  <ArrowRight size={16} className="text-blue-400" />
-                </div>
-                <div className="text-2xl font-bold text-white mb-1">{stats.currentGeneration} kW</div>
-                <div className="text-sm text-gray-400 mb-2">Current Generation</div>
-                <div className="text-xs text-green-400">Today: {stats.todayGeneration} kWh</div>
-              </CardBody>
-            </Card>*/}
-
             {/* Energy Generated */}
             <Card 
               className="bg-[#1A1A1A] border-none hover:bg-[#2A1A1A] transition-all duration-300 cursor-pointer"
               isPressable
-              onPress={() => navigate("/dashboard/analytics")}
             >
               <CardBody className="p-6">
                 <div className="flex items-center justify-between mb-3">
@@ -772,7 +912,7 @@ function DashboardPage() {
                 </div>
                 <div className="text-2xl font-bold text-white mb-1">{stats.energyGenerated} kWh</div>
                 <div className="text-sm text-gray-400 mb-2">Energy Generated</div>
-                <div className="text-xs text-green-400">+{stats.energyChange}% this month</div>
+                <div className="text-xs text-green-400">Since purchase • Real API data</div>
               </CardBody>
             </Card>
           </div>
@@ -847,7 +987,7 @@ function DashboardPage() {
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <h3 className="text-lg font-medium text-white">Energy Production</h3>
-                    <p className="text-sm text-gray-400">Track your energy generation over time</p>
+                    <p className="text-sm text-gray-400">Real plant data filtered by your ownership and purchase timeline</p>
                   </div>
                   <Tabs
                     aria-label="Time Period"
@@ -875,6 +1015,13 @@ function DashboardPage() {
                         >
                           Buy Your First Panels
                         </Button>
+                      </div>
+                    </div>
+                  ) : chartData.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="text-gray-400 mb-4">Loading real plant data...</div>
+                        <div className="text-sm text-gray-500">Fetching generation data since your purchase</div>
                       </div>
                     </div>
                   ) : (
@@ -906,6 +1053,21 @@ function DashboardPage() {
                     <div className="font-medium text-white">{summaryStats.totalPeriod} kWh</div>
                   </div>
                 </div>
+
+                {/* Data source indicator */}
+                {/* {historicalInverterData.length > 0 && (
+                  <div className="mt-4 p-3 bg-[#2A1A1A] rounded-lg">
+                    <div className="text-xs text-blue-400 mb-1">📊 Real-time Plant Data</div>
+                    <div className="text-xs text-gray-400">
+                      Your {userPanelData.purchasedPanels} panels × {PANEL_CAPACITY_KW} kW = {(userPanelData.purchasedPanels * PANEL_CAPACITY_KW).toFixed(1)} kW capacity
+                      ({((userPanelData.purchasedPanels * PANEL_CAPACITY_KW) / (plantData?.plantSize || 1) * 100).toFixed(2)}% of {plantData?.plantSize} kW plant)
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Data since: {purchaseData.length > 0 ? getEarliestPurchaseDate().toLocaleDateString() : 'No purchases'} • 
+                      Readings: {historicalInverterData.length} historical, {inverterData.length} today
+                    </div>
+                  </div>
+                )} */}
               </CardBody>
             </Card>
           </div>

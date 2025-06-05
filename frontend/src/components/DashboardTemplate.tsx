@@ -30,7 +30,7 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 }) => {
   const navigate = useNavigate();
   const { publicKey, wallet, disconnect } = useWallet();
-  const [username, setUsername] = useState<string | null>("John Doe");
+  const [username, setUsername] = useState<string | null>("User");
   const [web3AuthPublicKey, setWeb3AuthPublicKey] = useState<string | null>(null);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
 

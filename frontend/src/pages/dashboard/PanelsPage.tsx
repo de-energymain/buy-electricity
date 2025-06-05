@@ -73,6 +73,7 @@ interface InverterData {
   roofId: string;
   value: number;
   tillLifeTIme: number;
+  updated_date?: Date;
 }
 
 interface UserPanelData {
@@ -115,6 +116,7 @@ const PanelsPage: React.FC = () => {
   const [walletID, setWalletID] = useState<string | null>(null);
   const [plantData, setPlantData] = useState<PlantData | null>(null);
   const [inverterData, setInverterData] = useState<InverterData[]>([]);
+  const [historicalInverterData, setHistoricalInverterData] = useState<InverterData[]>([]);
   const [purchaseData, setPurchaseData] = useState<PurchaseData[]>([]);
   const [userPanelData, setUserPanelData] = useState<UserPanelData>({
     purchasedPanels: 0,
@@ -140,6 +142,10 @@ const PanelsPage: React.FC = () => {
   const [chartPeriod, setChartPeriod] = useState<string>("today");
   const [hasEmptyData, setHasEmptyData] = useState<boolean>(false);
 
+  // Constants
+  const PANEL_CAPACITY_KW = 1; // 1 kW per panel (updated from 0.45)
+  const CO2_SAVINGS_PER_KWH = 0.0004; // tons CO2 saved per kWh
+
   // Extract wallet ID
   useEffect(() => {
     if (connected) {
@@ -164,6 +170,109 @@ const PanelsPage: React.FC = () => {
       setWalletID(walletPublicKey);
     }
   }, [connected, wallet]);
+
+  // Get earliest purchase date to determine data fetch range
+  const getEarliestPurchaseDate = (): Date => {
+    if (purchaseData.length === 0) {
+      // If no purchases, default to 30 days ago
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() - 30);
+      return defaultDate;
+    }
+
+    const dates = purchaseData.map(purchase => 
+      new Date(purchase.purchaseDate || purchase.createdAt)
+    );
+    return new Date(Math.min(...dates.map(d => d.getTime())));
+  };
+
+  // Fetch historical inverter data since earliest purchase
+  const fetchHistoricalInverterData = async () => {
+    if (purchaseData.length === 0) return;
+
+    try {
+      const endDate = new Date();
+      const startDate = getEarliestPurchaseDate();
+      
+      console.log(`Fetching historical data from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      
+      const response = await fetch(
+        `https://de-express-backend.onrender.com/api/inverterquarterhourlydata/plant/6750afc5df6b8bbf630e3154?startDate=${encodeURIComponent(startDate.toISOString())}&endDate=${encodeURIComponent(endDate.toISOString())}`,
+        { headers: { 'accept': '*/*' } }
+      );
+      
+      if (response.ok) {
+        const result = await response.json();
+        setHistoricalInverterData(result.data || []);
+        console.log(`Fetched ${result.data?.length || 0} historical data points`);
+      }
+    } catch (error) {
+      console.error('Error fetching historical inverter data:', error);
+    }
+  };
+
+  // Calculate user's share of plant capacity based on actual ownership
+  const calculateUserCapacityShare = () => {
+    if (!plantData || userPanelData.purchasedPanels === 0) return 0;
+    
+    // Each panel is 1 kW
+    const userCapacity = userPanelData.purchasedPanels * PANEL_CAPACITY_KW;
+    const plantCapacity = plantData.plantSize;
+    
+    return userCapacity / plantCapacity; // Returns percentage as decimal
+  };
+
+  // Calculate total energy generated since purchase based on real API data
+  const calculateTotalEnergyFromAPI = (): number => {
+    const userShare = calculateUserCapacityShare();
+    
+    if (historicalInverterData.length === 0 || userShare === 0 || purchaseData.length === 0) {
+      return 0;
+    }
+
+    // Get the earliest purchase date
+    const earliestPurchase = getEarliestPurchaseDate();
+    
+    // Filter inverter data to only include data after earliest purchase
+    const relevantData = historicalInverterData.filter(d => {
+      const dataDate = new Date(d.date_time);
+      return dataDate >= earliestPurchase;
+    });
+    
+    // Sum all generation since earliest purchase
+    const totalPlantGeneration = relevantData.reduce((sum, d) => sum + d.value, 0);
+    
+    // Apply user's ownership share
+    return totalPlantGeneration * userShare;
+  };
+
+  // Calculate total energy generated based on purchase dates
+  const calculateTotalGenerated = () => {
+    // Use API data if available
+    const apiTotal = calculateTotalEnergyFromAPI();
+    if (apiTotal > 0) {
+      return apiTotal;
+    }
+
+    // Fallback calculation if no API data
+    if (purchaseData.length === 0) {
+      return userPanelData.purchasedPanels * 2.8 * 30;
+    }
+
+    let totalGenerated = 0;
+    const currentDate = new Date();
+
+    purchaseData.forEach(purchase => {
+      const purchaseDate = new Date(purchase.purchaseDate || purchase.createdAt);
+      const daysSincePurchase = Math.floor((currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Calculate generation: panels × 2.8 kWh/day × days since purchase
+      const generatedFromThisPurchase = purchase.panelsPurchased * 2.8 * Math.max(daysSincePurchase, 0);
+      totalGenerated += generatedFromThisPurchase;
+    });
+
+    return totalGenerated;
+  };
 
   // Fetch inverter data based on period
   const fetchInverterData = async (period: string) => {
@@ -294,30 +403,37 @@ const PanelsPage: React.FC = () => {
   };
 
   const fetchPurchaseData = async () => {
-  if (!walletID) return;
-  
-  try {
-    const purchaseResponse = await fetch(`https://buy-electricity-production.up.railway.app/api/purchases/wallet/${walletID}`);
-    if (purchaseResponse.ok) {
-      const purchaseResult = await purchaseResponse.json();
-      setPurchaseData(purchaseResult.data || []);
-    } else {
-      console.log('No purchase data found for wallet:', walletID);
+    if (!walletID) return;
+    
+    try {
+      const purchaseResponse = await fetch(`https://buy-electricity-production.up.railway.app/api/purchases/wallet/${walletID}`);
+      if (purchaseResponse.ok) {
+        const purchaseResult = await purchaseResponse.json();
+        setPurchaseData(purchaseResult.data || []);
+      } else {
+        console.log('No purchase data found for wallet:', walletID);
+        setPurchaseData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching purchase data:', error);
       setPurchaseData([]);
     }
-  } catch (error) {
-    console.error('Error fetching purchase data:', error);
-    setPurchaseData([]);
-  }
-};
+  };
 
   // Initial data fetch
   useEffect(() => {
-  fetchPlantData();
-  fetchUserData();
-  fetchPurchaseData();
-  fetchInverterData("today");
+    fetchPlantData();
+    fetchUserData();
+    fetchPurchaseData();
+    fetchInverterData("today");
   }, [walletID]);
+
+  // Fetch historical data after purchase data is loaded
+  useEffect(() => {
+    if (purchaseData.length > 0 && plantData) {
+      fetchHistoricalInverterData();
+    }
+  }, [purchaseData, plantData]);
 
   // Refetch inverter data when chart period changes
   useEffect(() => {
@@ -331,25 +447,30 @@ const PanelsPage: React.FC = () => {
     console.log("inverterData:", inverterData);
     // Always return metrics, even with empty data
     const latestReading = inverterData.length > 0 ? inverterData[inverterData.length - 1] : null;
-    const currentGeneration = latestReading?.value || 0;
+    const plantCurrentGeneration = latestReading?.value || 0;
+    
+    // Calculate user's current generation based on their share
+    const userCapacityShare = calculateUserCapacityShare();
+    const currentGeneration = plantCurrentGeneration * userCapacityShare;
 
     // Today's total generation (entire plant)
     const today = new Date().toISOString().split('T')[0];
     const todayData = inverterData.filter(d => d.date_time.startsWith(today));
-    const todayTotal = todayData.reduce((sum, d) => sum + d.value, 0);
+    const plantTodayTotal = todayData.reduce((sum, d) => sum + d.value, 0);
 
     // Today's user total generation
-    const todayTotalUser = (todayTotal/plantData?.plantSize) * (userPanelData.purchasedPanels * 1.0);
+    const todayTotalUser = plantTodayTotal * userCapacityShare;
 
     // Period total
-    const periodTotal = inverterData.reduce((sum, d) => sum + d.value, 0);
+    const plantPeriodTotal = inverterData.reduce((sum, d) => sum + d.value, 0);
+    const userPeriodTotal = plantPeriodTotal * userCapacityShare;
 
     // Lifetime total
     const lifetimeTotal = latestReading?.tillLifeTIme || 0;
 
     // Plant efficiency (current vs rated capacity)
     const plantCapacity = plantData?.plantSize || 1;
-    const plantEfficiency = (currentGeneration / plantCapacity) * 100;
+    const plantEfficiency = (plantCurrentGeneration / plantCapacity) * 100;
 
     // Monthly estimated vs actual
     const currentMonth = new Date().toLocaleString('default', { month: 'long' });
@@ -359,12 +480,12 @@ const PanelsPage: React.FC = () => {
     // Daily average for month
     const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
     const dailyEstimate = monthlyEstimate / daysInMonth;
-    const performanceRatio = dailyEstimate > 0 ? (todayTotal / dailyEstimate) * 100 : 0;
+    const performanceRatio = dailyEstimate > 0 ? (plantTodayTotal / dailyEstimate) * 100 : 0;
 
     return {
       currentGeneration,
-      todayTotal,
-      periodTotal,
+      todayTotal: plantTodayTotal,
+      periodTotal: userPeriodTotal,
       lifetimeTotal,
       plantEfficiency,
       performanceRatio,
@@ -375,29 +496,8 @@ const PanelsPage: React.FC = () => {
   };
 
   const metrics = calculateMetrics();
-   
-   const calculateTotalGenerated = () => {
-  if (purchaseData.length === 0) {
-    // Fallback to simple calculation if no purchase data
-    return userPanelData.purchasedPanels * 2.8 * 30;
-  }
-
-  let totalGenerated = 0;
-  const currentDate = new Date();
-
-  purchaseData.forEach(purchase => {
-    const purchaseDate = new Date(purchase.purchaseDate);
-    const daysSincePurchase = Math.floor((currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Calculate generation: panels × 2.8 kWh/day × days since purchase
-    const generatedFromThisPurchase = purchase.panelsPurchased * 2.8 * Math.max(daysSincePurchase, 0);
-    totalGenerated += generatedFromThisPurchase;
-  });
-
-  return totalGenerated;
-};
-
   const totalGenerated = calculateTotalGenerated();
+
   // Prepare chart data based on period
   const prepareChartData = () => {
     if (inverterData.length === 0) return [];
@@ -521,7 +621,6 @@ const PanelsPage: React.FC = () => {
             
             {/* Date Period Selector - Moved to top right */}
             <div className="flex flex-col items-end gap-2">
-              {/* <div className="text-sm text-gray-400 font-medium">Data Period</div> */}
               <Dropdown>
                 <DropdownTrigger>
                   <Button 
@@ -635,13 +734,6 @@ const PanelsPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
-                          <div className="text-gray-400 mt-1 text-[20px] font-bold">#</div>
-                          <div>
-                            <div className="text-sm text-gray-400">Project Code</div>
-                            <div className="text-white font-mono">{plantData.projectCode}</div>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
                           <div className="text-gray-400 mt-1 text-[20px] font-bold">⚡</div>
                           <div>
                             <div className="text-sm text-gray-400">Grid Status</div>
@@ -674,9 +766,8 @@ const PanelsPage: React.FC = () => {
                     </div>
                   </div>
                 </CardBody>
-              </Card>
+                </Card>
             )}
-
 
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -945,15 +1036,30 @@ const PanelsPage: React.FC = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Total Capacity</span>
-                        <span className="text-white font-semibold">{(userPanelData.purchasedPanels * 1.0).toFixed(2)} kW</span>
+                        <span className="text-white font-semibold">{(userPanelData.purchasedPanels * PANEL_CAPACITY_KW).toFixed(2)} kW</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Total Generated</span>
                         <span className="text-white font-semibold">{totalGenerated.toFixed(0)} kWh</span>
                       </div>
+                      {/* <div className="flex justify-between">
+                        <span className="text-gray-400">Your Share of Plant</span>
+                        <span className="text-white font-semibold">{(calculateUserCapacityShare() * 100).toFixed(3)}%</span>
+                      </div>
+                      {historicalInverterData.length > 0 && (
+                        <div className="mt-4 p-3 bg-[#2A1A1A] rounded-lg">
+                          <div className="text-xs text-blue-400 mb-1">📊 Real API Data</div>
+                          <div className="text-xs text-gray-400">
+                            Using {historicalInverterData.length} data points since {getEarliestPurchaseDate().toLocaleDateString()}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            API Total Generated: {calculateTotalEnergyFromAPI().toFixed(2)} kWh
+                          </div>
+                        </div>
+                      )} */}
                       <div className="mt-8">
                         <div className="flex justify-center">
-                          <span className="text-gray-400">Today's Chart</span>
+                          <span className="text-gray-400">Generation Pattern</span>
                         </div>
                         <div className="h-64">
                           <LineChart data={prepareChartData()} />
@@ -973,19 +1079,19 @@ const PanelsPage: React.FC = () => {
                   <div className="space-y-4">
                     <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
                       <div className="text-2xl font-bold text-green-500 mb-1">
-                        {(metrics.todayTotalUser * 0.0004).toFixed(3)}
+                        {(metrics.todayTotalUser * CO2_SAVINGS_PER_KWH).toFixed(3)}
                       </div>
                       <div className="text-sm text-gray-400">Tons CO₂ Saved Today</div>
                     </div>
                     <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
                       <div className="text-2xl font-bold text-blue-500 mb-1">
-                        {(metrics.lifetimeTotal * 0.0004).toFixed(1)}
+                        {(totalGenerated * CO2_SAVINGS_PER_KWH).toFixed(1)}
                       </div>
                       <div className="text-sm text-gray-400">Lifetime CO₂ Saved (tons)</div>
                     </div>
                     <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
                       <div className="text-2xl font-bold text-purple-500 mb-1">
-                        {Math.round(metrics.lifetimeTotal * 0.0004 * 2204.62)}
+                        {Math.round(totalGenerated * CO2_SAVINGS_PER_KWH * 2204.62)}
                       </div>
                       <div className="text-sm text-gray-400">Pounds CO₂ Equivalent</div>
                     </div>
@@ -997,15 +1103,15 @@ const PanelsPage: React.FC = () => {
                     <div className="space-y-2 text-xs">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Trees Planted</span>
-                        <span className="text-white">{Math.round(metrics.lifetimeTotal * 0.0004 * 16)}</span>
+                        <span className="text-white">{Math.round(totalGenerated * CO2_SAVINGS_PER_KWH * 16)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Miles Not Driven</span>
-                        <span className="text-white">{Math.round(metrics.lifetimeTotal * 0.0004 * 1102)}</span>
+                        <span className="text-white">{Math.round(totalGenerated * CO2_SAVINGS_PER_KWH * 1102)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Coal Avoided (lbs)</span>
-                        <span className="text-white">{Math.round(metrics.lifetimeTotal * 0.82)}</span>
+                        <span className="text-white">{Math.round(totalGenerated * 0.82)}</span>
                       </div>
                     </div>
                   </div>
@@ -1028,6 +1134,11 @@ const PanelsPage: React.FC = () => {
               Plant ID: {plantData._id}
             </div>
           )}
+          {/* {purchaseData.length > 0 && historicalInverterData.length > 0 && (
+            <div className="mt-2 text-xs text-gray-600">
+              Real-time data: {historicalInverterData.length} readings since {getEarliestPurchaseDate().toLocaleDateString()}
+            </div>
+          )} */}
         </div>
       </div>
     </DashboardTemplate>
