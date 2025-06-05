@@ -59,7 +59,9 @@ const TransactionsPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string[]>(["all"]);
   const [timeFilter, setTimeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [setUserPanelData] = useState<UserPanelData>({ 
+  
+  // Fix: Initialize with proper default values that match the interface
+  const [userPanelData, setUserPanelData] = useState<UserPanelData>({ 
     generatedYield: 0, 
     purchasedPanels: 0, 
     purchasedCost: 0 
@@ -136,15 +138,15 @@ const TransactionsPage: React.FC = () => {
   };
 
   // Fetch user data for calculations
-  const fetchUserData = async (walletAddress: string) => {
+  const fetchUserData = async (walletAddress: string): Promise<UserPanelData | null> => {
     try {
       const response = await fetch(`https://buy-electricity-production.up.railway.app/api/users/${walletAddress}`);
       if (response.ok) {
         const userData = await response.json();
-        const panelData = {
-          generatedYield: userData.user.panelDetails.generatedYield,
-          purchasedPanels: userData.user.panelDetails.purchasedPanels,
-          purchasedCost: userData.user.panelDetails.purchasedCost
+        const panelData: UserPanelData = {
+          generatedYield: userData.user.panelDetails.generatedYield || 0,
+          purchasedPanels: userData.user.panelDetails.purchasedPanels || 0,
+          purchasedCost: userData.user.panelDetails.purchasedCost || 0
         };
         setUserPanelData(panelData);
         return panelData;
@@ -414,7 +416,7 @@ const TransactionsPage: React.FC = () => {
     setCurrentPage(1);
   }, [searchQuery, statusFilter, typeFilter, timeFilter, transactions]);
 
-  // Calculate summary statistics
+  // Calculate summary statistics - This is where userPanelData is actually used!
   const calculateSummaryStats = () => {
     const purchases = transactions.filter(tx => tx.type === "purchase");
     const yields = transactions.filter(tx => tx.type === "yield");
@@ -425,13 +427,18 @@ const TransactionsPage: React.FC = () => {
       return sum + (tx.amount * rate);
     }, 0);
     
-    const totalYield = yields.reduce((sum, tx) => sum + tx.amount, 0);
+    // Include yield from both blockchain transactions AND user panel data
+    const blockchainYield = yields.reduce((sum, tx) => sum + tx.amount, 0);
+    const totalYield = blockchainYield + (userPanelData.generatedYield / DOLLAR_TO_NRG_RATE);
+    
     const totalTransfers = transfers.reduce((sum, tx) => sum + tx.amount, 0);
 
     return {
       totalSpent,
       totalYield,
-      totalTransfers
+      totalTransfers,
+      userYieldUSD: userPanelData.generatedYield,
+      userPanels: userPanelData.purchasedPanels
     };
   };
 
@@ -509,6 +516,12 @@ const TransactionsPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Transactions</h1>
             <p className="text-gray-400">View your purchases, yield payments, and NRG transfers.</p>
+            {/* Show user panel info if available */}
+            {/* {userPanelData.purchasedPanels > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                You own {userPanelData.purchasedPanels} panels with ${userPanelData.generatedYield.toFixed(4)} total yield
+              </p>
+            )} */}
           </div>
           <Button
             isIconOnly
@@ -553,7 +566,8 @@ const TransactionsPage: React.FC = () => {
               )}
             </div>
             <div className="text-sm text-gray-400">
-              {isLoadingBlockchain ? `${blockchainProgress.current}/${blockchainProgress.total} checked` : "Daily Rewards"}
+              {isLoadingBlockchain ? `${blockchainProgress.current}/${blockchainProgress.total} checked` : 
+                `Daily Rewards (${summaryStats.userYieldUSD.toFixed(4)} USD)`}
             </div>
           </div>
           
