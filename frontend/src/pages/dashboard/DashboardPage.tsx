@@ -209,17 +209,17 @@ function DashboardPage() {
   };
 
   // Calculate today's total generation for user
-  const calculateTodayGeneration = () => {
-    const userShare = calculateUserCapacityShare();
+  // const calculateTodayGeneration = () => {
+  //   const userShare = calculateUserCapacityShare();
     
-    if (inverterData.length === 0 || userShare === 0) return 0;
+  //   if (inverterData.length === 0 || userShare === 0) return 0;
     
-    const today = new Date().toISOString().split('T')[0];
-    const todayData = inverterData.filter(d => d.date_time.startsWith(today));
-    const plantTodayTotal = todayData.reduce((sum, d) => sum + d.value, 0);
+  //   const today = new Date().toISOString().split('T')[0];
+  //   const todayData = inverterData.filter(d => d.date_time.startsWith(today));
+  //   const plantTodayTotal = todayData.reduce((sum, d) => sum + d.value, 0);
     
-    return plantTodayTotal * userShare;
-  };
+  //   return plantTodayTotal * userShare;
+  // };
 
   // Fetch plant data
   const fetchPlantData = async () => {
