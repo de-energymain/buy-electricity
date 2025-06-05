@@ -59,7 +59,7 @@ const TransactionsPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string[]>(["all"]);
   const [timeFilter, setTimeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [userPanelData, setUserPanelData] = useState<UserPanelData>({ 
+  const [setUserPanelData] = useState<UserPanelData>({ 
     generatedYield: 0, 
     purchasedPanels: 0, 
     purchasedCost: 0 
@@ -303,8 +303,8 @@ const TransactionsPage: React.FC = () => {
 
   // Analyze transaction for token transfers
   const analyzeTransactionForTransfer = async (
-    transaction: ParsedTransactionWithMeta, 
-    walletAddress: string
+    _transaction: ParsedTransactionWithMeta, 
+    _walletAddress: string
   ): Promise<{ amount: number; direction: "in" | "out"; counterparty: string } | null> => {
     // This would analyze SPL token transfers for NRG tokens
     // For now, return null since we need the actual NRG token mint address
@@ -611,6 +611,37 @@ const TransactionsPage: React.FC = () => {
           />
           
           <div className="flex flex-wrap gap-2 md:ml-auto">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button 
+                  className="bg-[#1A1A1A] text-white border-1 border-gray-700"
+                  startContent={<Filter size={16} />}
+                >
+                  Status: {statusFilter.includes("all") ? "All" : statusFilter.join(", ")}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu 
+                aria-label="Status Filter"
+                closeOnSelect={false}
+                selectedKeys={new Set(statusFilter)}
+                selectionMode="multiple"
+                onSelectionChange={(keys) => {
+                  const selectedKeys = Array.from(keys as Set<string>);
+                  if (selectedKeys.includes("all")) {
+                    setStatusFilter(["all"]);
+                  } else {
+                    setStatusFilter(selectedKeys);
+                  }
+                }}
+                className="bg-[#1A1A1A] text-white border border-gray-700"
+              >
+                <DropdownItem key="all">All</DropdownItem>
+                <DropdownItem key="confirmed">Confirmed</DropdownItem>
+                <DropdownItem key="pending">Pending</DropdownItem>
+                <DropdownItem key="failed">Failed</DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            
             <Dropdown>
               <DropdownTrigger>
                 <Button 
