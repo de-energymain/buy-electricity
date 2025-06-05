@@ -82,6 +82,7 @@ interface InverterData {
   roofId: string;
   value: number;
   tillLifeTIme: number;
+  updated_date: Date;
 }
 
 interface PurchaseData {
@@ -199,6 +200,13 @@ function DashboardPage() {
       
       if (response.ok) {
         const result = await response.json();
+        //console.log("inverter data:", result);
+        if (result.data && result.data.length > 0) {       
+          const lastObject = result.data[result.data.length - 1];
+          const lastDateTime = new Date(lastObject.date_time);
+          setLastYieldUpdate(lastDateTime);
+        }
+
         setInverterData(result.data || []);
       }
     } catch (error) {
@@ -494,7 +502,7 @@ function DashboardPage() {
           purchasedCost: userData.user.panelDetails.purchasedCost,
           generatedYield: userData.user.panelDetails.generatedYield
         });
-        setLastYieldUpdate(new Date(userData.user.updatedAt));
+        //setLastYieldUpdate(new Date(userData.user.updatedAt));
       } else if (response.status === 404) {
         console.log('User not found, using default values');
       }
