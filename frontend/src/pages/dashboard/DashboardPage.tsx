@@ -14,7 +14,7 @@ import {
   Spinner
 } from "@nextui-org/react";
 import { useWallet } from '@solana/wallet-adapter-react';
-import { ArrowRight, CreditCard, Zap, DollarSign } from "lucide-react";
+import { ArrowRight, Zap, DollarSign } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 
 interface NodeData {
@@ -82,6 +82,7 @@ interface InverterData {
   roofId: string;
   value: number;
   tillLifeTIme: number;
+  updated_date: Date;
 }
 
 interface PurchaseData {
@@ -199,6 +200,13 @@ function DashboardPage() {
       
       if (response.ok) {
         const result = await response.json();
+        //console.log("inverter data:", result);
+        if (result.data && result.data.length > 0) {       
+          const lastObject = result.data[result.data.length - 1];
+          const lastDateTime = new Date(lastObject.date_time);
+          setLastYieldUpdate(lastDateTime);
+        }
+
         setInverterData(result.data || []);
       }
     } catch (error) {
@@ -494,7 +502,7 @@ function DashboardPage() {
           purchasedCost: userData.user.panelDetails.purchasedCost,
           generatedYield: userData.user.panelDetails.generatedYield
         });
-        setLastYieldUpdate(new Date(userData.user.updatedAt));
+        //setLastYieldUpdate(new Date(userData.user.updatedAt));
       } else if (response.status === 404) {
         console.log('User not found, using default values');
       }
@@ -657,43 +665,60 @@ function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         
         {/* Left - Your panels section */}
-        <div className="lg:col-span-1">
-          <h2 className="text-xl font-semibold text-white mb-4">Your panels</h2>
-          <Card className="bg-[#1A1A1A] border-none">
-            <CardBody className="p-4">
-              <div className="mb-4">
-                <h3 className="text-lg font-medium text-white">{stats.totalPanels} Panels</h3>
-                <p className="text-sm text-gray-400">
-                  {nodes.length > 0 ? `${nodes.length} Solar Farm${nodes.length > 1 ? 's' : ''} • India` : 'Multiple Solar Farms • India'}
-                </p>
-              </div>
-              
-              <div className="flex items-center p-3 bg-[#2A1A1A] rounded-lg mb-4">
-                <div className="w-8 h-8 mr-3 flex items-center justify-center text-lg">
-                  ⚡
+        <div className="lg:col-span-1 h-full overflow-y-auto">
+          <div className="sticky top-0 z-10">
+            <h2 className="text-xl font-semibold text-white mb-4">Your panels</h2>
+            <Card className="bg-[#1A1A1A] border-none">
+              <CardBody className="p-4">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium text-white">{stats.totalPanels} Panels</h3>
+                  <p className="text-sm text-gray-400">
+                    {nodes.length > 0 ? `${nodes.length} Solar Farm${nodes.length > 1 ? 's' : ''}` : 'Multiple Solar Farms • India'}
+                  </p>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-white">Active solar farm investments</div>
-                  <div className="text-xs text-gray-400">
-                    Generating {Math.round(stats.totalPanels * DAILY_GENERATION_PER_PANEL)} kWh daily across {Math.max(nodes.length, 1)} node{nodes.length !== 1 ? 's' : ''}.
+                
+                <div className="flex flex-col p-3 bg-[#2A1A1A] rounded-lg mb-4">
+                  <div className="flex mb-4">
+                    <div className="w-8 h-8 mr-3 flex items-center justify-center text-lg">
+                      ⚡
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-white">{Math.round(stats.totalPanels * DAILY_GENERATION_PER_PANEL)} kWh</div>
+                      <div className="text-xs text-gray-400">
+                        Daily generation across all assets.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <div className="w-8 h-8 mr-3 flex items-center justify-center text-lg">
+                      💡
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-white">
+                        {inverterData.length > 0 ? inverterData[inverterData.length - 1].value.toFixed(2) : "0.00"} kWh
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        Last 15 minutes generation.
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Button
-                className="w-full bg-transparent border border-[#E9423A] text-white hover:bg-[#2A1A1A]"
-                onPress={() => navigate('/dashboard/panels')}
-              >
-                View All Panels
-              </Button>
-            </CardBody>
-          </Card>
+                <Button
+                  className="w-full bg-transparent border border-[#E9423A] text-white hover:bg-[#2A1A1A]"
+                  onPress={() => navigate('/dashboard/panels')}
+                >
+                  View All Panels
+                </Button>
+              </CardBody>
+            </Card>
+          </div>
         </div>
 
         {/* Right - Key Metrics Cards */}
         <div className="lg:col-span-2">
           <h2 className="text-xl font-semibold text-white mb-4">Key Metrics</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* NRG Earnings */}
             <Card 
               className="bg-[#1A1A1A] border-none cursor-pointer hover:bg-[#2A1A1A] transition-all duration-300"
@@ -713,7 +738,7 @@ function DashboardPage() {
               </CardBody>
             </Card>
 
-            {/* Current Generation (Real-time from Plant API) */}
+            {/* Current Generation (Real-time from Plant API) 
             <Card 
               className="bg-[#1A1A1A] border-none hover:bg-[#2A1A1A] transition-all duration-300 cursor-pointer"
               isPressable
@@ -730,7 +755,7 @@ function DashboardPage() {
                 <div className="text-sm text-gray-400 mb-2">Current Generation</div>
                 <div className="text-xs text-green-400">Today: {stats.todayGeneration} kWh</div>
               </CardBody>
-            </Card>
+            </Card>*/}
 
             {/* Energy Generated */}
             <Card 
@@ -759,7 +784,7 @@ function DashboardPage() {
         
         {/* Left Column */}
         <div className="lg:col-span-1 space-y-6">
-          <div>
+          <div className="hidden">
             <h2 className="text-xl font-semibold text-white mb-4">Your solar impact</h2>
             <div className="grid grid-cols-1 gap-4">
               
@@ -813,7 +838,7 @@ function DashboardPage() {
         </div>
 
         {/* Right Column */}
-        <div className="lg:col-span-2 space-y-6">         
+        <div className="lg:col-span-2 -mt-20">         
 
           <div>
             <h2 className="text-xl font-semibold text-white mb-4">Your solar energy production</h2>
