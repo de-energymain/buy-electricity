@@ -78,8 +78,8 @@ export default function PaymentMethodPage() {
 
   // Order details
   const [orderDetails, setOrderDetails] = useState<OrderDetails>({
-    farm: "Jaipur Solar Farm",
-    location: "Jaipur, Rajasthan, India",
+    farm: "Mantra Essence Cooperative Society",
+    location: "Pune, India",
     panels: 29,
     capacity: 13.05,
     output: 0,

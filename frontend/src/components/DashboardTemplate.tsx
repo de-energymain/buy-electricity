@@ -16,6 +16,7 @@ import {
   Plus
 } from "lucide-react";
 import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, PublicKey } from '@solana/web3.js';
 import logo from "../assets/logo.svg";
 
 interface DashboardTemplateProps {
@@ -30,9 +31,17 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 }) => {
   const navigate = useNavigate();
   const { publicKey, wallet, disconnect } = useWallet();
-  const [username, setUsername] = useState<string | null>("John Doe");
+  const [username, setUsername] = useState<string | null>("User");
   const [web3AuthPublicKey, setWeb3AuthPublicKey] = useState<string | null>(null);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
+  
+  // Balance state
+  const [solBalance, setSolBalance] = useState<number | null>(null);
+  const [dogaBalance, setDogaBalance] = useState<number | null>(null);
+  const [isLoadingBalances, setIsLoadingBalances] = useState<boolean>(false);
+  
+  // Constants
+  const connection = new Connection("https://api.devnet.solana.com");
 
   useEffect(() => {
     const storedUsername = localStorage.getItem("username");
@@ -45,6 +54,79 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
       setWeb3AuthPublicKey(storedPublicKey);
     }
   }, []);
+
+  // Fetch wallet balances
+  const fetchBalances = async (walletAddress: string) => {
+    setIsLoadingBalances(true);
+    try {
+      const pubKey = new PublicKey(walletAddress);
+      
+      // Fetch SOL balance
+      const solBalanceResult = await connection.getBalance(pubKey);
+      setSolBalance(solBalanceResult / 1e9); // Convert lamports to SOL
+      
+      // Fetch DOGA token balance
+      try {
+        // Get all token accounts for this wallet
+        const allTokenAccounts = await connection.getParsedTokenAccountsByOwner(pubKey, {
+          programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+        });
+        
+        console.log(`Found ${allTokenAccounts.value.length} total token accounts`);
+        
+        let totalDogaBalance = 0;
+        let dogaAccountsFound = 0;
+        
+        // Check each token account for DOGA
+        for (const account of allTokenAccounts.value) {
+          const mintAddress = account.account.data.parsed.info.mint;
+          const tokenAmount = account.account.data.parsed.info.tokenAmount;
+          const balance = parseFloat(tokenAmount.amount) / Math.pow(10, tokenAmount.decimals);
+          
+          console.log(`Checking token: ${mintAddress}, balance: ${balance}`);
+          console.log(`Mint comparison: "${mintAddress}" === "GvkBPHKFYscCPP9AncN5YNVenbabY7vYXPrWg3NfYYXW" = ${mintAddress === 'GvkBPHKFYscCPP9AncN5YNVenbabY7vYXPrWg3NfYYXW'}`);
+          
+          // Look for DOGA tokens (exact mint match OR contains the mint)
+          if (mintAddress === 'GvkBPHKFYscCPP9AncN5YNVenbabY7vYXPrWg3NfYYXW' || 
+              mintAddress.includes('GvkBPHKFYscCPP9AncN5YNVenbabY7vYXPrWg3NfYYXW')) {
+            totalDogaBalance += balance;
+            dogaAccountsFound++;
+            console.log(`✅ Found DOGA account ${dogaAccountsFound}: ${balance} DOGA`);
+          } else {
+            console.log(`❌ Not a DOGA token: ${mintAddress}`);
+          }
+        }
+        
+        console.log(`Total DOGA balance: ${totalDogaBalance} from ${dogaAccountsFound} accounts`);
+        setDogaBalance(totalDogaBalance);
+        
+      } catch (tokenError) {
+        console.error('Error fetching token balance:', tokenError);
+        setDogaBalance(0);
+      }
+    } catch (error) {
+      console.error('Error fetching balances:', error);
+      setSolBalance(null);
+      setDogaBalance(null);
+    } finally {
+      setIsLoadingBalances(false);
+    }
+  };
+
+  // Fetch balances when wallet changes
+  useEffect(() => {
+    const walletAddress = publicKey?.toString() || web3AuthPublicKey;
+    if (walletAddress) {
+      fetchBalances(walletAddress);
+      
+      // Refresh balances every 30 seconds
+      const interval = setInterval(() => {
+        fetchBalances(walletAddress);
+      }, 30000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [publicKey, web3AuthPublicKey]);
 
    const handleLogout = async () => {
     setIsLogoutModalOpen(true);
@@ -76,6 +158,21 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     return address.length <= 8 ? address : `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  // Format large numbers with abbreviations
+  const formatBalance = (balance: number): string => {
+    if (balance >= 1000000000) {
+      return (balance / 1000000000).toFixed(1) + 'B';
+    } else if (balance >= 1000000) {
+      return (balance / 1000000).toFixed(1) + 'M';
+    } else if (balance >= 10000) {
+      return (balance / 1000).toFixed(0) + 'K';
+    } else if (balance >= 1000) {
+      return (balance / 1000).toFixed(1) + 'K';
+    } else {
+      return balance.toFixed(2);
+    }
+  };
+
   const getDate = () => {
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = { 
@@ -102,26 +199,41 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
         </div>
         
         <div className="flex items-center space-x-4">         
-          {/* Connected Wallet Display */}
+          {/* Connected Wallet Display with Balances */}
           {(publicKey || web3AuthPublicKey) && (
-            <div className="flex items-center bg-[#1A1A1A] rounded-lg p-2 pr-3">
-              <div className="w-6 h-6 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A] mr-2">
-                <WalletIcon size={14} />
+            <div className="flex items-center bg-[#1A1A1A] rounded-lg p-3">
+              <div className="w-8 h-8 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A] mr-3">
+                <WalletIcon size={16} />
               </div>
-              <div className="flex flex-col">
-                <div className="text-xs text-gray-400">{wallet?.adapter.name || "Wallet"}</div>
-                <div className="flex items-center">
-                  <span className="text-xs font-mono">{publicKey ? truncateAddress(publicKey.toString()) : truncateAddress(web3AuthPublicKey || " ") }</span>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-gray-400">{wallet?.adapter.name || "Wallet"}</span>
+                  <span className="text-xs font-mono text-white">{publicKey ? truncateAddress(publicKey.toString()) : truncateAddress(web3AuthPublicKey || " ") }</span>
                   <Tooltip content="View on Explorer">
                     <Button
                       isIconOnly
                       size="sm"
-                      className="ml-1 bg-transparent min-w-0 w-5 h-5 p-0"
+                      className="bg-transparent min-w-0 w-4 h-4 p-0"
                       onPress={() => window.open(`https://explorer.solana.com/address/${publicKey || web3AuthPublicKey}?cluster=devnet`, '_blank')}
                     >
-                      <ExternalLink size={12} className="text-gray-400" />
+                      <ExternalLink size={10} className="text-gray-400 hover:text-white" />
                     </Button>
                   </Tooltip>
+                </div>
+                {/* Balance Display */}
+                <div className="flex items-center gap-3 text-xs">
+                  {isLoadingBalances ? (
+                    <span className="text-gray-500">Loading balances...</span>
+                  ) : (
+                    <>
+                      <span className="text-blue-400 font-medium">
+                        {solBalance !== null ? `${solBalance.toFixed(3)} SOL` : '-- SOL'}
+                      </span>
+                      <span className="text-green-400 font-medium">
+                        {dogaBalance !== null ? `${formatBalance(dogaBalance)} DOGA` : '0.00 DOGA'}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -201,16 +313,6 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
           </div>
         </div>
       </nav>
-      
-      {/* Page Header with Title 
-      <div className="bg-[#0A0A0A] px-36 mx-10 py-4 border-b border-gray-800">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{title}</h1>
-          </div>
-        </div>
-      </div>
-      */}
       
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-8 bg-[#0A0A0A]">
