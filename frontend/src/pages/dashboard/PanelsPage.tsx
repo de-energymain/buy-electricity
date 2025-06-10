@@ -602,7 +602,7 @@ const PanelsPage: React.FC = () => {
   };
 
   const metrics = calculateMetrics();
-  const totalGenerated = calculateTotalGenerated();
+  //const totalGenerated = calculateTotalGenerated();
 
   // Prepare chart data based on period - FIXED VERSION
   const prepareChartData = () => {
