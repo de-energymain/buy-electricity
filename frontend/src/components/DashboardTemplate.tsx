@@ -230,7 +230,7 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                         {solBalance !== null ? `${solBalance.toFixed(3)} SOL` : '-- SOL'}
                       </span>
                       <span className="text-green-400 font-medium">
-                        {dogaBalance !== null ? `${formatBalance(dogaBalance)} DOGA` : '0.00 DOGA'}
+                        {dogaBalance !== null ? `${formatBalance(dogaBalance)} $NRG` : '0.00 $NRG'}
                       </span>
                     </>
                   )}
