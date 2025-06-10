@@ -75,14 +75,20 @@ interface PlantData {
 }
 
 interface InverterData {
-  _id: string;
-  date_time: string;
-  inverterId: string;
-  plantId: string;
-  roofId: string;
+  _id?: string;
+  date_time?: string; // For backward compatibility
+  time?: string; // For hourly data (e.g., "22:00")
+  date?: string; // For daily aggregated data (e.g., "2025-06-05")
+  inverterId?: string;
+  plantId?: string;
+  roofId?: string;
   value: number;
-  tillLifeTIme: number;
-  updated_date: Date;
+  cumulativeKWH?: number;
+  averageValue?: number;
+  recordCount?: number;
+  hasData?: boolean;
+  tillLifeTIme?: number;
+  updated_date?: Date;
 }
 
 interface PurchaseData {
@@ -120,6 +126,7 @@ function DashboardPage() {
   const [plantData, setPlantData] = useState<PlantData | null>(null);
   const [inverterData, setInverterData] = useState<InverterData[]>([]);
   const [historicalInverterData, setHistoricalInverterData] = useState<InverterData[]>([]);
+  const [todayInverterData, setTodayInverterData] = useState<InverterData[]>([]);
   const [userPanelData, setUserPanelData] = useState<UserPanelData>({
     purchasedPanels: 0,
     purchasedCost: 0,
@@ -133,6 +140,47 @@ function DashboardPage() {
   const PANEL_CAPACITY_KW = 1; // 1 kW per panel (updated from 0.45)
   const CO2_SAVINGS_PER_KWH = 0.0004; // tons CO2 saved per kWh
   const PLANT_ID = "6750afc5df6b8bbf630e3154"; // Plant ID for API calls
+
+  // Helper function to get date/time from inverter data item
+  const getDateTimeFromItem = (item: InverterData): Date | null => {
+    // Handle different API response structures
+    if (item.date_time) {
+      return new Date(item.date_time);
+    } else if (item.date) {
+      return new Date(item.date);
+    } else if (item.time) {
+      // For hourly data like "22:00", combine with today's date
+      const today = new Date();
+      const [hours, minutes] = item.time.split(':');
+      return new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hours), parseInt(minutes));
+    }
+    return null;
+  };
+
+  // Helper function to get time key for grouping
+  const getTimeKey = (item: InverterData, period: string): string => {
+    const date = getDateTimeFromItem(item);
+    if (!date) return '';
+
+    switch (period) {
+      case "day":
+        if (item.time) {
+          return item.time; // Use as-is for hourly data
+        }
+        return `${date.getHours().toString().padStart(2, '0')}:00`;
+      
+      case "week":
+      case "month":
+      case "year":
+        if (item.date) {
+          return new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      default:
+        return '';
+    }
+  };
 
   // Get earliest purchase date to determine data fetch range
   const getEarliestPurchaseDate = (): Date => {
@@ -160,20 +208,7 @@ function DashboardPage() {
     return userCapacity / plantCapacity; // Returns percentage as decimal
   };
 
-  // Calculate today's actual generation for user based on real plant data
-  const calculateTodayActualGeneration = (): number => {
-    const userShare = calculateUserCapacityShare();
-    
-    if (inverterData.length === 0 || userShare === 0) return 0;
-    
-    // Sum all generation data for today
-    const todayTotal = inverterData.reduce((sum, d) => sum + d.value, 0);
-    
-    // Apply user's ownership share
-    return todayTotal * userShare;
-  };
-
-  // Calculate total energy generated since purchase based on real API data
+  // Calculate total energy generated since purchase based on real API data (SAME AS PANELS PAGE)
   const calculateTotalEnergyFromAPI = (): number => {
     const userShare = calculateUserCapacityShare();
     
@@ -186,8 +221,8 @@ function DashboardPage() {
     
     // Filter inverter data to only include data after earliest purchase
     const relevantData = historicalInverterData.filter(d => {
-      const dataDate = new Date(d.date_time);
-      return dataDate >= earliestPurchase;
+      const dataDate = getDateTimeFromItem(d);
+      return dataDate && dataDate >= earliestPurchase;
     });
     
     // Sum all generation since earliest purchase
@@ -197,29 +232,29 @@ function DashboardPage() {
     return totalPlantGeneration * userShare;
   };
 
-  // Calculate user's generation based on plant data and their capacity share
+  // Calculate user's current generation based on plant data and their capacity share
   const calculateUserGenerationFromPlant = () => {
     const userShare = calculateUserCapacityShare();
     
-    if (inverterData.length === 0 || userShare === 0) return 0;
+    if (todayInverterData.length === 0 || userShare === 0) return 0;
     
     // Get latest reading for current generation
-    const latestReading = inverterData[inverterData.length - 1];
+    const latestReading = todayInverterData[todayInverterData.length - 1];
     return latestReading ? latestReading.value * userShare : 0;
   };
 
-  // Calculate today's total generation for user
-  // const calculateTodayGeneration = () => {
-  //   const userShare = calculateUserCapacityShare();
+  // Calculate today's actual generation for user based on real plant data
+  const calculateTodayActualGeneration = (): number => {
+    const userShare = calculateUserCapacityShare();
     
-  //   if (inverterData.length === 0 || userShare === 0) return 0;
+    if (todayInverterData.length === 0 || userShare === 0) return 0;
     
-  //   const today = new Date().toISOString().split('T')[0];
-  //   const todayData = inverterData.filter(d => d.date_time.startsWith(today));
-  //   const plantTodayTotal = todayData.reduce((sum, d) => sum + d.value, 0);
+    // Sum all generation data for today
+    const todayTotal = todayInverterData.reduce((sum, d) => sum + d.value, 0);
     
-  //   return plantTodayTotal * userShare;
-  // };
+    // Apply user's ownership share
+    return todayTotal * userShare;
+  };
 
   // Fetch plant data
   const fetchPlantData = async () => {
@@ -239,7 +274,7 @@ function DashboardPage() {
     }
   };
 
-  // Fetch inverter data for today
+  // Fetch today's data specifically for current generation
   const fetchTodayInverterData = async () => {
     try {
       const endDate = new Date();
@@ -253,23 +288,29 @@ function DashboardPage() {
       
       if (response.ok) {
         const result = await response.json();
-        //console.log("inverter data:", result);
-       if (result.data && result.data.length > 0) {       
-      const lastObject = result.data[result.data.length - 1];
-      console.log("Last inverter data object:", lastObject.time);
-  
-      // Create a proper date by combining today's date with the time
-      const today = new Date();
-      const timeString = lastObject.time; // "22:00"
-      const [hours, minutes] = timeString.split(':');
-  
-      const lastDateTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hours), parseInt(minutes));
-      setLastYieldUpdate(lastDateTime);
-     }    
+        
+        if (result.data && result.data.length > 0) {       
+          const lastObject = result.data[result.data.length - 1];
+          console.log("Last inverter data object:", lastObject.time || lastObject.date);
+          
+          // Handle different field structures for last update time
+          if (lastObject.time) {
+            // Create a proper date by combining today's date with the time
+            const today = new Date();
+            const timeString = lastObject.time; // "22:00"
+            const [hours, minutes] = timeString.split(':');
+            const lastDateTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hours), parseInt(minutes));
+            setLastYieldUpdate(lastDateTime);
+          } else if (lastObject.date) {
+            setLastYieldUpdate(new Date(lastObject.date));
+          }
+        }    
+        setTodayInverterData(result.data || []);
+        // Also set inverterData for compatibility with existing chart logic
         setInverterData(result.data || []);
       }
     } catch (error) {
-      console.error('Error fetching inverter data:', error);
+      console.error('Error fetching today inverter data:', error);
     }
   };
 
@@ -304,14 +345,14 @@ function DashboardPage() {
     
     if (historicalInverterData.length === 0 || userShare === 0 || purchaseData.length === 0) {
       // Fallback to today's data for day view
-      if (period === "day" && inverterData.length > 0) {
+      if (period === "day" && todayInverterData.length > 0) {
         const hourlyData: { [key: string]: number } = {};
         
-        inverterData.forEach(d => {
-          const date = new Date(d.date_time);
-          const hour = date.getHours();
-          const key = `${hour.toString().padStart(2, '0')}:00`;
-          hourlyData[key] = (hourlyData[key] || 0) + d.value;
+        todayInverterData.forEach(d => {
+          const timeKey = getTimeKey(d, period);
+          if (timeKey) {
+            hourlyData[timeKey] = (hourlyData[timeKey] || 0) + d.value;
+          }
         });
         
         return Object.entries(hourlyData)
@@ -319,7 +360,11 @@ function DashboardPage() {
             day: time,
             value: parseFloat((value * userShare).toFixed(2))
           }))
-          .sort((a, b) => parseInt(a.day.split(':')[0]) - parseInt(b.day.split(':')[0]));
+          .sort((a, b) => {
+            const aHour = parseInt(a.day.split(':')[0]);
+            const bHour = parseInt(b.day.split(':')[0]);
+            return aHour - bHour;
+          });
       }
       return [];
     }
@@ -328,8 +373,8 @@ function DashboardPage() {
     
     // Filter data to only include generation after earliest purchase
     const relevantData = historicalInverterData.filter(d => {
-      const dataDate = new Date(d.date_time);
-      return dataDate >= earliestPurchase;
+      const dataDate = getDateTimeFromItem(d);
+      return dataDate && dataDate >= earliestPurchase;
     });
 
     if (relevantData.length === 0) return [];
@@ -342,13 +387,16 @@ function DashboardPage() {
         const hourlyData: { [key: string]: number } = {};
         
         const today = new Date().toISOString().split('T')[0];
-        const todayData = relevantData.filter(d => d.date_time.startsWith(today));
+        const todayData = relevantData.filter(d => {
+          const dataDate = getDateTimeFromItem(d);
+          return dataDate && dataDate.toISOString().startsWith(today);
+        });
         
         todayData.forEach(d => {
-          const date = new Date(d.date_time);
-          const hour = date.getHours();
-          const key = `${hour.toString().padStart(2, '0')}:00`;
-          hourlyData[key] = (hourlyData[key] || 0) + d.value;
+          const timeKey = getTimeKey(d, period);
+          if (timeKey) {
+            hourlyData[timeKey] = (hourlyData[timeKey] || 0) + d.value;
+          }
         });
         
         data = Object.entries(hourlyData)
@@ -356,7 +404,11 @@ function DashboardPage() {
             day: time,
             value: parseFloat((value * userShare).toFixed(2))
           }))
-          .sort((a, b) => parseInt(a.day.split(':')[0]) - parseInt(b.day.split(':')[0]));
+          .sort((a, b) => {
+            const aHour = parseInt(a.day.split(':')[0]);
+            const bHour = parseInt(b.day.split(':')[0]);
+            return aHour - bHour;
+          });
         break;
         
       case "week":
@@ -366,14 +418,16 @@ function DashboardPage() {
         weekAgo.setDate(weekAgo.getDate() - 7);
         
         const weekData = relevantData.filter(d => {
-          const dataDate = new Date(d.date_time);
-          return dataDate >= weekAgo;
+          const dataDate = getDateTimeFromItem(d);
+          return dataDate && dataDate >= weekAgo;
         });
         
         weekData.forEach(d => {
-          const date = new Date(d.date_time);
-          const key = date.toLocaleDateString('en-US', { weekday: 'short' });
-          dailyData[key] = (dailyData[key] || 0) + d.value;
+          const dataDate = getDateTimeFromItem(d);
+          if (dataDate) {
+            const key = dataDate.toLocaleDateString('en-US', { weekday: 'short' });
+            dailyData[key] = (dailyData[key] || 0) + d.value;
+          }
         });
         
         const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -390,15 +444,17 @@ function DashboardPage() {
         monthAgo.setDate(monthAgo.getDate() - 30);
         
         const monthData = relevantData.filter(d => {
-          const dataDate = new Date(d.date_time);
-          return dataDate >= monthAgo;
+          const dataDate = getDateTimeFromItem(d);
+          return dataDate && dataDate >= monthAgo;
         });
         
         monthData.forEach(d => {
-          const date = new Date(d.date_time);
-          const weekNumber = Math.ceil((date.getDate()) / 7);
-          const key = `Week ${weekNumber}`;
-          weeklyData[key] = (weeklyData[key] || 0) + d.value;
+          const dataDate = getDateTimeFromItem(d);
+          if (dataDate) {
+            const weekNumber = Math.ceil((dataDate.getDate()) / 7);
+            const key = `Week ${weekNumber}`;
+            weeklyData[key] = (weeklyData[key] || 0) + d.value;
+          }
         });
         
         const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
@@ -415,14 +471,16 @@ function DashboardPage() {
         yearAgo.setFullYear(yearAgo.getFullYear() - 1);
         
         const yearData = relevantData.filter(d => {
-          const dataDate = new Date(d.date_time);
-          return dataDate >= yearAgo;
+          const dataDate = getDateTimeFromItem(d);
+          return dataDate && dataDate >= yearAgo;
         });
         
         yearData.forEach(d => {
-          const date = new Date(d.date_time);
-          const key = date.toLocaleDateString('en-US', { month: 'short' });
-          monthlyData[key] = (monthlyData[key] || 0) + d.value;
+          const dataDate = getDateTimeFromItem(d);
+          if (dataDate) {
+            const key = dataDate.toLocaleDateString('en-US', { month: 'short' });
+            monthlyData[key] = (monthlyData[key] || 0) + d.value;
+          }
         });
         
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -436,42 +494,14 @@ function DashboardPage() {
     return data;
   };
 
-  // Calculate total energy generated based on purchase dates
-  const calculateTotalGenerated = () => {
-    // Use API data if available
-    const apiTotal = calculateTotalEnergyFromAPI();
-    if (apiTotal > 0) {
-      return apiTotal;
-    }
-
-    // Fallback calculation if no API data
-    if (purchaseData.length === 0) {
-      return userPanelData.purchasedPanels * 2.8 * 30;
-    }
-
-    let totalGenerated = 0;
-    const currentDate = new Date();
-
-    purchaseData.forEach(purchase => {
-      const purchaseDate = new Date(purchase.purchaseDate || purchase.createdAt);
-      const daysSincePurchase = Math.floor((currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // Calculate generation: panels × 2.8 kWh/day × days since purchase
-      const generatedFromThisPurchase = purchase.panelsPurchased * 2.8 * Math.max(daysSincePurchase, 0);
-      totalGenerated += generatedFromThisPurchase;
-    });
-
-    return totalGenerated;
-  };
-
-  // Calculate real-time stats from actual data
+  // Calculate real-time stats from actual data (SAME LOGIC AS PANELS PAGE)
   const calculateRealStats = () => {
     const totalPanels = userPanelData.purchasedPanels;
     const dollarYield = userPanelData.generatedYield;
     const nrgEarnings = dollarYield / DOLLAR_TO_NRG_RATE;
     
-    // Calculate total energy generated based on purchase history
-    const totalEnergyGenerated = calculateTotalGenerated();
+    // Calculate total energy generated based on purchase history (SAME AS PANELS PAGE)
+    const totalEnergyGenerated = calculateTotalEnergyFromAPI();
     
     // Get current generation from plant data
     const currentGeneration = calculateUserGenerationFromPlant();
@@ -496,7 +526,7 @@ function DashboardPage() {
     const earningsChange = previousMonthYield > 0 ? ((dollarYield - previousMonthYield) / previousMonthYield) * 100 : 0;
     
     return {
-      energyGenerated: Math.round(totalEnergyGenerated),
+      energyGenerated: Math.round(totalEnergyGenerated), // NOW USES SAME CALCULATION AS PANELS PAGE
       energyChange: Math.round(Math.random() * 15 + 5), // Simulated growth
       nrgEarnings: Math.round(nrgEarnings),
       earningsChange: Math.round(earningsChange),
@@ -662,7 +692,6 @@ function DashboardPage() {
           purchasedCost: userData.user.panelDetails.purchasedCost,
           generatedYield: userData.user.panelDetails.generatedYield
         });
-        //setLastYieldUpdate(new Date(userData.user.updatedAt));
       } else if (response.status === 404) {
         console.log('User not found, using default values');
       }
@@ -862,7 +891,7 @@ function DashboardPage() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-white">
-                        {inverterData.length > 0 ? inverterData[inverterData.length - 1].value.toFixed(2) : "0.00"} kWh
+                        {todayInverterData.length > 0 ? (todayInverterData[todayInverterData.length - 1].value * calculateUserCapacityShare()).toFixed(2) : "0.00"} kWh
                       </div>
                       <div className="text-xs text-gray-400">
                         Last 15 minutes generation.
@@ -1059,21 +1088,6 @@ function DashboardPage() {
                     <div className="font-medium text-white">{summaryStats.totalPeriod} kWh</div>
                   </div>
                 </div>
-
-                {/* Data source indicator */}
-                {/* {historicalInverterData.length > 0 && (
-                  <div className="mt-4 p-3 bg-[#2A1A1A] rounded-lg">
-                    <div className="text-xs text-blue-400 mb-1">📊 Real-time Plant Data</div>
-                    <div className="text-xs text-gray-400">
-                      Your {userPanelData.purchasedPanels} panels × {PANEL_CAPACITY_KW} kW = {(userPanelData.purchasedPanels * PANEL_CAPACITY_KW).toFixed(1)} kW capacity
-                      ({((userPanelData.purchasedPanels * PANEL_CAPACITY_KW) / (plantData?.plantSize || 1) * 100).toFixed(2)}% of {plantData?.plantSize} kW plant)
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Data since: {purchaseData.length > 0 ? getEarliestPurchaseDate().toLocaleDateString() : 'No purchases'} • 
-                      Readings: {historicalInverterData.length} historical, {inverterData.length} today
-                    </div>
-                  </div>
-                )} */}
               </CardBody>
             </Card>
           </div>
