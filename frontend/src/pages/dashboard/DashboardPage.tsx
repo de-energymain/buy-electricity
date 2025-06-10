@@ -254,12 +254,18 @@ function DashboardPage() {
       if (response.ok) {
         const result = await response.json();
         //console.log("inverter data:", result);
-        if (result.data && result.data.length > 0) {       
-          const lastObject = result.data[result.data.length - 1];
-          const lastDateTime = new Date(lastObject.date_time);
-          setLastYieldUpdate(lastDateTime);
-        }
-
+       if (result.data && result.data.length > 0) {       
+      const lastObject = result.data[result.data.length - 1];
+      console.log("Last inverter data object:", lastObject.time);
+  
+      // Create a proper date by combining today's date with the time
+      const today = new Date();
+      const timeString = lastObject.time; // "22:00"
+      const [hours, minutes] = timeString.split(':');
+  
+      const lastDateTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hours), parseInt(minutes));
+      setLastYieldUpdate(lastDateTime);
+     }    
         setInverterData(result.data || []);
       }
     } catch (error) {
