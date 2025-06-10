@@ -422,6 +422,11 @@ const PanelsPage: React.FC = () => {
 
   // Initial data fetch
   useEffect(() => {
+    if (!walletID) {
+      setLoadingState(prev => ({ ...prev, user: false }));
+      return;
+    }
+
     fetchPlantData();
     fetchUserData();
     fetchPurchaseData();
@@ -454,9 +459,9 @@ const PanelsPage: React.FC = () => {
     const currentGeneration = plantCurrentGeneration * userCapacityShare;
 
     // Today's total generation (entire plant)
-    const today = new Date().toISOString().split('T')[0];
-    const todayData = inverterData.filter(d => d.date_time.startsWith(today));
-    const plantTodayTotal = todayData.reduce((sum, d) => sum + d.value, 0);
+    //const today = new Date().toISOString().split('T')[0];
+    //const todayData = inverterData.filter(d => d.date_time?.startsWith(today));
+    const plantTodayTotal = inverterData.reduce((sum, d) => sum + ( d.value || 0), 0);
 
     // Today's user total generation
     const todayTotalUser = plantTodayTotal * userCapacityShare;
