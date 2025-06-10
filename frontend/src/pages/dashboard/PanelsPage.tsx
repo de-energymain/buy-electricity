@@ -66,13 +66,19 @@ interface PlantData {
 }
 
 interface InverterData {
-  _id: string;
-  date_time: string;
-  inverterId: string;
-  plantId: string;
-  roofId: string;
+  _id?: string;
+  date_time?: string; // For backward compatibility
+  time?: string; // For hourly data (e.g., "22:00")
+  date?: string; // For daily aggregated data (e.g., "2025-06-05")
+  inverterId?: string;
+  plantId?: string;
+  roofId?: string;
   value: number;
-  tillLifeTIme: number;
+  cumulativeKWH?: number;
+  averageValue?: number;
+  recordCount?: number;
+  hasData?: boolean;
+  tillLifeTIme?: number;
   updated_date?: Date;
 }
 
@@ -145,6 +151,48 @@ const PanelsPage: React.FC = () => {
   // Constants
   const PANEL_CAPACITY_KW = 1; // 1 kW per panel (updated from 0.45)
   const CO2_SAVINGS_PER_KWH = 0.0004; // tons CO2 saved per kWh
+
+  // Helper function to get date/time from inverter data item
+  const getDateTimeFromItem = (item: InverterData): Date | null => {
+    // Handle different API response structures
+    if (item.date_time) {
+      return new Date(item.date_time);
+    } else if (item.date) {
+      return new Date(item.date);
+    } else if (item.time) {
+      // For hourly data like "22:00", combine with today's date
+      const today = new Date();
+      const [hours, minutes] = item.time.split(':');
+      return new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hours), parseInt(minutes));
+    }
+    return null;
+  };
+
+  // Helper function to get time key for grouping
+  const getTimeKey = (item: InverterData, period: string): string => {
+    const date = getDateTimeFromItem(item);
+    if (!date) return '';
+
+    switch (period) {
+      case "today":
+        if (item.time) {
+          return item.time; // Use as-is for hourly data
+        }
+        return `${date.getHours().toString().padStart(2, '0')}:00`;
+      
+      case "week":
+      case "month":
+      case "3months":
+      case "6months":
+        if (item.date) {
+          return new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      default:
+        return '';
+    }
+  };
 
   // Extract wallet ID
   useEffect(() => {
@@ -235,8 +283,8 @@ const PanelsPage: React.FC = () => {
     
     // Filter inverter data to only include data after earliest purchase
     const relevantData = historicalInverterData.filter(d => {
-      const dataDate = new Date(d.date_time);
-      return dataDate >= earliestPurchase;
+      const dataDate = getDateTimeFromItem(d);
+      return dataDate && dataDate >= earliestPurchase;
     });
     
     // Sum all generation since earliest purchase
@@ -323,7 +371,7 @@ const PanelsPage: React.FC = () => {
         const inverterResult = await inverterResponse.json();
         const data = inverterResult.data || [];
         
-        console.log(`Received ${data.length} data points for ${period}`);
+        console.log(`Received ${data.length} data points for ${period}`, data[0]);
         setInverterData(data);
         setHasEmptyData(data.length === 0);
       } else {
@@ -431,7 +479,15 @@ const PanelsPage: React.FC = () => {
     fetchUserData();
     fetchPurchaseData();
     fetchInverterData("today");
+    fetchTodayData(); // Always fetch today's data for current generation
   }, [walletID]);
+
+  // Fetch lifetime data after plant data is loaded
+  useEffect(() => {
+    if (plantData) {
+      fetchLifetimeData();
+    }
+  }, [plantData]);
 
   // Fetch historical data after purchase data is loaded
   useEffect(() => {
@@ -440,44 +496,88 @@ const PanelsPage: React.FC = () => {
     }
   }, [purchaseData, plantData]);
 
-  // Refetch inverter data when chart period changes
+  // Refetch inverter data when chart period changes (but keep today's data unchanged)
   useEffect(() => {
     if (plantData) {
       fetchInverterData(chartPeriod);
+      // Don't refetch today's data or lifetime data - they should remain constant
     }
   }, [chartPeriod, plantData]);
+
+  // Fetch today's data separately for current generation (always today regardless of filter)
+  const [todayInverterData, setTodayInverterData] = useState<InverterData[]>([]);
+  const [lifetimeInverterData, setLifetimeInverterData] = useState<InverterData[]>([]);
+
+  // Fetch today's data specifically for current generation
+  const fetchTodayData = async () => {
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      
+      const response = await fetch(
+        `https://de-express-backend.onrender.com/api/inverterquarterhourlydata/plant/6750afc5df6b8bbf630e3154?startDate=${encodeURIComponent(startDate.toISOString())}&endDate=${encodeURIComponent(endDate.toISOString())}`,
+        { headers: { 'accept': '*/*' } }
+      );
+      
+      if (response.ok) {
+        const result = await response.json();
+        setTodayInverterData(result.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching today data:', error);
+    }
+  };
+
+  // Fetch lifetime data using the same endpoint (from commission date to now)
+  const fetchLifetimeData = async () => {
+    if (!plantData) return;
+    
+    try {
+      const endDate = new Date();
+      const startDate = new Date(plantData.commissionDate);
+      
+      console.log(`Fetching lifetime data from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      
+      const response = await fetch(
+        `https://de-express-backend.onrender.com/api/inverterquarterhourlydata/plant/6750afc5df6b8bbf630e3154?startDate=${encodeURIComponent(startDate.toISOString())}&endDate=${encodeURIComponent(endDate.toISOString())}`,
+        { headers: { 'accept': '*/*' } }
+      );
+      
+      if (response.ok) {
+        const result = await response.json();
+        setLifetimeInverterData(result.data || []);
+        console.log(`Fetched ${result.data?.length || 0} lifetime data points`);
+      }
+    } catch (error) {
+      console.error('Error fetching lifetime data:', error);
+    }
+  };
 
   // Calculate real-time metrics
   const calculateMetrics = () => {
     console.log("inverterData:", inverterData);
-    // Always return metrics, even with empty data
-    const latestReading = inverterData.length > 0 ? inverterData[inverterData.length - 1] : null;
-    const plantCurrentGeneration = latestReading?.value || 0;
     
-    // Calculate user's current generation based on their share
     const userCapacityShare = calculateUserCapacityShare();
-    const currentGeneration = plantCurrentGeneration * userCapacityShare;
+    
+    // CURRENT GENERATION: Always from today's data, regardless of filter
+    const todayTotal = todayInverterData.reduce((sum, d) => sum + (d.value || 0), 0);
+    const currentGeneration = todayTotal * userCapacityShare;
 
-    // Today's total generation (entire plant)
-    //const today = new Date().toISOString().split('T')[0];
-    //const todayData = inverterData.filter(d => d.date_time?.startsWith(today));
-    const plantTodayTotal = inverterData.reduce((sum, d) => sum + ( d.value || 0), 0);
-
-    // Today's user total generation
-    const todayTotalUser = plantTodayTotal * userCapacityShare;
-
-    // Period total
+    // PERIOD TOTAL: Based on selected filter period
     const plantPeriodTotal = inverterData.reduce((sum, d) => sum + d.value, 0);
     const userPeriodTotal = plantPeriodTotal * userCapacityShare;
 
-    // Lifetime total
-    const lifetimeTotal = latestReading?.tillLifeTIme || 0;
+    // LIFETIME TOTAL: Always from plant commission using same endpoint, never changes with filter
+    const lifetimeTotal = lifetimeInverterData.reduce((sum, d) => sum + d.value, 0);
 
-    // Plant efficiency (current vs rated capacity)
+    // Plant efficiency (current vs rated capacity) - use latest reading from today
     const plantCapacity = plantData?.plantSize || 1;
-    const plantEfficiency = (plantCurrentGeneration / plantCapacity) * 100;
+    const latestTodayReading = todayInverterData.length > 0 ? todayInverterData[todayInverterData.length - 1] : null;
+    const currentPlantGeneration = latestTodayReading?.value || 0;
+    const plantEfficiency = (currentPlantGeneration / plantCapacity) * 100;
 
-    // Monthly estimated vs actual
+    // Monthly estimated vs actual (use today's total for performance ratio)
     const currentMonth = new Date().toLocaleString('default', { month: 'long' });
     const currentYear = new Date().getFullYear().toString();
     const monthlyEstimate = plantData?.estimatedGeneration?.[currentYear]?.[currentMonth] || 0;
@@ -485,25 +585,26 @@ const PanelsPage: React.FC = () => {
     // Daily average for month
     const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
     const dailyEstimate = monthlyEstimate / daysInMonth;
-    const performanceRatio = dailyEstimate > 0 ? (plantTodayTotal / dailyEstimate) * 100 : 0;
+    const performanceRatio = dailyEstimate > 0 ? (todayTotal / dailyEstimate) * 100 : 0;
 
     return {
-      currentGeneration,
-      todayTotal: plantTodayTotal,
-      periodTotal: userPeriodTotal,
-      lifetimeTotal,
+      currentGeneration, // Always today's cumulative
+      todayTotal, // Always today's plant total
+      periodTotal: userPeriodTotal, // Changes with filter
+      plantPeriodTotal, // Plant total for selected period
+      lifetimeTotal, // Always lifetime total
       plantEfficiency,
       performanceRatio,
       dailyEstimate,
       monthlyEstimate,
-      todayTotalUser
+      todayTotalUser: currentGeneration // User's today total
     };
   };
 
   const metrics = calculateMetrics();
   const totalGenerated = calculateTotalGenerated();
 
-  // Prepare chart data based on period
+  // Prepare chart data based on period - FIXED VERSION
   const prepareChartData = () => {
     if (inverterData.length === 0) return [];
 
@@ -511,46 +612,87 @@ const PanelsPage: React.FC = () => {
     
     let groupedData: { [key: string]: number } = {};
     
-    switch (chartPeriod) {
-      case "today":
-        inverterData.forEach(d => {
-          const date = new Date(d.date_time);
-          const hour = date.getHours();
-          const key = `${hour.toString().padStart(2, '0')}:00`;
-          groupedData[key] = (groupedData[key] || 0) + d.value;
-        });
-        break;
-      
-      case "week":
-      case "month":
-      case "3months":
-      case "6months":
-        inverterData.forEach(d => {
-          const date = new Date(d.date_time);
-          const key = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          groupedData[key] = (groupedData[key] || 0) + d.value;
-        });
-        break;
-      
-      default:
-        return [];
-    }
+    // Handle different data structures
+    inverterData.forEach(d => {
+      const timeKey = getTimeKey(d, chartPeriod);
+      if (timeKey) {
+        groupedData[timeKey] = (groupedData[timeKey] || 0) + d.value;
+      }
+    });
 
     const result = Object.entries(groupedData)
       .map(([time, value]) => ({ time, value }))
       .sort((a, b) => {
         if (chartPeriod === "today") {
-          return parseInt(a.time.split(':')[0]) - parseInt(b.time.split(':')[0]);
+          // Sort by hour for today's data
+          const aHour = parseInt(a.time.split(':')[0]);
+          const bHour = parseInt(b.time.split(':')[0]);
+          return aHour - bHour;
+        } else {
+          // Sort by date for longer periods
+          return new Date(a.time + ", 2024").getTime() - new Date(b.time + ", 2024").getTime();
         }
-        return new Date(a.time + ", 2024").getTime() - new Date(b.time + ", 2024").getTime();
       });
 
     console.log(`Chart data prepared:`, result);
     return result;
   };
 
+  // Prepare chart data for user's panels - based on user ownership and purchase timeline
   const chartData = prepareChartData();
   const maxChartValue = Math.max(...chartData.map(d => d.value), 1);
+
+  // Prepare chart data for user's panels - based on user ownership and filtered by purchase date
+  const prepareUserPanelChartData = () => {
+    // Use the current filtered inverterData (respects the period filter)
+    if (inverterData.length === 0 || purchaseData.length === 0) return [];
+
+    const userShare = calculateUserCapacityShare();
+    if (userShare === 0) return [];
+
+    const earliestPurchase = getEarliestPurchaseDate();
+    
+    // Filter inverterData to only include data after user's earliest purchase
+    const relevantData = inverterData.filter(d => {
+      const dataDate = getDateTimeFromItem(d);
+      return dataDate && dataDate >= earliestPurchase;
+    });
+
+    if (relevantData.length === 0) return [];
+
+    console.log(`Preparing user panel chart data for ${chartPeriod} with ${relevantData.length} data points since ${earliestPurchase.toLocaleDateString()}`);
+    
+    let groupedData: { [key: string]: number } = {};
+    
+    // Handle different data structures and apply user share
+    relevantData.forEach(d => {
+      const timeKey = getTimeKey(d, chartPeriod);
+      if (timeKey) {
+        // Apply user's ownership share to the plant generation
+        const userGeneration = d.value * userShare;
+        groupedData[timeKey] = (groupedData[timeKey] || 0) + userGeneration;
+      }
+    });
+
+    const result = Object.entries(groupedData)
+      .map(([time, value]) => ({ time, value }))
+      .sort((a, b) => {
+        if (chartPeriod === "today") {
+          // Sort by hour for today's data
+          const aHour = parseInt(a.time.split(':')[0]);
+          const bHour = parseInt(b.time.split(':')[0]);
+          return aHour - bHour;
+        } else {
+          // Sort by date for longer periods
+          return new Date(a.time + ", 2024").getTime() - new Date(b.time + ", 2024").getTime();
+        }
+      });
+
+    console.log(`User panel chart data prepared for ${chartPeriod} since purchase:`, result);
+    return result;
+  };
+
+  const userPanelChartData = prepareUserPanelChartData();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', { 
@@ -558,6 +700,18 @@ const PanelsPage: React.FC = () => {
       month: 'short', 
       day: 'numeric' 
     });
+  };
+
+  // Helper function to get period label for the middle card
+  const getPeriodGenerationLabel = () => {
+    switch (chartPeriod) {
+      case "today": return "Today's Generation";
+      case "week": return "Last Week's Generation";
+      case "month": return "Last Month's Generation";
+      case "3months": return "Last 3 Months' Generation";
+      case "6months": return "Last 6 Months' Generation";
+      default: return "Period Generation";
+    }
   };
 
   const getPeriodLabel = () => {
@@ -805,19 +959,22 @@ const PanelsPage: React.FC = () => {
                     <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
                       <Sun size={24} className="text-green-400" />
                     </div>
-                    <Chip size="sm" color="success" variant="flat">Today</Chip>
+                    <Chip size="sm" color="success" variant="flat">{getPeriodLabel()}</Chip>
                   </div>
-                  <div className="text-2xl font-bold text-white mb-1">{metrics.todayTotal.toFixed(1)} kWh</div>
-                  <div className="text-green-400 text-sm">Today's Generation</div>
+                  <div className="text-2xl font-bold text-white mb-1">{metrics.plantPeriodTotal.toFixed(1)} kWh</div>
+                  <div className="text-green-400 text-sm">{getPeriodGenerationLabel()}</div>
                   <Progress 
-                    value={metrics.performanceRatio > 0 ? metrics.performanceRatio : 0} 
+                    value={chartPeriod === "today" ? (metrics.performanceRatio > 0 ? metrics.performanceRatio : 0) : 50} 
                     maxValue={100}
                     color="success"
                     size="sm"
                     className="mt-2"
                   />
                   <div className="text-xs text-gray-400 mt-1">
-                    {metrics.performanceRatio > 0 ? `${metrics.performanceRatio.toFixed(1)}% of estimate` : 'No estimate available'}
+                    {chartPeriod === "today" ? 
+                      (metrics.performanceRatio > 0 ? `${metrics.performanceRatio.toFixed(1)}% of estimate` : 'No estimate available') :
+                      'Period performance'
+                    }
                   </div>
                 </CardBody>
               </Card>
@@ -901,7 +1058,7 @@ const PanelsPage: React.FC = () => {
                     Average: <span className="text-white">{chartData.length > 0 ? (chartData.reduce((sum, d) => sum + d.value, 0) / chartData.length).toFixed(2) : '0'} kW</span>
                   </div>
                   <div className="text-gray-400">
-                    Total: <span className="text-white">{metrics.periodTotal.toFixed(2)} kWh</span>
+                    Total: <span className="text-white">{metrics.plantPeriodTotal.toFixed(2)} kWh</span>
                   </div>
                 </div>
               </CardBody>
@@ -953,7 +1110,7 @@ const PanelsPage: React.FC = () => {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Current Output</span>
+                      <span className="text-gray-400">Current Output (Today)</span>
                       <span className="text-white font-semibold">{metrics.currentGeneration.toFixed(2)} kW</span>
                     </div>
                     <div className="flex justify-between">
@@ -962,7 +1119,7 @@ const PanelsPage: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Period Total ({getPeriodLabel()})</span>
-                      <span className="text-white font-semibold">{metrics.periodTotal.toFixed(2)} kWh</span>
+                      <span className="text-white font-semibold">{metrics.plantPeriodTotal.toFixed(2)} kWh</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Daily Estimate</span>
@@ -1037,7 +1194,7 @@ const PanelsPage: React.FC = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Generated Yield</span>
-                        <span className="text-green-500 font-semibold">${userPanelData.generatedYield.toFixed(4)}</span>
+                        <span className="text-green-500 font-semibold">{(userPanelData.generatedYield / 0.03).toFixed(2)} NRG</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Total Capacity</span>
@@ -1045,29 +1202,14 @@ const PanelsPage: React.FC = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Total Generated</span>
-                        <span className="text-white font-semibold">{totalGenerated.toFixed(0)} kWh</span>
+                        <span className="text-white font-semibold">{calculateTotalEnergyFromAPI().toFixed(0)} kWh</span>
                       </div>
-                      {/* <div className="flex justify-between">
-                        <span className="text-gray-400">Your Share of Plant</span>
-                        <span className="text-white font-semibold">{(calculateUserCapacityShare() * 100).toFixed(3)}%</span>
-                      </div>
-                      {historicalInverterData.length > 0 && (
-                        <div className="mt-4 p-3 bg-[#2A1A1A] rounded-lg">
-                          <div className="text-xs text-blue-400 mb-1">📊 Real API Data</div>
-                          <div className="text-xs text-gray-400">
-                            Using {historicalInverterData.length} data points since {getEarliestPurchaseDate().toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            API Total Generated: {calculateTotalEnergyFromAPI().toFixed(2)} kWh
-                          </div>
-                        </div>
-                      )} */}
                       <div className="mt-8">
                         <div className="flex justify-center">
                           <span className="text-gray-400">Generation Pattern</span>
                         </div>
                         <div className="h-64">
-                          <LineChart data={prepareChartData()} />
+                          <LineChart data={userPanelChartData} />
                         </div>
                       </div>
                     </div>
@@ -1090,13 +1232,13 @@ const PanelsPage: React.FC = () => {
                     </div>
                     <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
                       <div className="text-2xl font-bold text-blue-500 mb-1">
-                        {(totalGenerated * CO2_SAVINGS_PER_KWH).toFixed(1)}
+                        {(calculateTotalEnergyFromAPI() * CO2_SAVINGS_PER_KWH).toFixed(1)}
                       </div>
                       <div className="text-sm text-gray-400">Lifetime CO₂ Saved (tons)</div>
                     </div>
                     <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
                       <div className="text-2xl font-bold text-purple-500 mb-1">
-                        {Math.round(totalGenerated * CO2_SAVINGS_PER_KWH * 2204.62)}
+                        {Math.round(calculateTotalEnergyFromAPI() * CO2_SAVINGS_PER_KWH * 2204.62)}
                       </div>
                       <div className="text-sm text-gray-400">Pounds CO₂ Equivalent</div>
                     </div>
@@ -1108,15 +1250,15 @@ const PanelsPage: React.FC = () => {
                     <div className="space-y-2 text-xs">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Trees Planted</span>
-                        <span className="text-white">{Math.round(totalGenerated * CO2_SAVINGS_PER_KWH * 16)}</span>
+                        <span className="text-white">{Math.round(calculateTotalEnergyFromAPI() * CO2_SAVINGS_PER_KWH * 16)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Miles Not Driven</span>
-                        <span className="text-white">{Math.round(totalGenerated * CO2_SAVINGS_PER_KWH * 1102)}</span>
+                        <span className="text-white">{Math.round(calculateTotalEnergyFromAPI() * CO2_SAVINGS_PER_KWH * 1102)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Coal Avoided (lbs)</span>
-                        <span className="text-white">{Math.round(totalGenerated * 0.82)}</span>
+                        <span className="text-white">{Math.round(calculateTotalEnergyFromAPI() * 0.82)}</span>
                       </div>
                     </div>
                   </div>
@@ -1139,11 +1281,6 @@ const PanelsPage: React.FC = () => {
               Plant ID: {plantData._id}
             </div>
           )}
-          {/* {purchaseData.length > 0 && historicalInverterData.length > 0 && (
-            <div className="mt-2 text-xs text-gray-600">
-              Real-time data: {historicalInverterData.length} readings since {getEarliestPurchaseDate().toLocaleDateString()}
-            </div>
-          )} */}
         </div>
       </div>
     </DashboardTemplate>
