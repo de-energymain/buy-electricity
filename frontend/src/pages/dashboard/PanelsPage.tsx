@@ -295,32 +295,32 @@ const PanelsPage: React.FC = () => {
   };
 
   // Calculate total energy generated based on purchase dates
-  const calculateTotalGenerated = () => {
-    // Use API data if available
-    const apiTotal = calculateTotalEnergyFromAPI();
-    if (apiTotal > 0) {
-      return apiTotal;
-    }
+  // const calculateTotalGenerated = () => {
+  //   // Use API data if available
+  //   const apiTotal = calculateTotalEnergyFromAPI();
+  //   if (apiTotal > 0) {
+  //     return apiTotal;
+  //   }
 
-    // Fallback calculation if no API data
-    if (purchaseData.length === 0) {
-      return userPanelData.purchasedPanels * 2.8 * 30;
-    }
+  //   // Fallback calculation if no API data
+  //   if (purchaseData.length === 0) {
+  //     return userPanelData.purchasedPanels * 2.8 * 30;
+  //   }
 
-    let totalGenerated = 0;
-    const currentDate = new Date();
+  //   let totalGenerated = 0;
+  //   const currentDate = new Date();
 
-    purchaseData.forEach(purchase => {
-      const purchaseDate = new Date(purchase.purchaseDate || purchase.createdAt);
-      const daysSincePurchase = Math.floor((currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
+  //   purchaseData.forEach(purchase => {
+  //     const purchaseDate = new Date(purchase.purchaseDate || purchase.createdAt);
+  //     const daysSincePurchase = Math.floor((currentDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      // Calculate generation: panels × 2.8 kWh/day × days since purchase
-      const generatedFromThisPurchase = purchase.panelsPurchased * 2.8 * Math.max(daysSincePurchase, 0);
-      totalGenerated += generatedFromThisPurchase;
-    });
+  //     // Calculate generation: panels × 2.8 kWh/day × days since purchase
+  //     const generatedFromThisPurchase = purchase.panelsPurchased * 2.8 * Math.max(daysSincePurchase, 0);
+  //     totalGenerated += generatedFromThisPurchase;
+  //   });
 
-    return totalGenerated;
-  };
+  //   return totalGenerated;
+  // };
 
   // Fetch inverter data based on period
   const fetchInverterData = async (period: string) => {
