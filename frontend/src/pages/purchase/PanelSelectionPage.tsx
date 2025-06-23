@@ -1,19 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Button, Card, CardBody, Spinner, Tooltip } from "@nextui-org/react";
 import {
-  Button,
-  Card,
-  CardBody,
-  Spinner,
-  Tooltip,
-} from "@nextui-org/react";
-import { 
   ArrowLeft,
   Plus,
   Minus,
   LogIn,
   LayoutDashboard,
-  Info 
+  Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react"; // Import wallet hook
@@ -22,7 +16,7 @@ import {
   FormContainer,
   cardClasses,
   secondaryButtonClasses,
-  formElementTransition
+  formElementTransition,
 } from "../../shared/styles";
 
 interface FarmDetails {
@@ -52,14 +46,14 @@ const PanelSelectionPage: React.FC = () => {
 
   // Panel configuration and details
   const [panelQuantity, setPanelQuantity] = useState<number>(14); // Default to 14 panels to match screenshot
-  const [farmDetails] = useState<FarmDetails>({
-    name: "Jaipur Solar Farm",
-    location: "Jaipur, Rajasthan, India",
+  const [farmDetails, setFarmDetails] = useState<FarmDetails>({
+    name: "Mantra Essence Cooperative Society",
+    location: "Pune, India",
     solarIndex: 4.8,
     panelPower: 450, // Watts
     efficiency: 98, // Percentage
     pricePerPanel: 1, // USD (changed from 525 to 1)
-    networkFee: 0 // USD
+    networkFee: 0, // USD
   });
 
   // Calculated values
@@ -97,11 +91,11 @@ const PanelSelectionPage: React.FC = () => {
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const panels = parseFloat(queryParams.get("panels") || "0");
-    
+
     // Try to get dollarAmount first (new format), fallback to kwh (old format)
     const dollarAmount = parseFloat(queryParams.get("dollarAmount") || "0");
     const kwh = parseFloat(queryParams.get("kwh") || "0");
-    
+
     if (panels > 0) {
       setPanelQuantity(panels);
     } else if (dollarAmount > 0) {
@@ -120,6 +114,21 @@ const PanelSelectionPage: React.FC = () => {
       const requiredCapacity = kwh / effectiveMonthlyProduction;
       const requiredPanels = Math.ceil(requiredCapacity);
       setPanelQuantity(requiredPanels);
+    }
+  }, [location.search]);
+
+  // Extract farm details from query params if available
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const farmName = queryParams.get("farmName");
+    const farmLocation = queryParams.get("farmLocation");
+
+    if (farmName || farmLocation) {
+      setFarmDetails((prevDetails) => ({
+        ...prevDetails,
+        name: farmName || prevDetails.name,
+        location: farmLocation || prevDetails.location,
+      }));
     }
   }, [location.search]);
 
@@ -148,7 +157,7 @@ const PanelSelectionPage: React.FC = () => {
       dailyOutput,
       platformFee,
       totalCost,
-      dailyNRGYield
+      dailyNRGYield,
     });
   }, [panelQuantity, farmDetails]);
 
@@ -161,12 +170,12 @@ const PanelSelectionPage: React.FC = () => {
 
   const handleDecreaseQuantity = (): void => {
     if (panelQuantity > 1) {
-      setPanelQuantity(prev => prev - 1);
+      setPanelQuantity((prev) => prev - 1);
     }
   };
 
   const handleIncreaseQuantity = (): void => {
-    setPanelQuantity(prev => prev + 1);
+    setPanelQuantity((prev) => prev + 1);
   };
 
   const handleContinueToPayment = (): void => {
@@ -179,7 +188,7 @@ const PanelSelectionPage: React.FC = () => {
       panels: panelQuantity.toString(),
       capacity: calculations.totalCapacity.toString(),
       output: calculations.dailyOutput.toString(),
-      cost: calculations.totalCost.toString()
+      cost: calculations.totalCost.toString(),
     });
 
     // Add a slight delay for better UX
@@ -192,7 +201,9 @@ const PanelSelectionPage: React.FC = () => {
     navigate(-1);
   };
 
-  const handleAuthButtonClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
+  const handleAuthButtonClick = (
+    e: React.MouseEvent<HTMLAnchorElement>
+  ): void => {
     e.preventDefault();
     navigate(isAuthenticated ? "/dashboard" : "/login");
   };
@@ -236,8 +247,7 @@ const PanelSelectionPage: React.FC = () => {
               </>
             )}
           </a>
-        </div>
-
+        </div>{" "}
         <Card className={cardClasses}>
           <div className="mt-3 p-4 bg-[#2F2F2F]">
             <h2 className="text-3xl font-bold text-white mb-2 font-electrolize text-center">
@@ -251,7 +261,9 @@ const PanelSelectionPage: React.FC = () => {
           <CardBody className="bg-[#2F2F2F] p-6">
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-bold text-white mb-4 font-electrolize">Panel Details</h3>
+                <h3 className="text-xl font-bold text-white mb-4 font-electrolize">
+                  Panel Details
+                </h3>
 
                 {/* Panel Quantity Selector */}
                 <div className="flex items-center justify-between mb-6">
@@ -292,10 +304,15 @@ const PanelSelectionPage: React.FC = () => {
                         content="Total capacity of your purchased solar panels. Each panel has a capacity of 1.0 kW."
                         className="bg-[#3b3b3b] text-white text-xs px-3 py-2 rounded shadow-lg font-inter"
                       >
-                        <Info size={14} className="text-gray-400 hover:text-white cursor-pointer" />
+                        <Info
+                          size={14}
+                          className="text-gray-400 hover:text-white cursor-pointer"
+                        />
                       </Tooltip>
                     </div>
-                    <div className="text-lg font-bold text-white">{calculations.totalCapacity.toFixed(2)} kW</div>
+                    <div className="text-lg font-bold text-white">
+                      {calculations.totalCapacity.toFixed(2)} kW
+                    </div>
                   </div>
                   <div>
                     <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -304,10 +321,15 @@ const PanelSelectionPage: React.FC = () => {
                         content="Your daily output of the purhcased panels. Each panel gives an output of 2.8 kWh."
                         className="bg-[#3b3b3b] text-white text-xs px-3 py-2 rounded shadow-lg font-inter"
                       >
-                        <Info size={14} className="text-gray-400 hover:text-white cursor-pointer" />
+                        <Info
+                          size={14}
+                          className="text-gray-400 hover:text-white cursor-pointer"
+                        />
                       </Tooltip>
                     </div>
-                    <div className="text-lg font-bold text-white">{calculations.dailyOutput} kWh</div>
+                    <div className="text-lg font-bold text-white">
+                      {calculations.dailyOutput} kWh
+                    </div>
                   </div>
                   <div>
                     <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -316,10 +338,15 @@ const PanelSelectionPage: React.FC = () => {
                         content="Your yield generated daily upon purchase of the solar panels."
                         className="bg-[#3b3b3b] text-white text-xs px-3 py-2 rounded shadow-lg font-inter"
                       >
-                        <Info size={14} className="text-gray-400 hover:text-white cursor-pointer" />
+                        <Info
+                          size={14}
+                          className="text-gray-400 hover:text-white cursor-pointer"
+                        />
                       </Tooltip>
                     </div>
-                    <div className="text-lg font-bold text-white">{calculations.dailyNRGYield.toFixed(2)} NRG</div>
+                    <div className="text-lg font-bold text-white">
+                      {calculations.dailyNRGYield.toFixed(2)} NRG
+                    </div>
                   </div>
                 </div>
 
@@ -327,11 +354,17 @@ const PanelSelectionPage: React.FC = () => {
                 <div className="space-y-2 border-t border-gray-700 pt-4">
                   <div className="flex justify-between">
                     <div className="text-gray-300">Per Panel Cost</div>
-                    <div className="text-white font-medium">${farmDetails.pricePerPanel}</div>
+                    <div className="text-white font-medium">
+                      ${farmDetails.pricePerPanel}
+                    </div>
                   </div>
                   <div className="flex justify-between">
-                    <div className="text-gray-300">Total Panel Cost ({panelQuantity} panels)</div>
-                    <div className="text-white font-medium">${panelQuantity * farmDetails.pricePerPanel}</div>
+                    <div className="text-gray-300">
+                      Total Panel Cost ({panelQuantity} panels)
+                    </div>
+                    <div className="text-white font-medium">
+                      ${panelQuantity * farmDetails.pricePerPanel}
+                    </div>
                   </div>
                   {/*<div className="flex justify-between">
                     <div className="text-gray-300">Platform Fee (10%)</div>
@@ -340,16 +373,15 @@ const PanelSelectionPage: React.FC = () => {
                   */}
                   <div className="flex justify-between border-t border-gray-700 pt-2 mt-2">
                     <div className="text-white font-bold">Total Amount</div>
-                    <div className="text-white font-bold">${calculations.totalCost}</div>
+                    <div className="text-white font-bold">
+                      ${calculations.totalCost}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Continue Button */}
-              <motion.div
-                {...formElementTransition}
-                className="pt-2"
-              >
+              <motion.div {...formElementTransition} className="pt-2">
                 <Button
                   className="w-full bg-[#E9423A] text-white font-medium py-6 rounded-none"
                   onPress={handleContinueToPayment}

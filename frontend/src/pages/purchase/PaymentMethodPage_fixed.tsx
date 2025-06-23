@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Card, CardBody, Spinner, Tooltip } from "@nextui-org/react";
 import { ArrowLeft, Clock, Copy, ExternalLink } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   FormContainer,
   cardClasses,
@@ -19,12 +20,6 @@ import {
   SystemProgram,
   Keypair,
 } from "@solana/web3.js";
-import {
-  getAssociatedTokenAddress,
-  createTransferInstruction,
-  getAccount,
-  createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token";
 
 // Import crypto icons from assets - NRG removed
 import solIcon from "../../assets/crypto/sol-icon.svg";
@@ -33,12 +28,6 @@ import logo from "../../assets/logo.svg";
 
 // Payment method types - NRG removed
 type PaymentMethod = "SOL" | "USDC";
-
-// USDC mint address on Solana devnet
-const USDC_MINT_ADDRESS = new PublicKey(
-  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
-); // Devnet USDC
-// For mainnet, use: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 
 interface OrderDetails {
   farm: string;
@@ -214,7 +203,7 @@ export default function PaymentMethodPage() {
     fetchExchangeRates();
   }, []);
 
-  // Enhanced wallet balance fetching with USDC support
+  // Enhanced wallet balance fetching with USDC support placeholder
   useEffect(() => {
     const fetchWalletBalance = async () => {
       if (!publicKey) return;
@@ -226,43 +215,14 @@ export default function PaymentMethodPage() {
           balance = await connection.getBalance(publicKey);
           balance /= LAMPORTS_PER_SOL;
         } else if (selectedPayment === "USDC") {
-          try {
-            console.log("Fetching USDC balance for:", publicKey.toString());
-            console.log(
-              "USDC Mint Address (Devnet):",
-              USDC_MINT_ADDRESS.toString()
-            );
-
-            // Get associated token account address for USDC
-            const tokenAccount = await getAssociatedTokenAddress(
-              USDC_MINT_ADDRESS,
-              publicKey
-            );
-
-            console.log(
-              "Expected USDC token account:",
-              tokenAccount.toString()
-            );
-
-            // Get account info
-            const accountInfo = await getAccount(connection, tokenAccount);
-            balance = Number(accountInfo.amount) / Math.pow(10, 6); // USDC has 6 decimals
-            console.log("USDC balance found:", balance);
-          } catch (error: any) {
-            // If token account doesn't exist, balance is 0
-            console.log("USDC token account error:", error.message);
-            if (error.message.includes("could not find account")) {
-              console.log(
-                "USDC token account not found - you may need devnet USDC tokens"
-              );
-            }
-            balance = 0;
-          }
+          // TODO: Implement USDC token balance fetching
+          // This would require fetching SPL token account balance for USDC mint address
+          // For now, setting to 0 to prevent errors
+          balance = 0;
         }
         setWalletBalance(balance);
       } catch (error) {
         console.error("Error fetching wallet balance:", error);
-        setWalletBalance(0);
       }
     };
 
@@ -417,276 +377,11 @@ export default function PaymentMethodPage() {
         throw new Error("No wallet connected");
       }
 
-      // Check if USDC is selected and validate
+      // Check if USDC is selected - currently not implemented
       if (selectedPayment === "USDC") {
-        // Check if user has sufficient USDC balance
-        if (walletBalance < tokenAmount) {
-          throw new Error(
-            `Insufficient USDC balance. You need ${tokenAmount.toFixed(
-              2
-            )} USDC but only have ${walletBalance.toFixed(2)} USDC.`
-          );
-        }
-
-        // Handle USDC payment via Solana wallet adapter
-        if (connected && publicKey && signTransaction) {
-          // For testing purposes, send to your own wallet (you can change this to any valid wallet address)
-          const recipient = publicKey; // Send to yourself for testing
-          // Alternative: use a different valid wallet address like:
-          // const recipient = new PublicKey("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
-
-          console.log("Starting USDC payment transaction");
-          console.log("Sender public key:", publicKey.toString());
-          console.log("Recipient public key:", recipient.toString());
-          console.log("USDC Mint:", USDC_MINT_ADDRESS.toString());
-
-          // Get sender's USDC token account
-          const senderTokenAccount = await getAssociatedTokenAddress(
-            USDC_MINT_ADDRESS,
-            publicKey
-          );
-          console.log("Sender token account:", senderTokenAccount.toString());
-
-          // Check if sender's token account exists and has balance
-          try {
-            const senderAccountInfo = await getAccount(
-              connection,
-              senderTokenAccount
-            );
-            console.log(
-              "Sender USDC balance:",
-              Number(senderAccountInfo.amount) / Math.pow(10, 6)
-            );
-
-            if (
-              Number(senderAccountInfo.amount) <
-              Math.floor(tokenAmount * Math.pow(10, 6))
-            ) {
-              throw new Error("Insufficient USDC balance in token account");
-            }
-          } catch (error: any) {
-            if (error.message.includes("could not find account")) {
-              throw new Error(
-                "USDC token account not found. Please ensure you have USDC tokens in your wallet."
-              );
-            }
-            throw error;
-          }
-
-          // Get recipient's USDC token account (create if doesn't exist)
-          const recipientTokenAccount = await getAssociatedTokenAddress(
-            USDC_MINT_ADDRESS,
-            recipient
-          );
-          console.log(
-            "Recipient token account:",
-            recipientTokenAccount.toString()
-          );
-
-          const tx = new Transaction();
-
-          // Check if recipient token account exists
-          try {
-            await getAccount(connection, recipientTokenAccount);
-          } catch (error) {
-            // If account doesn't exist, create it
-            tx.add(
-              createAssociatedTokenAccountInstruction(
-                publicKey, // payer
-                recipientTokenAccount, // associatedToken
-                recipient, // owner
-                USDC_MINT_ADDRESS // mint
-              )
-            );
-          }
-
-          // Add USDC transfer instruction
-          const usdcAmount = Math.floor(tokenAmount * Math.pow(10, 6)); // USDC has 6 decimals
-          tx.add(
-            createTransferInstruction(
-              senderTokenAccount, // source
-              recipientTokenAccount, // destination
-              publicKey, // owner
-              usdcAmount // amount
-            )
-          );
-
-          const { blockhash } = await connection.getLatestBlockhash();
-          tx.recentBlockhash = blockhash;
-          tx.feePayer = publicKey;
-          const signedTx = await signTransaction(tx);
-          const signature = await connection.sendRawTransaction(
-            signedTx.serialize()
-          );
-          await connection.confirmTransaction(signature, "confirmed");
-
-          // Complete transaction
-          setToasts((prev) => prev.filter((t) => t.id !== processingId));
-          showToast(
-            "Payment Successful",
-            "Your USDC transaction was completed successfully",
-            "success",
-            3000
-          );
-          navigate("/payment-success", {
-            state: {
-              ...orderDetails,
-              paymentMethod: selectedPayment,
-              tokenAmount,
-              wallet: wallet?.adapter.name ?? "Unknown",
-              walletAddress: walletAddress,
-              signature,
-            },
-          });
-        }
-        // Handle USDC payment via Web3Auth/Google login
-        else if (web3AuthWalletInfo && web3AuthWalletInfo.publicKey) {
-          try {
-            // Get the session data which should contain the private key
-            const sessionStr = localStorage.getItem("web3AuthSession");
-            if (!sessionStr) {
-              throw new Error("Web3Auth session not found");
-            }
-
-            const sessionData = JSON.parse(sessionStr);
-
-            // Check if privateKey is available
-            if (!sessionData.privateKey) {
-              throw new Error("Private key not available in session");
-            }
-
-            // Handle different private key formats (same as SOL implementation)
-            let privateKeyBytes;
-
-            if (typeof sessionData.privateKey === "string") {
-              if (sessionData.privateKey.length === 88) {
-                throw new Error("Base58 decoding requires bs58 library");
-              } else if (
-                sessionData.privateKey.length === 128 ||
-                sessionData.privateKey.length === 64
-              ) {
-                privateKeyBytes = new Uint8Array(
-                  sessionData.privateKey.length / 2
-                );
-                for (let i = 0; i < sessionData.privateKey.length; i += 2) {
-                  privateKeyBytes[i / 2] = parseInt(
-                    sessionData.privateKey.substr(i, 2),
-                    16
-                  );
-                }
-              } else {
-                try {
-                  const parsed = JSON.parse(sessionData.privateKey);
-                  privateKeyBytes = new Uint8Array(parsed);
-                } catch (e) {
-                  throw new Error(
-                    `Unable to parse privateKey format: ${e.message}`
-                  );
-                }
-              }
-            } else if (Array.isArray(sessionData.privateKey)) {
-              privateKeyBytes = new Uint8Array(sessionData.privateKey);
-            } else if (typeof sessionData.privateKey === "object") {
-              privateKeyBytes = new Uint8Array(
-                Object.values(sessionData.privateKey)
-              );
-            } else {
-              throw new Error("Unsupported privateKey format");
-            }
-
-            if (privateKeyBytes.length !== 64) {
-              console.error(
-                "Invalid private key length:",
-                privateKeyBytes.length
-              );
-              throw new Error(
-                `Bad secret key size: expected 64 bytes, got ${privateKeyBytes.length}`
-              );
-            }
-
-            const keyPair = Keypair.fromSecretKey(privateKeyBytes);
-            // For testing purposes, send to your own wallet
-            const recipient = keyPair.publicKey; // Send to yourself for testing
-            // Alternative: use a different valid wallet address
-
-            console.log("Starting Web3Auth USDC payment transaction");
-            console.log("Sender public key:", keyPair.publicKey.toString());
-            console.log("Recipient public key:", recipient.toString());
-
-            // Get sender's USDC token account
-            const senderTokenAccount = await getAssociatedTokenAddress(
-              USDC_MINT_ADDRESS,
-              keyPair.publicKey
-            );
-
-            // Get recipient's USDC token account
-            const recipientTokenAccount = await getAssociatedTokenAddress(
-              USDC_MINT_ADDRESS,
-              recipient
-            );
-
-            const tx = new Transaction();
-
-            // Check if recipient token account exists
-            try {
-              await getAccount(connection, recipientTokenAccount);
-            } catch (error) {
-              // If account doesn't exist, create it
-              tx.add(
-                createAssociatedTokenAccountInstruction(
-                  keyPair.publicKey, // payer
-                  recipientTokenAccount, // associatedToken
-                  recipient, // owner
-                  USDC_MINT_ADDRESS // mint
-                )
-              );
-            }
-
-            // Add USDC transfer instruction
-            const usdcAmount = Math.floor(tokenAmount * Math.pow(10, 6)); // USDC has 6 decimals
-            tx.add(
-              createTransferInstruction(
-                senderTokenAccount, // source
-                recipientTokenAccount, // destination
-                keyPair.publicKey, // owner
-                usdcAmount // amount
-              )
-            );
-
-            const { blockhash } = await connection.getLatestBlockhash();
-            tx.recentBlockhash = blockhash;
-            tx.feePayer = keyPair.publicKey;
-            tx.sign(keyPair);
-
-            const signature = await connection.sendRawTransaction(
-              tx.serialize()
-            );
-            await connection.confirmTransaction(signature, "confirmed");
-
-            // Complete transaction
-            setToasts((prev) => prev.filter((t) => t.id !== processingId));
-            showToast(
-              "Payment Successful",
-              "Your USDC transaction was completed successfully",
-              "success",
-              3000
-            );
-            navigate("/payment-success", {
-              state: {
-                ...orderDetails,
-                paymentMethod: selectedPayment,
-                tokenAmount,
-                wallet: "Google Web3Auth",
-                signature,
-              },
-            });
-          } catch (error: any) {
-            console.error("Web3Auth USDC transaction error:", error);
-            throw new Error(
-              `Web3Auth USDC transaction failed: ${error.message}`
-            );
-          }
-        }
+        throw new Error(
+          "USDC payments are not yet implemented. Please use SOL for now."
+        );
       }
 
       // Validate SOL payment
@@ -703,7 +398,9 @@ export default function PaymentMethodPage() {
         // Handle payment via Solana wallet adapter
         if (connected && publicKey && signTransaction) {
           const lamports = Math.floor(tokenAmount * LAMPORTS_PER_SOL);
-          const recipient = publicKey; // Send to yourself for testing
+          const recipient = new PublicKey(
+            "7C4jsPZpht1JaRJB7u8QdXhfY2pFdh6fT2xatJhvLpzz"
+          );
           const tx = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: publicKey,
@@ -741,6 +438,11 @@ export default function PaymentMethodPage() {
         }
         // Handle payment via Web3Auth/Google login
         else if (web3AuthWalletInfo && web3AuthWalletInfo.publicKey) {
+          // Validate SOL payment for Web3Auth users
+          if (selectedPayment !== "SOL") {
+            throw new Error("Web3Auth currently only supports SOL payments");
+          }
+
           try {
             // Get the session data which should contain the private key
             const sessionStr = localStorage.getItem("web3AuthSession");
@@ -839,7 +541,9 @@ export default function PaymentMethodPage() {
               }
 
               // Create and sign the transaction using the private key
-              const recipientPublicKey = keyPair.publicKey; // Send to yourself for testing
+              const recipientPublicKey = new PublicKey(
+                "7C4jsPZpht1JaRJB7u8QdXhfY2pFdh6fT2xatJhvLpzz"
+              );
               const senderPublicKey = keyPair.publicKey;
               const lamports = Math.floor(tokenAmount * LAMPORTS_PER_SOL);
 
@@ -955,7 +659,8 @@ export default function PaymentMethodPage() {
             <p className="text-xs text-white font-inter">
               Choose your payment method
             </p>
-          </div>{" "}
+          </div>
+
           <CardBody className="p-4 bg-[#2F2F2F] space-y-4">
             {/* Order details section - Improved layout */}
             <div className="space-y-3">
@@ -1014,6 +719,16 @@ export default function PaymentMethodPage() {
                   </div>
                 ))}
               </div>
+
+              {/* USDC implementation notice */}
+              {selectedPayment === "USDC" && (
+                <div className="p-3 bg-orange-500/20 border border-orange-500/50 rounded mb-3">
+                  <div className="text-orange-200 text-xs">
+                    <strong>Note:</strong> USDC payments are not yet
+                    implemented. Please use SOL for now.
+                  </div>
+                </div>
+              )}
 
               {/* Amount display */}
               <div className="text-center mb-3">
@@ -1082,40 +797,18 @@ export default function PaymentMethodPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400 text-xs">Balance</span>
                       <span className="text-white text-xs font-medium">
-                        {walletBalance.toFixed(
-                          selectedPayment === "USDC" ? 2 : 4
-                        )}{" "}
+                        {selectedPayment === "SOL"
+                          ? walletBalance.toFixed(4)
+                          : "0.0000"}{" "}
                         {selectedPayment}
                       </span>
                     </div>
 
-                    {/* Balance warning for insufficient funds or missing devnet USDC */}
+                    {/* Balance warning for insufficient funds */}
                     {selectedPayment === "SOL" &&
                       walletBalance < tokenAmount && (
                         <div className="text-xs text-red-400 text-center">
                           Insufficient balance for this transaction
-                        </div>
-                      )}
-
-                    {selectedPayment === "USDC" && walletBalance === 0 && (
-                      <div className="text-xs text-yellow-400 text-center">
-                        <div>No devnet USDC found.</div>
-                        <a
-                          href="https://spl-token-faucet.com/?token-name=USDC"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline hover:text-yellow-300"
-                        >
-                          Get devnet USDC
-                        </a>
-                      </div>
-                    )}
-
-                    {selectedPayment === "USDC" &&
-                      walletBalance > 0 &&
-                      walletBalance < tokenAmount && (
-                        <div className="text-xs text-red-400 text-center">
-                          Insufficient USDC balance for this transaction
                         </div>
                       )}
                   </div>
@@ -1208,9 +901,13 @@ export default function PaymentMethodPage() {
                 }
               >
                 {isProcessingPayment && (
-                  <div className="absolute inset-0 bg-[#E9423A] bg-opacity-80 flex items-center justify-center z-20 rounded">
-                    <Spinner size="lg" color="white" />
-                  </div>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                    className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                  >
+                    <Spinner size="sm" />
+                  </motion.div>
                 )}
                 <span
                   className={`${
