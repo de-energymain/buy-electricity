@@ -14,11 +14,13 @@ VITE_BREVO_API_KEY=your_brevo_api_key_here
 ## Setup Instructions
 
 1. **Copy the example file:**
+
    ```bash
    cp .env.example .env
    ```
 
 2. **Get your Brevo API Key:**
+
    - Go to [Brevo Dashboard](https://app.brevo.com/settings/keys/api)
    - Create a new API key or copy an existing one
    - Update the `VITE_BREVO_API_KEY` in your `.env` file
