@@ -410,7 +410,8 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
             >
               Settings
             </Button>
-            <Button
+            {/* Help tab temporarily hidden */}
+            {/* <Button
               className={`px-4 py-2 ${
                 activePage === "help"
                   ? "text-white border-b-2 border-[#E9423A]"
@@ -419,7 +420,7 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
               onPress={() => navigate("/dashboard/help")}
             >
               Help
-            </Button>
+            </Button> */}
           </div>
           <div>
             <Button
