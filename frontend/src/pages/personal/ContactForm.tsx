@@ -1,3 +1,4 @@
+import { BREVO_CONFIG } from "../../config/brevo";
 import {
   Button,
   Card,
@@ -7,7 +8,7 @@ import {
   Select,
   SelectItem,
   Spinner,
-  Textarea
+  Textarea,
 } from "@nextui-org/react";
 import { ArrowLeft, CheckCircle, LogIn } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -20,7 +21,7 @@ import {
   selectClasses,
   cardClasses,
   secondaryButtonClasses,
-  formElementTransition
+  formElementTransition,
 } from "../../shared/styles";
 import { KeyboardEvent as ReactKeyboardEvent } from "react";
 
@@ -61,11 +62,6 @@ interface CallingCodeType {
 const isValidEmail = (email: string): boolean =>
   /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/.test(email);
 
-// Brevo API configuration
-const BREVO_API_KEY =
-  "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"; // Replace with your actual API key
-const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
-
 function ContactForm() {
   // Phone code state declared only once
   const [phoneCodeInput, setPhoneCodeInput] = useState("");
@@ -86,8 +82,12 @@ function ContactForm() {
   });
 
   const [errors, setErrors] = useState<ErrorsType>({});
-  const [formState, setFormState] = useState<"idle" | "loading" | "success">("idle");
-  const [emailStatus, setEmailStatus] = useState<null | "sending" | "sent" | "failed">(null);
+  const [formState, setFormState] = useState<"idle" | "loading" | "success">(
+    "idle"
+  );
+  const [emailStatus, setEmailStatus] = useState<
+    null | "sending" | "sent" | "failed"
+  >(null);
 
   // Data from APIs
   const [countries, setCountries] = useState<CountryType[]>([]);
@@ -104,7 +104,10 @@ function ContactForm() {
   // Click-outside handler for phone code dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (phoneContainerRef.current && !phoneContainerRef.current.contains(e.target as Node)) {
+      if (
+        phoneContainerRef.current &&
+        !phoneContainerRef.current.contains(e.target as Node)
+      ) {
         setShowPhoneDropdown(false);
       }
     };
@@ -126,10 +129,14 @@ function ContactForm() {
             flag: country.flags.svg,
             callingCode:
               country.idd && country.idd.root
-                ? `${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ""}`
+                ? `${country.idd.root}${
+                    country.idd.suffixes ? country.idd.suffixes[0] : ""
+                  }`
                 : "",
           }))
-          .sort((a: CountryType, b: CountryType) => a.name.localeCompare(b.name));
+          .sort((a: CountryType, b: CountryType) =>
+            a.name.localeCompare(b.name)
+          );
         setCountries(countryList);
       } catch (error) {
         console.error("Error fetching countries:", error);
@@ -144,11 +151,14 @@ function ContactForm() {
       const fetchStates = async () => {
         setIsFetchingStates(true);
         try {
-          const res = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ country: formData.country })
-          });
+          const res = await fetch(
+            "https://countriesnow.space/api/v0.1/countries/states",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ country: formData.country }),
+            }
+          );
           const data = await res.json();
           if (!data.error && data.data && data.data.states) {
             setStates(data.data.states.map((s: any) => s.name));
@@ -167,29 +177,34 @@ function ContactForm() {
 
   // Prepare calling codes for searching
   const callingCodes: CallingCodeType[] = countries
-    .filter(c => c.callingCode)
-    .map(country => ({
+    .filter((c) => c.callingCode)
+    .map((country) => ({
       value: country.callingCode,
       flag: country.flag,
       country: country.name,
-      searchText: `${country.callingCode} ${country.name}`.toLowerCase()
+      searchText: `${country.callingCode} ${country.name}`.toLowerCase(),
     }))
     .sort((a, b) => {
-      const numA = parseInt(a.value.replace(/[^\d]/g, ''), 10);
-      const numB = parseInt(b.value.replace(/[^\d]/g, ''), 10);
+      const numA = parseInt(a.value.replace(/[^\d]/g, ""), 10);
+      const numB = parseInt(b.value.replace(/[^\d]/g, ""), 10);
       return numA - numB;
     });
 
   // Filter phone codes based on input (compare both country and code in lower case)
-  const filteredCodes = phoneCodeInput.trim() === ""
-    ? callingCodes
-    : callingCodes.filter(code =>
-      code.country.toLowerCase().includes(phoneCodeInput.toLowerCase()) ||
-      code.value.toLowerCase().includes(phoneCodeInput.toLowerCase())
-    );
+  const filteredCodes =
+    phoneCodeInput.trim() === ""
+      ? callingCodes
+      : callingCodes.filter(
+          (code) =>
+            code.country.toLowerCase().includes(phoneCodeInput.toLowerCase()) ||
+            code.value.toLowerCase().includes(phoneCodeInput.toLowerCase())
+        );
 
   // Validate a single field
-  const validateField = (field: keyof FormDataType, value: string): string | undefined => {
+  const validateField = (
+    field: keyof FormDataType,
+    value: string
+  ): string | undefined => {
     switch (field) {
       case "name":
         return !value.trim() ? "Name is required" : undefined;
@@ -197,8 +212,8 @@ function ContactForm() {
         return !value.trim()
           ? "Email is required"
           : !isValidEmail(value)
-            ? "Valid email is required"
-            : undefined;
+          ? "Valid email is required"
+          : undefined;
       case "country":
         return !value ? "Country is required" : undefined;
       case "state":
@@ -234,8 +249,17 @@ function ContactForm() {
     const newErrors: ErrorsType = {};
     Object.keys(formData).forEach((key) => {
       if (key === "properties") return;
-      if (key === "dollarAmount" || key === "kwh" || key === "panels" || key === "cost") return;
-      const error = validateField(key as keyof FormDataType, formData[key as keyof FormDataType]);
+      if (
+        key === "dollarAmount" ||
+        key === "kwh" ||
+        key === "panels" ||
+        key === "cost"
+      )
+        return;
+      const error = validateField(
+        key as keyof FormDataType,
+        formData[key as keyof FormDataType]
+      );
       if (error) {
         newErrors[key] = error;
       }
@@ -264,22 +288,22 @@ function ContactForm() {
   const sendConfirmationEmail = async () => {
     setEmailStatus("sending");
     try {
-      const response = await fetch(BREVO_API_URL, {
+      const response = await fetch(BREVO_CONFIG.API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "api-key": BREVO_API_KEY
+          "api-key": BREVO_CONFIG.API_KEY,
         },
         body: JSON.stringify({
           sender: {
             name: "Renrg",
-            email: "contact@renrg.io"
+            email: "contact@renrg.io",
           },
           to: [
             {
               email: formData.email,
-              name: formData.name
-            }
+              name: formData.name,
+            },
           ],
           subject: "Thank you for your submission",
           htmlContent: `
@@ -315,14 +339,26 @@ function ContactForm() {
                     <ul>
                       <li><strong>Name:</strong> ${formData.name}</li>
                       <li><strong>Email:</strong> ${formData.email}</li>
-                      <li><strong>Location:</strong> ${formData.city}, ${formData.state}, ${formData.country}</li>
-                      <li><strong>Phone:</strong> ${formData.phoneCode} ${formData.phone}</li>
-                      ${formData.properties ? `<li><strong>Property Details:</strong> ${formData.properties}</li>` : ""}
+                      <li><strong>Location:</strong> ${formData.city}, ${
+            formData.state
+          }, ${formData.country}</li>
+                      <li><strong>Phone:</strong> ${formData.phoneCode} ${
+            formData.phone
+          }</li>
+                      ${
+                        formData.properties
+                          ? `<li><strong>Property Details:</strong> ${formData.properties}</li>`
+                          : ""
+                      }
                     </ul>
                     <p>Here are our panel estimates:</p>
                     <ul>
-                      <li><strong>Your monthly bill:</strong> ${formData.dollarAmount}</li>
-                      <li><strong>Calculated usage:</strong> ${parseFloat(formData.kwh || "0").toFixed(0)} kWh</li>
+                      <li><strong>Your monthly bill:</strong> ${
+                        formData.dollarAmount
+                      }</li>
+                      <li><strong>Calculated usage:</strong> ${parseFloat(
+                        formData.kwh || "0"
+                      ).toFixed(0)} kWh</li>
                       <li><strong>Panel Count:</strong> ${formData.panels}</li>
                       <li><strong>Estimated Cost:</strong> ${formData.cost}</li>
                     </ul>
@@ -341,8 +377,8 @@ function ContactForm() {
                 </div>
               </body>
             </html>
-          `
-        })
+          `,
+        }),
       });
 
       const result = await response.json();
@@ -383,7 +419,8 @@ function ContactForm() {
   // Country and state search management
   const [searchCountryQuery, setSearchCountryQuery] = useState("");
   const [searchStateQuery, setSearchStatesQuery] = useState("");
-  const [filteredCountries, setFilteredCountries] = useState<CountryType[]>(countries);
+  const [filteredCountries, setFilteredCountries] =
+    useState<CountryType[]>(countries);
   const [filteredStates, setFilteredStates] = useState<string[]>(states);
 
   useEffect(() => {
@@ -458,7 +495,8 @@ function ContactForm() {
                   Thank You!
                 </h3>
                 <p className="text-white text-center mb-6">
-                  Your form has been successfully submitted. Our team will contact you shortly.
+                  Your form has been successfully submitted. Our team will
+                  contact you shortly.
                 </p>
                 {emailStatus === "sent" && (
                   <p className="text-green-400 text-center mb-6">
@@ -467,7 +505,8 @@ function ContactForm() {
                 )}
                 {emailStatus === "failed" && (
                   <p className="text-yellow-400 text-center mb-6">
-                    We couldn't send a confirmation email. Please check your inbox later.
+                    We couldn't send a confirmation email. Please check your
+                    inbox later.
                   </p>
                 )}
                 <Button
@@ -512,7 +551,9 @@ function ContactForm() {
                       placeholder="Name *"
                       variant="faded"
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       onBlur={(e) => handleInputChange("name", e.target.value)}
                       classNames={inputClasses}
                       isInvalid={!!errors.name}
@@ -527,7 +568,9 @@ function ContactForm() {
                       placeholder="Email *"
                       variant="faded"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
                       onBlur={(e) => handleInputChange("email", e.target.value)}
                       classNames={inputClasses}
                       isInvalid={!!errors.email}
@@ -537,7 +580,10 @@ function ContactForm() {
                   </div>
                 </div>
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1 min-w-0" onKeyDown={handleKeyDownCountry}>
+                  <div
+                    className="flex-1 min-w-0"
+                    onKeyDown={handleKeyDownCountry}
+                  >
                     <Select
                       placeholder="Country *"
                       variant="faded"
@@ -558,19 +604,32 @@ function ContactForm() {
                       {filteredCountries.map((country) => (
                         <SelectItem key={country.name} textValue={country.name}>
                           <div className="flex items-center gap-2">
-                            <img src={country.flag} alt={country.name} className="w-5 h-5" />
+                            <img
+                              src={country.flag}
+                              alt={country.name}
+                              className="w-5 h-5"
+                            />
                             <span>{country.name}</span>
                           </div>
                         </SelectItem>
                       ))}
                     </Select>
                   </div>
-                  <div className="flex-1 min-w-0" onKeyDown={handleKeyDownStates}>
+                  <div
+                    className="flex-1 min-w-0"
+                    onKeyDown={handleKeyDownStates}
+                  >
                     <Select
-                      placeholder={isFetchingStates ? "Loading states..." : "State *"}
+                      placeholder={
+                        isFetchingStates ? "Loading states..." : "State *"
+                      }
                       variant="faded"
                       size="lg"
-                      isDisabled={formState === "loading" || isFetchingStates || !formData.country}
+                      isDisabled={
+                        formState === "loading" ||
+                        isFetchingStates ||
+                        !formData.country
+                      }
                       classNames={selectClasses}
                       selectedKeys={formData.state ? [formData.state] : []}
                       onSelectionChange={(keys) => {
@@ -586,7 +645,9 @@ function ContactForm() {
                         ))
                       ) : (
                         <SelectItem key="none">
-                          {isFetchingStates ? "Loading states..." : "No states available"}
+                          {isFetchingStates
+                            ? "Loading states..."
+                            : "No states available"}
                         </SelectItem>
                       )}
                     </Select>
@@ -598,7 +659,9 @@ function ContactForm() {
                       placeholder="City *"
                       variant="faded"
                       value={formData.city}
-                      onChange={(e) => handleInputChange("city", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("city", e.target.value)
+                      }
                       onBlur={(e) => handleInputChange("city", e.target.value)}
                       classNames={inputClasses}
                       isInvalid={!!errors.city}
@@ -642,13 +705,21 @@ function ContactForm() {
                                 setShowPhoneDropdown(false);
                               }}
                             >
-                              <img src={code.flag} alt={code.country} className="w-5 h-5" />
+                              <img
+                                src={code.flag}
+                                alt={code.country}
+                                className="w-5 h-5"
+                              />
                               <span className="font-medium">{code.value}</span>
-                              <span className="text-xs text-gray-400">({code.country})</span>
+                              <span className="text-xs text-gray-400">
+                                ({code.country})
+                              </span>
                             </div>
                           ))
                         ) : (
-                          <div className="p-2 text-gray-400">No results found</div>
+                          <div className="p-2 text-gray-400">
+                            No results found
+                          </div>
                         )}
                       </div>
                     )}
@@ -660,7 +731,9 @@ function ContactForm() {
                       placeholder="Phone Number *"
                       variant="faded"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
                       onBlur={(e) => handleInputChange("phone", e.target.value)}
                       classNames={inputClasses}
                       isInvalid={!!errors.phone}
@@ -675,10 +748,12 @@ function ContactForm() {
                     placeholder="Property Details (Optional)"
                     variant="faded"
                     value={formData.properties}
-                    onChange={(e) => handleInputChange("properties", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("properties", e.target.value)
+                    }
                     classNames={{
                       ...inputClasses,
-                      input: "bg-[#333] text-white min-h-[50px]"
+                      input: "bg-[#333] text-white min-h-[50px]",
                     }}
                     isDisabled={formState === "loading"}
                     minRows={2}
@@ -687,7 +762,9 @@ function ContactForm() {
                 </div>
                 <motion.div
                   {...formElementTransition}
-                  style={{ pointerEvents: formState === "loading" ? "none" : "auto" }}
+                  style={{
+                    pointerEvents: formState === "loading" ? "none" : "auto",
+                  }}
                 >
                   <Button
                     type="submit"
@@ -708,7 +785,10 @@ function ContactForm() {
       </Card>
 
       {/* Login icon with text - Same as ElectricityEstimateForm */}
-      <div className="flex justify-center w-full mt-10" style={{ position: "relative", zIndex: 10 }}>
+      <div
+        className="flex justify-center w-full mt-10"
+        style={{ position: "relative", zIndex: 10 }}
+      >
         <a
           href="/login"
           onClick={(e) => {
@@ -725,7 +805,10 @@ function ContactForm() {
 
       {/* Business profile text */}
       <div className="absolute bottom-6 text-sm text-white w-full text-center">
-        Are you a business? <a href="/business-contact" className="text-[#E9423A] hover:underline">Switch to Business Profile</a>
+        Are you a business?{" "}
+        <a href="/business-contact" className="text-[#E9423A] hover:underline">
+          Switch to Business Profile
+        </a>
       </div>
     </FormContainer>
   );

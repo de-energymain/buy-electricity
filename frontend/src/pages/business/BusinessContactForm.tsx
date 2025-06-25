@@ -1,3 +1,4 @@
+import { BREVO_CONFIG } from "../../config/brevo";
 import {
   Button,
   Card,
@@ -15,21 +16,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.svg";
-import { 
-  FormContainer, 
-  inputClasses, 
-  selectClasses, 
+import {
+  FormContainer,
+  inputClasses,
+  selectClasses,
   cardClasses,
-  formElementTransition
+  formElementTransition,
 } from "../../shared/styles";
 
 // Simple email validation
 const isValidEmail = (email: string) =>
   /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/.test(email);
-
-// Brevo API configuration
-const BREVO_API_KEY = "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";
-const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
 interface FormData {
   name: string;
@@ -78,7 +75,7 @@ function BusinessContactForm() {
     phone: "",
     properties: "",
   });
-  
+
   const navigate = useNavigate();
 
   const [errors, setErrors] = useState<ErrorState>({});
@@ -105,7 +102,10 @@ function BusinessContactForm() {
   // Click outside handler for phone code dropdown using the ref
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (phoneCodeRef.current && !phoneCodeRef.current.contains(e.target as Node)) {
+      if (
+        phoneCodeRef.current &&
+        !phoneCodeRef.current.contains(e.target as Node)
+      ) {
         setShowPhoneDropdown(false);
       }
     };
@@ -135,7 +135,9 @@ function BusinessContactForm() {
             flag: country.flags.svg,
             callingCode:
               country.idd && country.idd.root
-                ? `${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ""}`
+                ? `${country.idd.root}${
+                    country.idd.suffixes ? country.idd.suffixes[0] : ""
+                  }`
                 : "",
           }))
           .sort((a: Country, b: Country) => a.name.localeCompare(b.name));
@@ -153,11 +155,14 @@ function BusinessContactForm() {
       const fetchStates = async () => {
         setIsFetchingStates(true);
         try {
-          const res = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ country: formData.country })
-          });
+          const res = await fetch(
+            "https://countriesnow.space/api/v0.1/countries/states",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ country: formData.country }),
+            }
+          );
           const data = await res.json();
           if (!data.error && data.data && data.data.states) {
             setStates(data.data.states.map((s: any) => s.name));
@@ -176,16 +181,16 @@ function BusinessContactForm() {
 
   // Prepare a list of calling codes with flags and countries
   const phoneCodesList = countries
-    .filter(c => c.callingCode)
-    .map(country => ({
+    .filter((c) => c.callingCode)
+    .map((country) => ({
       value: country.callingCode,
       flag: country.flag,
       country: country.name,
     }))
     .sort((a, b) => {
       // Sort by numeric value
-      const numA = parseInt(a.value.replace(/\D/g, ''), 10) || 0;
-      const numB = parseInt(b.value.replace(/\D/g, ''), 10) || 0;
+      const numA = parseInt(a.value.replace(/\D/g, ""), 10) || 0;
+      const numB = parseInt(b.value.replace(/\D/g, ""), 10) || 0;
       return numA - numB;
     });
 
@@ -210,11 +215,11 @@ function BusinessContactForm() {
   const sendConfirmationEmail = async () => {
     setEmailStatus("sending");
     try {
-      const response = await fetch(BREVO_API_URL, {
+      const response = await fetch(BREVO_CONFIG.API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "api-key": BREVO_API_KEY,
+          "api-key": BREVO_CONFIG.API_KEY,
         },
         body: JSON.stringify({
           sender: {
@@ -263,9 +268,17 @@ function BusinessContactForm() {
                       <li><strong>Email:</strong> ${formData.email}</li>
                       <li><strong>Company:</strong> ${formData.company}</li>
                       <li><strong>Title:</strong> ${formData.title}</li>
-                      <li><strong>Location:</strong> ${formData.city}, ${formData.state}, ${formData.country}</li>
-                      <li><strong>Phone:</strong> ${formData.phoneCode} ${formData.phone}</li>
-                      ${formData.properties ? `<li><strong>Property Details:</strong> ${formData.properties}</li>` : ''}
+                      <li><strong>Location:</strong> ${formData.city}, ${
+            formData.state
+          }, ${formData.country}</li>
+                      <li><strong>Phone:</strong> ${formData.phoneCode} ${
+            formData.phone
+          }</li>
+                      ${
+                        formData.properties
+                          ? `<li><strong>Property Details:</strong> ${formData.properties}</li>`
+                          : ""
+                      }
                     </ul>
                     <p>Our business development team will review your information and contact you shortly.</p>
                     <p>If you have any immediate questions, please don't hesitate to contact us.</p>
@@ -283,7 +296,7 @@ function BusinessContactForm() {
               </body>
             </html>
           `,
-        })
+        }),
       });
       const result = await response.json();
       console.log("Email sent result:", result);
@@ -433,7 +446,7 @@ function BusinessContactForm() {
         <CardBody className="p-6">
           <AnimatePresence mode="wait">
             {formState === "success" ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -444,7 +457,8 @@ function BusinessContactForm() {
                   Thank You!
                 </h3>
                 <p className="text-white text-center mb-6">
-                  Your business inquiry has been successfully submitted. Our team will contact you shortly.
+                  Your business inquiry has been successfully submitted. Our
+                  team will contact you shortly.
                 </p>
                 {emailStatus === "sent" && (
                   <p className="text-green-400 text-center mb-6">
@@ -453,10 +467,11 @@ function BusinessContactForm() {
                 )}
                 {emailStatus === "failed" && (
                   <p className="text-yellow-400 text-center mb-6">
-                    We couldn't send a confirmation email. Please check your inbox later.
+                    We couldn't send a confirmation email. Please check your
+                    inbox later.
                   </p>
                 )}
-                <Button 
+                <Button
                   className="bg-[#E9423A] text-white"
                   onPress={() => {
                     setFormState("idle");
@@ -480,7 +495,7 @@ function BusinessContactForm() {
                 </Button>
               </motion.div>
             ) : (
-              <motion.form 
+              <motion.form
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onSubmit={handleSubmit}
@@ -503,7 +518,9 @@ function BusinessContactForm() {
                       placeholder="Name *"
                       variant="faded"
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       classNames={inputClasses}
                       isInvalid={!!errors.name}
                       errorMessage={errors.name}
@@ -517,7 +534,9 @@ function BusinessContactForm() {
                       placeholder="Email *"
                       variant="faded"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
                       classNames={inputClasses}
                       isInvalid={!!errors.email}
                       errorMessage={errors.email}
@@ -535,7 +554,9 @@ function BusinessContactForm() {
                       placeholder="Company *"
                       variant="faded"
                       value={formData.company}
-                      onChange={(e) => handleInputChange("company", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("company", e.target.value)
+                      }
                       classNames={inputClasses}
                       isInvalid={!!errors.company}
                       errorMessage={errors.company}
@@ -549,7 +570,9 @@ function BusinessContactForm() {
                       placeholder="Title *"
                       variant="faded"
                       value={formData.title}
-                      onChange={(e) => handleInputChange("title", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("title", e.target.value)
+                      }
                       classNames={inputClasses}
                       isInvalid={!!errors.title}
                       errorMessage={errors.title}
@@ -581,7 +604,11 @@ function BusinessContactForm() {
                       {filteredCountries.map((country) => (
                         <SelectItem key={country.name} textValue={country.name}>
                           <div className="flex items-center gap-2">
-                            <img src={country.flag} alt={country.name} className="w-5 h-5" />
+                            <img
+                              src={country.flag}
+                              alt={country.name}
+                              className="w-5 h-5"
+                            />
                             <span>{country.name}</span>
                           </div>
                         </SelectItem>
@@ -590,14 +617,20 @@ function BusinessContactForm() {
                   </div>
                   <div>
                     <Select
-                      placeholder={isFetchingStates ? "Loading states..." : "State *"}
+                      placeholder={
+                        isFetchingStates ? "Loading states..." : "State *"
+                      }
                       variant="faded"
                       size="lg"
-                      isDisabled={formState === "loading" || isFetchingStates || !formData.country}
+                      isDisabled={
+                        formState === "loading" ||
+                        isFetchingStates ||
+                        !formData.country
+                      }
                       classNames={selectClasses}
                       selectedKeys={formData.state ? [formData.state] : []}
                       onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string || "";
+                        const selected = (Array.from(keys)[0] as string) || "";
                         handleInputChange("state", selected);
                       }}
                       isInvalid={!!errors.state}
@@ -609,7 +642,9 @@ function BusinessContactForm() {
                         ))
                       ) : (
                         <SelectItem key="none">
-                          {isFetchingStates ? "Loading states..." : "No states available"}
+                          {isFetchingStates
+                            ? "Loading states..."
+                            : "No states available"}
                         </SelectItem>
                       )}
                     </Select>
@@ -621,7 +656,9 @@ function BusinessContactForm() {
                       placeholder="City *"
                       variant="faded"
                       value={formData.city}
-                      onChange={(e) => handleInputChange("city", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("city", e.target.value)
+                      }
                       classNames={inputClasses}
                       isInvalid={!!errors.city}
                       errorMessage={errors.city}
@@ -649,20 +686,20 @@ function BusinessContactForm() {
                       errorMessage={errors.phoneCode}
                       isDisabled={formState === "loading"}
                     />
-                    
+
                     {showPhoneDropdown && (
-                      <div 
-                        className="absolute z-50 w-full mt-1 bg-[#333] border border-[#444] rounded-lg shadow-lg max-h-[200px] overflow-y-auto"
-                      >
+                      <div className="absolute z-50 w-full mt-1 bg-[#333] border border-[#444] rounded-lg shadow-lg max-h-[200px] overflow-y-auto">
                         {phoneCodesList
-                          .filter(code => {
+                          .filter((code) => {
                             const input = phoneCodeInput.trim().toLowerCase();
-                            return input === "" || 
-                                   code.country.toLowerCase().includes(input) ||
-                                   code.value.toLowerCase().includes(input);
+                            return (
+                              input === "" ||
+                              code.country.toLowerCase().includes(input) ||
+                              code.value.toLowerCase().includes(input)
+                            );
                           })
-                          .map(code => (
-                            <div 
+                          .map((code) => (
+                            <div
                               key={code.value}
                               className="flex items-center gap-2 p-2 hover:bg-[#444] cursor-pointer"
                               onClick={() => {
@@ -671,18 +708,28 @@ function BusinessContactForm() {
                                 setShowPhoneDropdown(false);
                               }}
                             >
-                              <img src={code.flag} alt={code.country} className="w-5 h-5" />
+                              <img
+                                src={code.flag}
+                                alt={code.country}
+                                className="w-5 h-5"
+                              />
                               <span className="font-medium">{code.value}</span>
-                              <span className="text-xs text-gray-400">({code.country})</span>
+                              <span className="text-xs text-gray-400">
+                                ({code.country})
+                              </span>
                             </div>
                           ))}
-                        {phoneCodesList.filter(code => {
+                        {phoneCodesList.filter((code) => {
                           const input = phoneCodeInput.trim().toLowerCase();
-                          return input === "" || 
-                                 code.country.toLowerCase().includes(input) ||
-                                 code.value.toLowerCase().includes(input);
+                          return (
+                            input === "" ||
+                            code.country.toLowerCase().includes(input) ||
+                            code.value.toLowerCase().includes(input)
+                          );
                         }).length === 0 && (
-                          <div className="p-2 text-gray-400">No results found</div>
+                          <div className="p-2 text-gray-400">
+                            No results found
+                          </div>
                         )}
                       </div>
                     )}
@@ -694,7 +741,9 @@ function BusinessContactForm() {
                       placeholder="Phone Number *"
                       variant="faded"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
                       classNames={inputClasses}
                       isInvalid={!!errors.phone}
                       errorMessage={errors.phone}
@@ -709,10 +758,12 @@ function BusinessContactForm() {
                     placeholder="Tell us about your properties"
                     variant="bordered"
                     value={formData.properties}
-                    onChange={(e) => handleInputChange("properties", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("properties", e.target.value)
+                    }
                     classNames={{
                       ...inputClasses,
-                      input: "bg-[#333] text-white min-h-[50px]"
+                      input: "bg-[#333] text-white min-h-[50px]",
                     }}
                     isDisabled={formState === "loading"}
                     minRows={2}
@@ -724,11 +775,13 @@ function BusinessContactForm() {
                 {/* Submit Button */}
                 <motion.div
                   {...formElementTransition}
-                  style={{ pointerEvents: formState === "loading" ? 'none' : 'auto' }}
+                  style={{
+                    pointerEvents: formState === "loading" ? "none" : "auto",
+                  }}
                   className="mt-2"
                 >
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-[#E9423A] text-white rounded-none"
                     disabled={formState === "loading"}
                   >
@@ -746,8 +799,11 @@ function BusinessContactForm() {
       </Card>
 
       {/* Login icon with text - Same as ElectricityEstimateForm */}
-      <div className="flex justify-center w-full mt-10" style={{ position: "relative", zIndex: 10 }}>
-        <a 
+      <div
+        className="flex justify-center w-full mt-10"
+        style={{ position: "relative", zIndex: 10 }}
+      >
+        <a
           href="/login"
           onClick={(e) => {
             e.preventDefault();
@@ -760,7 +816,7 @@ function BusinessContactForm() {
           <span>Login</span>
         </a>
       </div>
-      
+
       {/* No business profile text since this is already the business form */}
     </FormContainer>
   );

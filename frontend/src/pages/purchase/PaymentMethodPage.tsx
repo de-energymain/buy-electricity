@@ -26,19 +26,28 @@ import {
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
 
-// Import crypto icons from assets - NRG removed
+// Import email service
+import { sendPurchaseNotificationEmail } from "../../services/emailApi";
+
+// Import crypto icons from assets
 import solIcon from "../../assets/crypto/sol-icon.svg";
 import usdcIcon from "../../assets/crypto/usdc-icon.svg";
+import nrgIcon from "../../assets/crypto/nrg-icon.svg";
 import logo from "../../assets/logo.svg";
 
-// Payment method types - NRG removed
-type PaymentMethod = "SOL" | "USDC";
+// Payment method types
+type PaymentMethod = "SOL" | "USDC" | "NRG";
 
 // USDC mint address on Solana devnet
 const USDC_MINT_ADDRESS = new PublicKey(
   "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
 ); // Devnet USDC
 // For mainnet, use: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+
+// NRG token mint address (using DOGA token address)
+const NRG_MINT_ADDRESS = new PublicKey(
+  "GvkBPHKFYscCPP9AncN5YNVenbabY7vYXPrWg3NfYYXW"
+); // DOGA token mint address (displayed as NRG in UI)
 
 interface OrderDetails {
   farm: string;
@@ -66,6 +75,7 @@ interface Web3AuthWalletInfo {
 interface ExchangeRates {
   sol: number;
   usdc: number;
+  nrg: number;
 }
 
 export default function PaymentMethodPage() {
@@ -121,6 +131,7 @@ export default function PaymentMethodPage() {
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({
     sol: 20,
     usdc: 1,
+    nrg: 0.1, // $0.1 per NRG token (placeholder rate)
   });
   const [isLoadingRates, setIsLoadingRates] = useState(true);
 
@@ -197,6 +208,7 @@ export default function PaymentMethodPage() {
         setExchangeRates({
           sol: data.solana.usd,
           usdc: data["usd-coin"].usd,
+          nrg: 0.1, // Placeholder rate for NRG - can be updated with real API later
         });
       } catch (error) {
         console.error("Error fetching exchange rates:", error);
@@ -258,6 +270,33 @@ export default function PaymentMethodPage() {
             }
             balance = 0;
           }
+        } else if (selectedPayment === "NRG") {
+          try {
+            console.log("Fetching NRG balance for:", publicKey.toString());
+            console.log("NRG Mint Address:", NRG_MINT_ADDRESS.toString());
+
+            // Get associated token account address for NRG
+            const tokenAccount = await getAssociatedTokenAddress(
+              NRG_MINT_ADDRESS,
+              publicKey
+            );
+
+            console.log("Expected NRG token account:", tokenAccount.toString());
+
+            // Get account info
+            const accountInfo = await getAccount(connection, tokenAccount);
+            balance = Number(accountInfo.amount) / Math.pow(10, 9); // NRG has 9 decimals (standard SPL token)
+            console.log("NRG balance found:", balance);
+          } catch (error: any) {
+            // If token account doesn't exist, balance is 0
+            console.log("NRG token account error:", error.message);
+            if (error.message.includes("could not find account")) {
+              console.log(
+                "NRG token account not found - you may need NRG tokens"
+              );
+            }
+            balance = 0;
+          }
         }
         setWalletBalance(balance);
       } catch (error) {
@@ -314,7 +353,7 @@ export default function PaymentMethodPage() {
     setOrderDetails(newOrderDetails);
   }, [location.search]);
 
-  // Update token amount based on current cost - NRG logic removed
+  // Update token amount based on current cost
   useEffect(() => {
     if (selectedPayment === "SOL") {
       // Use SOL to USD conversion rate from exchange rates
@@ -322,6 +361,9 @@ export default function PaymentMethodPage() {
     } else if (selectedPayment === "USDC") {
       // USDC is pegged to USD (1:1)
       setTokenAmount(orderDetails.cost);
+    } else if (selectedPayment === "NRG") {
+      // Use NRG rate from exchange rates
+      setTokenAmount(orderDetails.cost / exchangeRates.nrg);
     }
   }, [selectedPayment, orderDetails.cost, exchangeRates]);
 
@@ -386,6 +428,29 @@ export default function PaymentMethodPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     showToast("Copied", "Address copied to clipboard", "success", 2000);
+  };
+
+  // Helper function to send admin notification email
+  const sendAdminNotification = async (
+    paymentMethod: PaymentMethod,
+    tokenAmount: number,
+    walletName: string,
+    signature: string
+  ) => {
+    try {
+      await sendPurchaseNotificationEmail({
+        orderDetails,
+        paymentMethod,
+        tokenAmount,
+        walletAddress: walletAddress,
+        signature,
+        wallet: walletName,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Failed to send admin notification:", error);
+      // Don't block the payment flow if email fails
+    }
   };
 
   // Handle action based on authentication state
@@ -528,6 +593,15 @@ export default function PaymentMethodPage() {
             "success",
             3000
           );
+
+          // Send admin notification email
+          await sendAdminNotification(
+            selectedPayment,
+            tokenAmount,
+            wallet?.adapter.name ?? "Unknown",
+            signature
+          );
+
           navigate("/payment-success", {
             state: {
               ...orderDetails,
@@ -538,6 +612,14 @@ export default function PaymentMethodPage() {
               signature,
             },
           });
+
+          // Send admin notification email
+          sendAdminNotification(
+            "USDC",
+            tokenAmount,
+            wallet?.adapter.name ?? "Unknown",
+            signature
+          );
         }
         // Handle USDC payment via Web3Auth/Google login
         else if (web3AuthWalletInfo && web3AuthWalletInfo.publicKey) {
@@ -671,6 +753,15 @@ export default function PaymentMethodPage() {
               "success",
               3000
             );
+
+            // Send admin notification email
+            await sendAdminNotification(
+              selectedPayment,
+              tokenAmount,
+              "Google Web3Auth",
+              signature
+            );
+
             navigate("/payment-success", {
               state: {
                 ...orderDetails,
@@ -684,6 +775,297 @@ export default function PaymentMethodPage() {
             console.error("Web3Auth USDC transaction error:", error);
             throw new Error(
               `Web3Auth USDC transaction failed: ${error.message}`
+            );
+          }
+        }
+      }
+
+      // Check if NRG is selected and validate
+      if (selectedPayment === "NRG") {
+        // Check if user has sufficient NRG balance
+        if (walletBalance < tokenAmount) {
+          throw new Error(
+            `Insufficient NRG balance. You need ${tokenAmount.toFixed(
+              2
+            )} NRG but only have ${walletBalance.toFixed(2)} NRG.`
+          );
+        }
+
+        // Handle NRG payment via Solana wallet adapter
+        if (connected && publicKey && signTransaction) {
+          // Send NRG payments to specific recipient address
+          const recipient = new PublicKey(
+            "CxuV3Wd1BDkgaYCqJuzuy1BRjdszt9bUhhKBBRB8pTru"
+          );
+
+          console.log("Starting NRG payment transaction");
+          console.log("Sender public key:", publicKey.toString());
+          console.log("Recipient public key:", recipient.toString());
+          console.log("NRG Mint:", NRG_MINT_ADDRESS.toString());
+
+          // Get sender's NRG token account
+          const senderTokenAccount = await getAssociatedTokenAddress(
+            NRG_MINT_ADDRESS,
+            publicKey
+          );
+          console.log("Sender token account:", senderTokenAccount.toString());
+
+          // Check if sender's token account exists and has balance
+          try {
+            const senderAccountInfo = await getAccount(
+              connection,
+              senderTokenAccount
+            );
+            console.log(
+              "Sender NRG balance:",
+              Number(senderAccountInfo.amount) / Math.pow(10, 9)
+            );
+
+            if (
+              Number(senderAccountInfo.amount) <
+              Math.floor(tokenAmount * Math.pow(10, 9))
+            ) {
+              throw new Error("Insufficient NRG balance in token account");
+            }
+          } catch (error: any) {
+            if (error.message.includes("could not find account")) {
+              throw new Error(
+                "NRG token account not found. Please ensure you have NRG tokens in your wallet."
+              );
+            }
+            throw error;
+          }
+
+          // Get recipient's NRG token account (create if doesn't exist)
+          const recipientTokenAccount = await getAssociatedTokenAddress(
+            NRG_MINT_ADDRESS,
+            recipient
+          );
+          console.log(
+            "Recipient token account:",
+            recipientTokenAccount.toString()
+          );
+
+          const tx = new Transaction();
+
+          // Check if recipient token account exists
+          try {
+            await getAccount(connection, recipientTokenAccount);
+          } catch (error) {
+            // If account doesn't exist, create it
+            tx.add(
+              createAssociatedTokenAccountInstruction(
+                publicKey, // payer
+                recipientTokenAccount, // associatedToken
+                recipient, // owner
+                NRG_MINT_ADDRESS // mint
+              )
+            );
+          }
+
+          // Add NRG transfer instruction
+          const nrgAmount = Math.floor(tokenAmount * Math.pow(10, 9)); // NRG has 9 decimals (standard SPL token)
+          tx.add(
+            createTransferInstruction(
+              senderTokenAccount, // source
+              recipientTokenAccount, // destination
+              publicKey, // owner
+              nrgAmount // amount
+            )
+          );
+
+          const { blockhash } = await connection.getLatestBlockhash();
+          tx.recentBlockhash = blockhash;
+          tx.feePayer = publicKey;
+          const signedTx = await signTransaction(tx);
+          const signature = await connection.sendRawTransaction(
+            signedTx.serialize()
+          );
+          await connection.confirmTransaction(signature, "confirmed");
+
+          // Complete transaction
+          setToasts((prev) => prev.filter((t) => t.id !== processingId));
+          showToast(
+            "Payment Successful",
+            "Your NRG transaction was completed successfully",
+            "success",
+            3000
+          );
+
+          // Send admin notification email
+          await sendAdminNotification(
+            selectedPayment,
+            tokenAmount,
+            wallet?.adapter.name ?? "Unknown",
+            signature
+          );
+
+          navigate("/payment-success", {
+            state: {
+              ...orderDetails,
+              paymentMethod: selectedPayment,
+              tokenAmount,
+              wallet: wallet?.adapter.name ?? "Unknown",
+              walletAddress: walletAddress,
+              signature,
+            },
+          });
+        }
+        // Handle NRG payment via Web3Auth/Google login
+        else if (web3AuthWalletInfo && web3AuthWalletInfo.publicKey) {
+          try {
+            // Get the session data which should contain the private key
+            const sessionStr = localStorage.getItem("web3AuthSession");
+            if (!sessionStr) {
+              throw new Error("Web3Auth session not found");
+            }
+
+            const sessionData = JSON.parse(sessionStr);
+
+            // Check if privateKey is available
+            if (!sessionData.privateKey) {
+              throw new Error("Private key not available in session");
+            }
+
+            // Handle different private key formats (same as SOL implementation)
+            let privateKeyBytes;
+
+            if (typeof sessionData.privateKey === "string") {
+              if (sessionData.privateKey.length === 88) {
+                throw new Error("Base58 decoding requires bs58 library");
+              } else if (
+                sessionData.privateKey.length === 128 ||
+                sessionData.privateKey.length === 64
+              ) {
+                privateKeyBytes = new Uint8Array(
+                  sessionData.privateKey.length / 2
+                );
+                for (let i = 0; i < sessionData.privateKey.length; i += 2) {
+                  privateKeyBytes[i / 2] = parseInt(
+                    sessionData.privateKey.substr(i, 2),
+                    16
+                  );
+                }
+              } else {
+                try {
+                  const parsed = JSON.parse(sessionData.privateKey);
+                  privateKeyBytes = new Uint8Array(parsed);
+                } catch (e) {
+                  throw new Error(
+                    `Unable to parse privateKey format: ${e.message}`
+                  );
+                }
+              }
+            } else if (Array.isArray(sessionData.privateKey)) {
+              privateKeyBytes = new Uint8Array(sessionData.privateKey);
+            } else if (typeof sessionData.privateKey === "object") {
+              privateKeyBytes = new Uint8Array(
+                Object.values(sessionData.privateKey)
+              );
+            } else {
+              throw new Error("Unsupported privateKey format");
+            }
+
+            if (privateKeyBytes.length !== 64) {
+              console.error(
+                "Invalid private key length:",
+                privateKeyBytes.length
+              );
+              throw new Error(
+                `Bad secret key size: expected 64 bytes, got ${privateKeyBytes.length}`
+              );
+            }
+
+            const keyPair = Keypair.fromSecretKey(privateKeyBytes);
+            // Send NRG payments to specific recipient address
+            const recipient = new PublicKey(
+              "CxuV3Wd1BDkgaYCqJuzuy1BRjdszt9bUhhKBBRB8pTru"
+            );
+
+            console.log("Starting Web3Auth NRG payment transaction");
+            console.log("Sender public key:", keyPair.publicKey.toString());
+            console.log("Recipient public key:", recipient.toString());
+
+            // Get sender's NRG token account
+            const senderTokenAccount = await getAssociatedTokenAddress(
+              NRG_MINT_ADDRESS,
+              keyPair.publicKey
+            );
+
+            // Get recipient's NRG token account
+            const recipientTokenAccount = await getAssociatedTokenAddress(
+              NRG_MINT_ADDRESS,
+              recipient
+            );
+
+            const tx = new Transaction();
+
+            // Check if recipient token account exists
+            try {
+              await getAccount(connection, recipientTokenAccount);
+            } catch (error) {
+              // If account doesn't exist, create it
+              tx.add(
+                createAssociatedTokenAccountInstruction(
+                  keyPair.publicKey, // payer
+                  recipientTokenAccount, // associatedToken
+                  recipient, // owner
+                  NRG_MINT_ADDRESS // mint
+                )
+              );
+            }
+
+            // Add NRG transfer instruction
+            const nrgAmount = Math.floor(tokenAmount * Math.pow(10, 9)); // NRG has 9 decimals (standard SPL token)
+            tx.add(
+              createTransferInstruction(
+                senderTokenAccount, // source
+                recipientTokenAccount, // destination
+                keyPair.publicKey, // owner
+                nrgAmount // amount
+              )
+            );
+
+            const { blockhash } = await connection.getLatestBlockhash();
+            tx.recentBlockhash = blockhash;
+            tx.feePayer = keyPair.publicKey;
+            tx.sign(keyPair);
+
+            const signature = await connection.sendRawTransaction(
+              tx.serialize()
+            );
+            await connection.confirmTransaction(signature, "confirmed");
+
+            // Complete transaction
+            setToasts((prev) => prev.filter((t) => t.id !== processingId));
+            showToast(
+              "Payment Successful",
+              "Your NRG transaction was completed successfully",
+              "success",
+              3000
+            );
+
+            // Send admin notification email
+            await sendAdminNotification(
+              selectedPayment,
+              tokenAmount,
+              "Google Web3Auth",
+              signature
+            );
+
+            navigate("/payment-success", {
+              state: {
+                ...orderDetails,
+                paymentMethod: selectedPayment,
+                tokenAmount,
+                wallet: "Google Web3Auth",
+                signature,
+              },
+            });
+          } catch (error: any) {
+            console.error("Web3Auth NRG transaction error:", error);
+            throw new Error(
+              `Web3Auth NRG transaction failed: ${error.message}`
             );
           }
         }
@@ -728,6 +1110,15 @@ export default function PaymentMethodPage() {
             "success",
             3000
           );
+
+          // Send admin notification email
+          await sendAdminNotification(
+            selectedPayment,
+            tokenAmount,
+            wallet?.adapter.name ?? "Unknown",
+            signature
+          );
+
           navigate("/payment-success", {
             state: {
               ...orderDetails,
@@ -874,6 +1265,15 @@ export default function PaymentMethodPage() {
                 "success",
                 3000
               );
+
+              // Send admin notification email
+              await sendAdminNotification(
+                selectedPayment,
+                tokenAmount,
+                "Google Web3Auth",
+                signature
+              );
+
               navigate("/payment-success", {
                 state: {
                   ...orderDetails,
@@ -986,15 +1386,16 @@ export default function PaymentMethodPage() {
               </div>
             </div>
 
-            {/* Payment method selection - NRG removed, adjusted to 2 columns */}
+            {/* Payment method selection */}
             <div>
               <h3 className="text-lg font-bold text-white mb-3">
                 Payment Method
               </h3>
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 {[
                   { method: "SOL", icon: solIcon },
                   { method: "USDC", icon: usdcIcon },
+                  { method: "NRG", icon: nrgIcon },
                 ].map(({ method, icon }) => (
                   <div
                     key={method}
@@ -1204,7 +1605,9 @@ export default function PaymentMethodPage() {
                 disabled={
                   isProcessingPayment ||
                   isLoadingRates ||
-                  (selectedPayment === "SOL" && walletBalance < tokenAmount)
+                  (selectedPayment === "SOL" && walletBalance < tokenAmount) ||
+                  (selectedPayment === "USDC" && walletBalance < tokenAmount) ||
+                  (selectedPayment === "NRG" && walletBalance < tokenAmount)
                 }
               >
                 {isProcessingPayment && (
