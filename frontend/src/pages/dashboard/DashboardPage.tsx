@@ -135,9 +135,6 @@ function DashboardPage() {
   const [plantDataMap, setPlantDataMap] = useState<Map<string, PlantData>>(
     new Map()
   );
-  const [inverterDataMap, setInverterDataMap] = useState<
-    Map<string, InverterData[]>
-  >(new Map());
   const [historicalInverterDataMap, setHistoricalInverterDataMap] = useState<
     Map<string, InverterData[]>
   >(new Map());
@@ -172,42 +169,6 @@ function DashboardPage() {
     const ids = Array.from(plantIds);
     console.log("🌱 User's plant IDs:", ids);
     return ids;
-  };
-
-  // Get primary plant ID (the one with most panels allocated)
-  const getPrimaryPlantId = (): string | null => {
-    if (purchaseData.length === 0) {
-      return null; // No fallback
-    }
-
-    const plantTotals: { [plantId: string]: number } = {};
-
-    purchaseData.forEach((purchase) => {
-      if (purchase.plantAllocations) {
-        purchase.plantAllocations.forEach((allocation) => {
-          plantTotals[allocation.plantId] =
-            (plantTotals[allocation.plantId] || 0) + allocation.panels;
-        });
-      }
-    });
-
-    if (Object.keys(plantTotals).length === 0) {
-      return null;
-    }
-
-    // Find plant with most panels
-    const primaryPlantId = Object.entries(plantTotals).reduce((a, b) =>
-      plantTotals[a[0]] > plantTotals[b[0]] ? a : b
-    )[0];
-
-    console.log(
-      "🏆 Primary plant ID:",
-      primaryPlantId,
-      "with",
-      plantTotals[primaryPlantId],
-      "panels"
-    );
-    return primaryPlantId;
   };
 
   // Helper function to get date/time from inverter data item
@@ -276,26 +237,6 @@ function DashboardPage() {
       (purchase) => new Date(purchase.purchaseDate || purchase.createdAt)
     );
     return new Date(Math.min(...dates.map((d) => d.getTime())));
-  };
-
-  // Calculate user's total capacity across all plants based on actual ownership
-  const calculateUserTotalCapacity = () => {
-    if (purchaseData.length === 0) return 0;
-
-    let totalPanels = 0;
-    purchaseData.forEach((purchase) => {
-      if (purchase.plantAllocations) {
-        purchase.plantAllocations.forEach((allocation) => {
-          totalPanels += allocation.panels;
-        });
-      } else {
-        // Fallback for legacy purchases without plantAllocations
-        totalPanels += purchase.panelsPurchased || 0;
-      }
-    });
-
-    // Each panel is 1 kW
-    return totalPanels * PANEL_CAPACITY_KW;
   };
 
   // Calculate user's capacity share for a specific plant

@@ -290,14 +290,6 @@ const PanelsPage: React.FC = () => {
     }
   }, [userAllocations, selectedPlantId]);
 
-  // Get selected plant info
-  const getSelectedPlantInfo = () => {
-    return (
-      plantsFromService.find((p) => p.id === selectedPlantId) ||
-      plantsFromService[0]
-    );
-  };
-
   // Get plant API ID for the selected plant (direct mapping since IDs match backend)
   const getPlantApiId = (plantId: string): string => {
     return plantId; // Plant IDs in the service already match backend IDs
@@ -1040,8 +1032,8 @@ const PanelsPage: React.FC = () => {
         } else {
           // Sort by date for longer periods
           return (
-            new Date(a.time + ", 2024").getFullTimeString() -
-            new Date(b.time + ", 2024").getFullTimeString()
+            new Date(a.time + ", 2024").getTime() -
+            new Date(b.time + ", 2024").getTime()
           );
         }
       });
