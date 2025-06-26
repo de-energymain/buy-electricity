@@ -9,7 +9,14 @@ import {
   ModalHeader,
   ModalFooter,
 } from "@nextui-org/react";
-import { Wallet as WalletIcon, LogOut, ExternalLink, Plus } from "lucide-react";
+import {
+  Wallet as WalletIcon,
+  LogOut,
+  ExternalLink,
+  Plus,
+  Menu,
+  X,
+} from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getUserData } from "../services/userApi";
@@ -40,6 +47,7 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     null
   );
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   // Balance state
   const [solBalance, setSolBalance] = useState<number | null>(null);
@@ -254,27 +262,33 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
   return (
     <div className="flex flex-col w-full h-screen bg-[#0A0A0A] text-white">
       {/* Top header with logo and user info */}
-      <header className="w-full bg-[#0F0F0F] px-32 py-6 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+      <header className="w-full bg-[#0F0F0F] px-4 md:px-8 lg:px-32 py-4 md:py-6 flex items-center justify-between">
+        <div className="flex items-center space-x-2 md:space-x-3">
           <div>
-            <img src={logo} alt="NRG logo" className="h-16 w-16" />
+            <img
+              src={logo}
+              alt="NRG logo"
+              className="h-12 w-12 md:h-16 md:w-16"
+            />
           </div>
           <div className="flex flex-col">
-            <h2 className="text-lg font-medium">Hello {username}</h2>
-            <p className="text-xs text-gray-400">Last Updated: {getDate()}</p>
+            <h2 className="text-sm md:text-lg font-medium">Hello {username}</h2>
+            <p className="text-xs text-gray-400 hidden sm:block">
+              Last Updated: {getDate()}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           {/* Connected Wallet Display with Balances */}
           {(publicKey || web3AuthPublicKey) && (
-            <div className="flex items-center bg-[#1A1A1A] rounded-lg p-3">
-              <div className="w-8 h-8 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A] mr-3">
-                <WalletIcon size={16} />
+            <div className="flex items-center bg-[#1A1A1A] rounded-lg p-2 md:p-3">
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-[#2A1A1A] rounded-full flex items-center justify-center text-[#E9423A] mr-2 md:mr-3">
+                <WalletIcon size={12} className="md:w-4 md:h-4" />
               </div>
               <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs text-gray-400">
+                <div className="flex items-center gap-1 md:gap-2 mb-1">
+                  <span className="text-xs text-gray-400 hidden sm:block">
                     {wallet?.adapter.name || "Wallet"}
                   </span>
                   <span className="text-xs font-mono text-white">
@@ -297,16 +311,16 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                       }
                     >
                       <ExternalLink
-                        size={10}
-                        className="text-gray-400 hover:text-white"
+                        size={8}
+                        className="md:w-3 md:h-3 text-gray-400 hover:text-white"
                       />
                     </Button>
                   </Tooltip>
                 </div>
                 {/* Balance Display */}
-                <div className="flex items-center gap-3 text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs">
                   {isLoadingBalances ? (
-                    <span className="text-gray-500">Loading balances...</span>
+                    <span className="text-gray-500">Loading...</span>
                   ) : (
                     <>
                       <span className="text-blue-400 font-medium">
@@ -327,19 +341,21 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
           )}
           {/* Buy Panels Button */}
           <Button
-            className="bg-[#E9423A] text-white"
-            startContent={<Plus size={16} />}
+            className="bg-[#E9423A] text-white text-xs md:text-sm px-2 md:px-4"
+            startContent={<Plus size={14} className="md:w-4 md:h-4" />}
             onPress={handleBuyPanels}
           >
-            Buy Panels
+            <span className="hidden sm:inline">Buy Panels</span>
+            <span className="sm:hidden">Buy</span>
           </Button>
         </div>
       </header>
 
       {/* Navigation Bar */}
-      <nav className="w-full bg-[#0F0F0F] border-b border-gray-800 px-32">
+      <nav className="w-full bg-[#0F0F0F] border-b border-gray-800 px-4 md:px-8 lg:px-32">
         <div className="flex items-center justify-between">
-          <div className="flex space-x-1">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex space-x-1">
             <Button
               className={`px-4 py-2 ${
                 activePage === "dashboard"
@@ -410,32 +426,105 @@ const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
             >
               Settings
             </Button>
-            {/* Help tab temporarily hidden */}
-            {/* <Button
-              className={`px-4 py-2 ${
-                activePage === "help"
-                  ? "text-white border-b-2 border-[#E9423A]"
-                  : "text-gray-400 hover:text-white"
-              } bg-transparent rounded-none`}
-              onPress={() => navigate("/dashboard/help")}
-            >
-              Help
-            </Button> */}
           </div>
-          <div>
+
+          {/* Mobile Navigation Button */}
+          <div className="md:hidden">
             <Button
-              className="bg-transparent text-gray-400 hover:text-white flex items-center"
+              isIconOnly
+              className="bg-transparent text-gray-400 hover:text-white"
+              onPress={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </Button>
+          </div>
+
+          {/* Desktop Logout Button */}
+          <div className="hidden md:block">
+            <Button
+              className="bg-transparent text-gray-400 hover:text-white flex items-center text-sm"
               onPress={handleLogout}
             >
-              <LogOut size={18} className="mr-2" />
+              <LogOut size={16} className="mr-2" />
               Sign Out
             </Button>
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-[#1A1A1A] border-t border-gray-700">
+            <div className="flex flex-col py-2">
+              <Button
+                className={`justify-start px-4 py-3 ${
+                  activePage === "dashboard"
+                    ? "text-white bg-[#E9423A]/20 border-l-4 border-[#E9423A]"
+                    : "text-gray-400 hover:text-white hover:bg-gray-800"
+                } bg-transparent rounded-none`}
+                onPress={() => {
+                  navigate("/dashboard");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Dashboard
+              </Button>
+              <Button
+                className={`justify-start px-4 py-3 ${
+                  activePage === "panels"
+                    ? "text-white bg-[#E9423A]/20 border-l-4 border-[#E9423A]"
+                    : "text-gray-400 hover:text-white hover:bg-gray-800"
+                } bg-transparent rounded-none`}
+                onPress={() => {
+                  navigate("/dashboard/panels");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Panels
+              </Button>
+              <Button
+                className={`justify-start px-4 py-3 ${
+                  activePage === "transactions"
+                    ? "text-white bg-[#E9423A]/20 border-l-4 border-[#E9423A]"
+                    : "text-gray-400 hover:text-white hover:bg-gray-800"
+                } bg-transparent rounded-none`}
+                onPress={() => {
+                  navigate("/dashboard/transactions");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Transactions
+              </Button>
+              <Button
+                className={`justify-start px-4 py-3 ${
+                  activePage === "settings"
+                    ? "text-white bg-[#E9423A]/20 border-l-4 border-[#E9423A]"
+                    : "text-gray-400 hover:text-white hover:bg-gray-800"
+                } bg-transparent rounded-none`}
+                onPress={() => {
+                  navigate("/dashboard/settings");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Settings
+              </Button>
+              {/* Mobile Logout Button */}
+              <Button
+                className="justify-start px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 bg-transparent rounded-none border-t border-gray-700 mt-2"
+                onPress={() => {
+                  handleLogout();
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                <LogOut size={16} className="mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-8 bg-[#0A0A0A]">
+      <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 bg-[#0A0A0A]">
         <div className="max-w-6xl mx-auto">
           {/* Page content */}
           {children}

@@ -1139,10 +1139,10 @@ const PanelsPage: React.FC = () => {
     <DashboardTemplate title="Solar Panels" activePage="panels">
       <div className="mb-8">
         {/* Header with Plant Selector and Date Dropdown */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-col gap-4 md:gap-6 mb-6">
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
                 Panels Dashboard
               </h1>
               <p className="text-gray-400">
@@ -1150,25 +1150,27 @@ const PanelsPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-4 items-end">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               {/* Plant Selector */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 flex-1">
                 <label className="text-sm text-gray-400">Select Plant</label>
                 <Dropdown>
                   <DropdownTrigger>
                     <Button
-                      className="bg-[#1A1A1A] text-white border-1 border-gray-700 hover:border-[#E9423A] transition-colors min-w-[200px]"
+                      className="bg-[#1A1A1A] text-white border-1 border-gray-700 hover:border-[#E9423A] transition-colors w-full sm:min-w-[200px]"
                       endContent={<ChevronDown size={16} />}
                       startContent={<Building size={16} />}
                       size="lg"
                     >
-                      {selectedPlantId
-                        ? userAllocations.find(
-                            (a) => a.plantId === selectedPlantId
-                          )?.plantName ||
-                          getPlantDisplayName(selectedPlantId) ||
-                          "Select a plant"
-                        : "Select a plant"}
+                      <span className="truncate">
+                        {selectedPlantId
+                          ? userAllocations.find(
+                              (a) => a.plantId === selectedPlantId
+                            )?.plantName ||
+                            getPlantDisplayName(selectedPlantId) ||
+                            "Select a plant"
+                          : "Select a plant"}
+                      </span>
                     </Button>
                   </DropdownTrigger>
                   <DropdownMenu
@@ -1207,12 +1209,12 @@ const PanelsPage: React.FC = () => {
               </div>
 
               {/* Date Period Selector */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 flex-1 sm:flex-none">
                 <label className="text-sm text-gray-400">Time Period</label>
                 <Dropdown>
                   <DropdownTrigger>
                     <Button
-                      className="bg-[#1A1A1A] text-white border-1 border-gray-700 hover:border-[#E9423A] transition-colors min-w-[140px]"
+                      className="bg-[#1A1A1A] text-white border-1 border-gray-700 hover:border-[#E9423A] transition-colors w-full sm:min-w-[140px]"
                       endContent={<ChevronDown size={16} />}
                       startContent={<Calendar size={16} />}
                       disabled={loadingState.inverter}
@@ -1239,7 +1241,7 @@ const PanelsPage: React.FC = () => {
                   </DropdownMenu>
                 </Dropdown>
                 {loadingState.inverter && (
-                  <div className="text-xs text-blue-400 flex items-center gap-1">
+                  <div className="text-xs text-blue-400 flex items-center gap-1 justify-center sm:justify-start">
                     <Spinner size="sm" />
                     Refreshing data...
                   </div>
@@ -1252,7 +1254,10 @@ const PanelsPage: React.FC = () => {
           {errorState.inverter && (
             <div className="p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg mb-4">
               <div className="flex items-center gap-2">
-                <AlertCircle size={16} className="text-yellow-400" />
+                <AlertCircle
+                  size={16}
+                  className="text-yellow-400 flex-shrink-0"
+                />
                 <span className="text-yellow-400 text-sm">
                   Limited data: {errorState.inverter}
                 </span>
@@ -1263,7 +1268,10 @@ const PanelsPage: React.FC = () => {
           {hasEmptyData && !errorState.inverter && (
             <div className="p-3 bg-blue-900/20 border border-blue-600/30 rounded-lg mb-4">
               <div className="flex items-center gap-2">
-                <AlertCircle size={16} className="text-blue-400" />
+                <AlertCircle
+                  size={16}
+                  className="text-blue-400 flex-shrink-0"
+                />
                 <span className="text-blue-400 text-sm">
                   No generation data available for{" "}
                   {getPeriodLabel().toLowerCase()}
@@ -1280,10 +1288,10 @@ const PanelsPage: React.FC = () => {
           color="danger"
           variant="underlined"
           classNames={{
-            base: "mb-8",
+            base: "mb-6 md:mb-8",
             tabList: "bg-transparent",
             cursor: "bg-[#E9423A]",
-            tab: "text-gray-400 data-[selected=true]:text-white px-6 py-3",
+            tab: "text-gray-400 data-[selected=true]:text-white px-3 md:px-6 py-3 text-sm md:text-base",
           }}
         >
           <Tab key="overview" title="Overview" />
@@ -1293,32 +1301,38 @@ const PanelsPage: React.FC = () => {
 
         {/* Overview Tab */}
         {activeTab === "overview" && (
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
             {/* Plant Information */}
             {plantData && (
               <Card className="bg-[#1A1A1A] border-none">
-                <CardBody className="p-6">
-                  <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <CardBody className="p-4 md:p-6">
+                  <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 flex items-center gap-2">
                     <Building size={24} className="text-[#E9423A]" />
                     {plantData.plantName}
                   </h2>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="px-16 py-12 space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                         <div className="flex items-start gap-3">
-                          <MapPin size={20} className="text-gray-400 mt-1" />
-                          <div>
+                          <MapPin
+                            size={20}
+                            className="text-gray-400 mt-1 flex-shrink-0"
+                          />
+                          <div className="min-w-0">
                             <div className="text-sm text-gray-400">
                               Location
                             </div>
-                            <div className="text-white font-medium">
+                            <div className="text-white font-medium break-words">
                               {plantData.plantLocation}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
-                          <Zap size={20} className="text-yellow-500 mt-1" />
+                          <Zap
+                            size={20}
+                            className="text-yellow-500 mt-1 flex-shrink-0"
+                          />
                           <div>
                             <div className="text-sm text-gray-400">
                               Total Capacity
@@ -1329,7 +1343,10 @@ const PanelsPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
-                          <Calendar size={20} className="text-blue-400 mt-1" />
+                          <Calendar
+                            size={20}
+                            className="text-blue-400 mt-1 flex-shrink-0"
+                          />
                           <div>
                             <div className="text-sm text-gray-400">
                               Commissioned
@@ -1340,7 +1357,7 @@ const PanelsPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
-                          <div className="text-gray-400 mt-1 text-[20px] font-bold">
+                          <div className="text-gray-400 mt-1 text-[20px] font-bold flex-shrink-0">
                             ⚡
                           </div>
                           <div>
@@ -1353,7 +1370,7 @@ const PanelsPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="hidden flex items-start gap-3">
-                          <div className="text-gray-400 mt-1 text-[20px] font-bold">
+                          <div className="text-gray-400 mt-1 text-[20px] font-bold flex-shrink-0">
                             🏭
                           </div>
                           <div>
@@ -1366,7 +1383,7 @@ const PanelsPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
-                          <div className="text-gray-400 mt-1 text-[20px] font-bold">
+                          <div className="text-gray-400 mt-1 text-[20px] font-bold flex-shrink-0">
                             🏢
                           </div>
                           <div>
@@ -1385,7 +1402,7 @@ const PanelsPage: React.FC = () => {
                       <img
                         src="https://meil.in/sites/default/files/2024-11/Solar%20Power%20Plant.jpg"
                         alt="Solar Panel Farm"
-                        className="rounded-lg object-cover w-full h-full max-h-[300px]"
+                        className="rounded-lg object-cover w-full h-full max-h-[200px] md:max-h-[300px]"
                       />
                     </div>
                   </div>
@@ -1394,18 +1411,18 @@ const PanelsPage: React.FC = () => {
             )}
 
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               <Card className="bg-[#1A1A1A] border-none">
-                <CardBody className="p-6">
+                <CardBody className="p-4 md:p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
                       <Gauge size={24} className="text-blue-400" />
                     </div>
                     <Chip size="sm" color="primary" variant="flat">
                       {loadingState.inverter ? "Loading..." : "Live"}
                     </Chip>
                   </div>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-xl md:text-2xl font-bold text-white mb-1">
                     {metrics.currentGeneration.toFixed(2)} kW
                   </div>
                   <div className="text-blue-400 text-sm">
@@ -1425,16 +1442,16 @@ const PanelsPage: React.FC = () => {
               </Card>
 
               <Card className="bg-[#1A1A1A] border-none">
-                <CardBody className="p-6">
+                <CardBody className="p-4 md:p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
                       <Sun size={24} className="text-green-400" />
                     </div>
                     <Chip size="sm" color="success" variant="flat">
                       {getPeriodLabel()}
                     </Chip>
                   </div>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-xl md:text-2xl font-bold text-white mb-1">
                     {metrics.plantPeriodTotal.toFixed(1)} kWh
                   </div>
                   <div className="text-green-400 text-sm">
@@ -1463,17 +1480,17 @@ const PanelsPage: React.FC = () => {
                 </CardBody>
               </Card>
 
-              <Card className="bg-[#1A1A1A] border-none">
-                <CardBody className="p-6">
+              <Card className="bg-[#1A1A1A] border-none sm:col-span-2 lg:col-span-1">
+                <CardBody className="p-4 md:p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
                       <TrendingUp size={24} className="text-purple-400" />
                     </div>
                     <Chip size="sm" color="secondary" variant="flat">
                       Lifetime
                     </Chip>
                   </div>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-xl md:text-2xl font-bold text-white mb-1">
                     {metrics.lifetimeTotal.toFixed(0)} kWh
                   </div>
                   <div className="text-purple-400 text-sm">
@@ -1490,9 +1507,9 @@ const PanelsPage: React.FC = () => {
 
             {/* Generation Chart */}
             <Card className="bg-[#1A1A1A] border-none">
-              <CardBody className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <CardBody className="p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 md:mb-6 gap-2">
+                  <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
                     <BarChart3 size={20} className="text-[#E9423A]" />
                     Plant Generation Pattern
                   </h3>
@@ -1503,7 +1520,7 @@ const PanelsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="h-64 relative">
+                <div className="h-48 md:h-64 relative overflow-x-auto">
                   {loadingState.inverter ? (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
@@ -1514,26 +1531,27 @@ const PanelsPage: React.FC = () => {
                       </div>
                     </div>
                   ) : chartData.length > 0 ? (
-                    <div className="absolute inset-0 flex items-end justify-between">
+                    <div className="absolute inset-0 flex items-end justify-between min-w-full">
                       {chartData.map((item, index) => (
                         <div
                           key={index}
-                          className="flex flex-col items-center h-full justify-end flex-1 mx-1"
+                          className="flex flex-col items-center h-full justify-end flex-1 mx-0.5 min-w-[20px]"
                         >
-                          <div className="text-xs text-gray-400 mb-1 whitespace-nowrap">
+                          <div className="text-xs text-gray-400 mb-1 whitespace-nowrap hidden sm:block">
                             {item.value > 0 ? item.value.toFixed(1) : ""}
                           </div>
                           <div
                             className="w-full bg-gradient-to-t from-[#E9423A] to-red-400 rounded-sm min-h-[2px]"
                             style={{
                               height: `${Math.max(
-                                (item.value / maxChartValue) * 200,
+                                (item.value / maxChartValue) *
+                                  (window.innerWidth < 768 ? 150 : 200),
                                 2
                               )}px`,
                               opacity: item.value > 0 ? 1 : 0.3,
                             }}
                           ></div>
-                          <div className="text-xs text-gray-500 mt-2 transform -rotate-45 origin-top">
+                          <div className="text-xs text-gray-500 mt-1 md:mt-2 transform -rotate-45 origin-top whitespace-nowrap">
                             {item.time}
                           </div>
                         </div>
@@ -1546,7 +1564,7 @@ const PanelsPage: React.FC = () => {
                           size={48}
                           className="text-gray-600 mx-auto mb-4"
                         />
-                        <div className="text-gray-400">
+                        <div className="text-gray-400 text-sm">
                           No generation data available for{" "}
                           {getPeriodLabel().toLowerCase()}
                         </div>
@@ -1558,7 +1576,7 @@ const PanelsPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex justify-between mt-4 pt-4 border-t border-gray-800 text-sm">
+                <div className="flex flex-col sm:flex-row sm:justify-between mt-4 pt-4 border-t border-gray-800 text-sm gap-2">
                   <div className="text-gray-400">
                     Peak:{" "}
                     <span className="text-white">
@@ -1705,29 +1723,29 @@ const PanelsPage: React.FC = () => {
 
         {/* Your Panels Tab */}
         {activeTab === "investment" && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6 md:space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="bg-[#1A1A1A] border-none">
-                <CardBody className="p-6">
+                <CardBody className="p-4 md:p-6">
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                     <Sun size={20} className="text-[#E9423A]" />
                     Your Panel Portfolio
                   </h3>
                   <div className="flex-1 flex flex-col justify-between">
                     <div className="space-y-4">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-400">Panels Owned</span>
                         <span className="text-white font-semibold">
                           {userPanelData.purchasedPanels}
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-400">Generated Yield</span>
                         <span className="text-green-500 font-semibold">
                           {(userPanelData.generatedYield / 0.03).toFixed(2)} NRG
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-400">Total Capacity</span>
                         <span className="text-white font-semibold">
                           {(
@@ -1736,19 +1754,19 @@ const PanelsPage: React.FC = () => {
                           kW
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-400">Total Generated</span>
                         <span className="text-white font-semibold">
                           {calculateTotalEnergyFromAPI().toFixed(0)} kWh
                         </span>
                       </div>
-                      <div className="mt-8">
-                        <div className="flex justify-center">
-                          <span className="text-gray-400">
+                      <div className="mt-6 md:mt-8">
+                        <div className="flex justify-center mb-4">
+                          <span className="text-gray-400 text-sm">
                             Generation Pattern
                           </span>
                         </div>
-                        <div className="h-64">
+                        <div className="h-48 md:h-64">
                           <LineChart data={userPanelChartData} />
                         </div>
                       </div>
@@ -1758,14 +1776,14 @@ const PanelsPage: React.FC = () => {
               </Card>
 
               <Card className="bg-[#1A1A1A] border-none">
-                <CardBody className="p-6">
+                <CardBody className="p-4 md:p-6">
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                     <Leaf size={20} className="text-green-500" />
                     Environmental Impact
                   </h3>
                   <div className="space-y-4">
-                    <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
-                      <div className="text-2xl font-bold text-green-500 mb-1">
+                    <div className="text-center p-3 md:p-4 bg-[#2A1A1A] rounded-lg">
+                      <div className="text-xl md:text-2xl font-bold text-green-500 mb-1">
                         {(metrics.todayTotalUser * CO2_SAVINGS_PER_KWH).toFixed(
                           3
                         )}
@@ -1774,8 +1792,8 @@ const PanelsPage: React.FC = () => {
                         Tons CO₂ Saved Today
                       </div>
                     </div>
-                    <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
-                      <div className="text-2xl font-bold text-blue-500 mb-1">
+                    <div className="text-center p-3 md:p-4 bg-[#2A1A1A] rounded-lg">
+                      <div className="text-xl md:text-2xl font-bold text-blue-500 mb-1">
                         {(
                           calculateTotalEnergyFromAPI() * CO2_SAVINGS_PER_KWH
                         ).toFixed(1)}
@@ -1784,8 +1802,8 @@ const PanelsPage: React.FC = () => {
                         Lifetime CO₂ Saved (tons)
                       </div>
                     </div>
-                    <div className="text-center p-4 bg-[#2A1A1A] rounded-lg">
-                      <div className="text-2xl font-bold text-purple-500 mb-1">
+                    <div className="text-center p-3 md:p-4 bg-[#2A1A1A] rounded-lg">
+                      <div className="text-xl md:text-2xl font-bold text-purple-500 mb-1">
                         {Math.round(
                           calculateTotalEnergyFromAPI() *
                             CO2_SAVINGS_PER_KWH *
@@ -1799,12 +1817,12 @@ const PanelsPage: React.FC = () => {
                   </div>
 
                   {/* Environmental Benefits */}
-                  <div className="mt-6 p-4 bg-[#2A1A1A] rounded-lg">
+                  <div className="mt-6 p-3 md:p-4 bg-[#2A1A1A] rounded-lg">
                     <div className="text-sm text-gray-400 mb-3">
                       Environmental Equivalents
                     </div>
                     <div className="space-y-2 text-xs">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-400">Trees Planted</span>
                         <span className="text-white">
                           {Math.round(
@@ -1814,7 +1832,7 @@ const PanelsPage: React.FC = () => {
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-400">Miles Not Driven</span>
                         <span className="text-white">
                           {Math.round(
@@ -1824,7 +1842,7 @@ const PanelsPage: React.FC = () => {
                           )}
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-400">
                           Coal Avoided (lbs)
                         </span>
@@ -1841,16 +1859,16 @@ const PanelsPage: React.FC = () => {
         )}
 
         {/* Status Footer */}
-        <div className="mt-8 text-center text-sm text-gray-500">
+        <div className="mt-6 md:mt-8 text-center text-xs md:text-sm text-gray-500">
           {errorState.user && (
             <div className="mb-2 text-yellow-400">
               User data unavailable: {errorState.user}
             </div>
           )}
           {plantData && (
-            <div>
+            <div className="break-words">
               Last updated: {new Date().toLocaleTimeString()} • Plant ID:{" "}
-              {plantData._id}
+              <span className="break-all">{plantData._id}</span>
             </div>
           )}
         </div>
