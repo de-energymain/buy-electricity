@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@types/node-fetch": "^2.6.12",
     "all": "^0.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -20,6 +21,7 @@
     "express": "^5.1.0",
     "mongoose": "^8.15.1",
     "node-cron": "^4.1.0",
+    "node-fetch": "^3.3.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },

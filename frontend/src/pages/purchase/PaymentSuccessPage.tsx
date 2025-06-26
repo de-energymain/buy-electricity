@@ -5,8 +5,6 @@ import { Check, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.svg";
 import { FormContainer, cardClasses } from "../../shared/styles";
-import { createPurchase } from "../../services/purchaseApi";
-import { updateUserPanels } from "../../services/userApi";
 
 // Success page order details type
 interface SuccessDetails {
@@ -23,20 +21,6 @@ interface SuccessDetails {
   signature?: string; // Real transaction signature from blockchain
   dollarAmount?: number; // Add original dollar amount
   calculatedKWh?: number; // Add calculated kWh
-}
-
-interface PurchaseData {
-  farmName: string;
-  location: string;
-  walletAddress: string;
-  paymentMethod: string;
-  tokenAmount: number;
-  panelsPurchased: number;
-  cost: number;
-  capacity: number;
-  output: number;
-  transactionHash: string;
-  purchaseDate: string;
 }
 
 function PaymentSuccessPage() {
@@ -88,11 +72,15 @@ function PaymentSuccessPage() {
       }
 
       // Generate node token ID
-      const farmPrefix = stateData.farm
+      const farmName = stateData.farm || "UNKNOWN-FARM";
+      // Ensure farmName is a string before calling .split()
+      const farmString =
+        typeof farmName === "string" ? farmName : "UNKNOWN-FARM";
+      const farmPrefix = farmString
         .split(" ")
         .map((word) => word.substring(0, 3).toUpperCase())
         .join("-");
-      setNodeToken(`${farmPrefix}-${stateData.panels}`);
+      setNodeToken(`${farmPrefix}-${stateData.panels || 0}`);
     } else {
       // If no state was passed, redirect to home
       navigate("/");
@@ -113,39 +101,6 @@ function PaymentSuccessPage() {
       setTimeout(() => setCopied(false), 2000);
     });
   };
-
-  useEffect(() => {
-    const savePurchase = async () => {
-      if (!orderDetails || !entireHash) return;
-
-      try {
-        const purchaseData: PurchaseData = {
-          farmName: orderDetails.farm,
-          location: orderDetails.location,
-          walletAddress: orderDetails.walletAddress,
-          paymentMethod: orderDetails.paymentMethod,
-          tokenAmount: orderDetails.tokenAmount,
-          panelsPurchased: orderDetails.panels,
-          cost: orderDetails.cost,
-          capacity: orderDetails.capacity,
-          output: orderDetails.output,
-          transactionHash: entireHash,
-          purchaseDate: new Date().toISOString(),
-        };
-        console.log("Purchase data:", purchaseData);
-        await createPurchase(purchaseData);
-        //update user data
-        await updateUserPanels(orderDetails.walletAddress, {
-          panelsPurchased: orderDetails.panels,
-          cost: orderDetails.cost,
-        });
-      } catch (error) {
-        console.error("Failed to save purchase:", error);
-      }
-    };
-
-    savePurchase();
-  }, [location.state, entireHash, orderDetails]);
 
   // If no orderDetails, show nothing (will redirect)
   if (!orderDetails) {
@@ -273,7 +228,7 @@ function PaymentSuccessPage() {
                       Panels Purchased
                     </div>
                     <div className="text-white">
-                      {orderDetails.panels} x 450W Solar Panels
+                      {orderDetails.panels} x 1000W Solar Panels
                     </div>
                   </CardBody>
                 </Card>

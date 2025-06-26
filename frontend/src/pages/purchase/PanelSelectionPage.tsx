@@ -18,15 +18,17 @@ import {
   secondaryButtonClasses,
   formElementTransition,
 } from "../../shared/styles";
+import {
+  PlantAllocationService,
+  PlantAllocation,
+  PANEL_CAPACITY_KWP,
+} from "../../services/plantAllocationService";
 
-interface FarmDetails {
-  name: string;
-  location: string;
-  solarIndex: number;
-  panelPower: number;
-  efficiency: number;
-  pricePerPanel: number;
-  networkFee: number;
+interface AllocationPreview {
+  allocations: PlantAllocation[];
+  totalCapacity: number;
+  totalCost: number;
+  error?: string;
 }
 
 interface Calculations {
@@ -34,7 +36,7 @@ interface Calculations {
   dailyOutput: number;
   platformFee: number;
   totalCost: number;
-  dailyNRGYield: number; // Changed from perPanelNRGYield to dailyNRGYield
+  dailyNRGYield: number;
 }
 
 const PanelSelectionPage: React.FC = () => {
@@ -44,25 +46,27 @@ const PanelSelectionPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Panel configuration and details
-  const [panelQuantity, setPanelQuantity] = useState<number>(14); // Default to 14 panels to match screenshot
-  const [farmDetails, setFarmDetails] = useState<FarmDetails>({
-    name: "Mantra Essence Cooperative Society",
-    location: "Pune, India",
-    solarIndex: 4.8,
-    panelPower: 450, // Watts
-    efficiency: 98, // Percentage
-    pricePerPanel: 1, // USD (changed from 525 to 1)
-    networkFee: 0, // USD
-  });
+  // Panel configuration and allocation preview
+  const [panelQuantity, setPanelQuantity] = useState<number>(14); // Default to 14 panels
+  const [allocationPreview, setAllocationPreview] = useState<AllocationPreview>(
+    {
+      allocations: [],
+      totalCapacity: 0,
+      totalCost: 0,
+    }
+  );
 
-  // Calculated values
+  // Track total available capacity for display
+  const [totalAvailableCapacity, setTotalAvailableCapacity] =
+    useState<number>(0);
+
+  // Calculated values for display
   const [calculations, setCalculations] = useState<Calculations>({
     totalCapacity: 0,
     dailyOutput: 0,
     platformFee: 0,
     totalCost: 0,
-    dailyNRGYield: 0, // Changed from perPanelNRGYield to dailyNRGYield
+    dailyNRGYield: 0,
   });
 
   // Check authentication status when component mounts and when wallet connection changes
@@ -84,7 +88,20 @@ const PanelSelectionPage: React.FC = () => {
       setIsAuthenticated(false);
     };
 
+    const loadAvailableCapacity = async (): Promise<void> => {
+      try {
+        // Load total available capacity from dynamic API
+        const availableCapacity =
+          await PlantAllocationService.getTotalAvailableCapacity();
+        setTotalAvailableCapacity(availableCapacity);
+      } catch (error) {
+        console.error("Error loading available capacity:", error);
+        setTotalAvailableCapacity(0);
+      }
+    };
+
     checkAuth();
+    loadAvailableCapacity();
   }, [connected]);
 
   // Extract panels from query params if available, with support for both dollarAmount and kwh
@@ -117,54 +134,85 @@ const PanelSelectionPage: React.FC = () => {
     }
   }, [location.search]);
 
-  // Extract farm details from query params if available
+  // Calculate allocation preview when panel quantity changes
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const farmName = queryParams.get("farmName");
-    const farmLocation = queryParams.get("farmLocation");
+    const calculateAllocation = async () => {
+      try {
+        const result = await PlantAllocationService.allocatePanels(
+          panelQuantity
+        );
 
-    if (farmName || farmLocation) {
-      setFarmDetails((prevDetails) => ({
-        ...prevDetails,
-        name: farmName || prevDetails.name,
-        location: farmLocation || prevDetails.location,
-      }));
-    }
-  }, [location.search]);
+        setAllocationPreview({
+          allocations: result.allocations,
+          totalCapacity: result.totalCapacity,
+          totalCost: result.totalCost,
+          error: result.error,
+        });
 
-  // Recalculate whenever panel quantity changes
-  useEffect(() => {
-    // Calculate total capacity (kW)
-    const capacity = panelQuantity * 1; //Previously (panelQuantity * farmDetails.panelPower) / 1000
+        // Update calculations for display
+        if (result.success) {
+          // Calculate estimated daily output (kWh) - using average solar index
+          const avgSolarIndex = 4.8; // Average across plants
+          const dailyOutput = parseFloat(
+            (result.totalCapacity * avgSolarIndex).toFixed(2)
+          );
 
-    // Calculate estimated daily output (kWh)
-    const dailyOutput = parseFloat((capacity * 2.8).toFixed(2)); //Previously Math.round(capacity * farmDetails.solarIndex * (farmDetails.efficiency / 100));
+          // Calculate platform fee (10% of total cost)
+          const platformFee = result.totalCost * 0.1;
 
-    // Calculate total cost
-    const panelCost = panelQuantity * farmDetails.pricePerPanel;
-    // Calculate platform fee as exactly 10% without rounding
-    const platformFee = panelCost * 0.1;
-    const totalCost = panelCost; //Previously included + platformFee;
+          // Calculate daily NRG yield
+          const dailyEnergy = result.totalCapacity * avgSolarIndex;
+          const pricePerKWh = 0.15;
+          const dailyNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
 
-    // Calculate daily NRG yield (for all panels combined)
-    const panelPowerKW = farmDetails.panelPower / 1000;
-    const dailyEnergy = panelPowerKW * 3.5 * panelQuantity; // Multiply by panel quantity for total
-    const pricePerKWh = 0.15; // Previously assumed as $0.1
-    const dailyNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
+          setCalculations({
+            totalCapacity: result.totalCapacity,
+            dailyOutput,
+            platformFee,
+            totalCost: result.totalCost,
+            dailyNRGYield,
+          });
+        } else {
+          // Reset calculations if allocation fails
+          setCalculations({
+            totalCapacity: 0,
+            dailyOutput: 0,
+            platformFee: 0,
+            totalCost: 0,
+            dailyNRGYield: 0,
+          });
+        }
+      } catch (error) {
+        console.error("Error calculating allocation:", error);
+        setAllocationPreview({
+          allocations: [],
+          totalCapacity: 0,
+          totalCost: 0,
+          error: "Error calculating allocation",
+        });
+        setCalculations({
+          totalCapacity: 0,
+          dailyOutput: 0,
+          platformFee: 0,
+          totalCost: 0,
+          dailyNRGYield: 0,
+        });
+      }
+    };
 
-    setCalculations({
-      totalCapacity: capacity,
-      dailyOutput,
-      platformFee,
-      totalCost,
-      dailyNRGYield,
-    });
-  }, [panelQuantity, farmDetails]);
+    calculateAllocation();
+  }, [panelQuantity]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value >= 1) {
-      setPanelQuantity(value);
+      // Convert kWp capacity to panel count for maximum allowed
+      const maxPanelsFromCapacity = Math.floor(
+        totalAvailableCapacity / PANEL_CAPACITY_KWP
+      );
+      const maxAllowed = maxPanelsFromCapacity; // Enforce strict capacity limits
+      const finalValue = Math.min(value, maxAllowed);
+      setPanelQuantity(finalValue);
     }
   };
 
@@ -175,20 +223,37 @@ const PanelSelectionPage: React.FC = () => {
   };
 
   const handleIncreaseQuantity = (): void => {
-    setPanelQuantity((prev) => prev + 1);
+    // Convert kWp capacity to panel count for maximum allowed
+    const maxPanelsFromCapacity = Math.floor(
+      totalAvailableCapacity / PANEL_CAPACITY_KWP
+    );
+
+    if (panelQuantity < maxPanelsFromCapacity) {
+      setPanelQuantity((prev) => prev + 1);
+    }
   };
 
   const handleContinueToPayment = (): void => {
+    // Check if allocation is valid
+    if (allocationPreview.error) {
+      console.error("Cannot proceed: Insufficient capacity");
+      return;
+    }
+
+    if (allocationPreview.allocations.length === 0) {
+      console.error("Cannot proceed: No allocations available");
+      return;
+    }
+
     setIsLoading(true);
 
-    // Create query params with all the necessary data
+    // Create query params with plant allocation data
     const queryParams = new URLSearchParams({
-      farm: farmDetails.name,
-      location: farmDetails.location,
       panels: panelQuantity.toString(),
       capacity: calculations.totalCapacity.toString(),
       output: calculations.dailyOutput.toString(),
       cost: calculations.totalCost.toString(),
+      allocations: JSON.stringify(allocationPreview.allocations),
     });
 
     // Add a slight delay for better UX
@@ -267,7 +332,18 @@ const PanelSelectionPage: React.FC = () => {
 
                 {/* Panel Quantity Selector */}
                 <div className="flex items-center justify-between mb-6">
-                  <div className="text-white font-medium">Panel Quantity</div>
+                  <div className="flex flex-col">
+                    <div className="text-white font-medium">Panel Quantity</div>
+                    {totalAvailableCapacity > 0 && (
+                      <div className="text-xs text-gray-400">
+                        Available:{" "}
+                        {Math.floor(
+                          totalAvailableCapacity / PANEL_CAPACITY_KWP
+                        )}{" "}
+                        panels
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center">
                     <Button
                       isIconOnly
@@ -280,6 +356,9 @@ const PanelSelectionPage: React.FC = () => {
                     <input
                       type="number"
                       min={1}
+                      max={Math.floor(
+                        totalAvailableCapacity / PANEL_CAPACITY_KWP
+                      )}
                       value={panelQuantity}
                       onChange={handleQuantityChange}
                       className="mx-4 h-10 w-16 text-center text-xl font-bold text-white bg-[#1e1e1e] border border-gray-700 rounded [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
@@ -287,8 +366,18 @@ const PanelSelectionPage: React.FC = () => {
                     <Button
                       isIconOnly
                       size="sm"
-                      className="bg-[#222] text-white rounded-full"
+                      className="bg-[#222] text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
                       onPress={handleIncreaseQuantity}
+                      disabled={
+                        panelQuantity >=
+                        Math.floor(totalAvailableCapacity / PANEL_CAPACITY_KWP)
+                      }
+                      title={
+                        panelQuantity >=
+                        Math.floor(totalAvailableCapacity / PANEL_CAPACITY_KWP)
+                          ? "Maximum available capacity reached"
+                          : "Increase quantity"
+                      }
                     >
                       <Plus size={16} />
                     </Button>
@@ -354,16 +443,14 @@ const PanelSelectionPage: React.FC = () => {
                 <div className="space-y-2 border-t border-gray-700 pt-4">
                   <div className="flex justify-between">
                     <div className="text-gray-300">Per Panel Cost</div>
-                    <div className="text-white font-medium">
-                      ${farmDetails.pricePerPanel}
-                    </div>
+                    <div className="text-white font-medium">$1.00</div>
                   </div>
                   <div className="flex justify-between">
                     <div className="text-gray-300">
                       Total Panel Cost ({panelQuantity} panels)
                     </div>
                     <div className="text-white font-medium">
-                      ${panelQuantity * farmDetails.pricePerPanel}
+                      ${calculations.totalCost.toFixed(2)}
                     </div>
                   </div>
                   {/*<div className="flex justify-between">
@@ -378,17 +465,104 @@ const PanelSelectionPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Capacity Warning Message (when getting close to limit) */}
+                {!allocationPreview.error &&
+                  totalAvailableCapacity > 0 &&
+                  panelQuantity >=
+                    Math.floor(
+                      (totalAvailableCapacity / PANEL_CAPACITY_KWP) * 0.8
+                    ) && (
+                    <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                          <span className="text-black text-xs font-bold">
+                            !
+                          </span>
+                        </div>
+                        <span className="text-yellow-400 font-medium text-sm">
+                          High Demand Alert
+                        </span>
+                      </div>
+                      <p className="text-yellow-200 text-xs">
+                        You're purchasing {panelQuantity} panels out of{" "}
+                        {Math.floor(
+                          totalAvailableCapacity / PANEL_CAPACITY_KWP
+                        )}{" "}
+                        available. Consider securing your purchase soon as
+                        capacity is limited.
+                      </p>
+                    </div>
+                  )}
+
+                {/* Capacity Error Message */}
+                {allocationPreview.error && (
+                  <div className="mb-4 p-4 bg-red-900/20 border border-red-600/30 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                      <span className="text-red-400 font-medium">
+                        Insufficient Capacity
+                      </span>
+                    </div>
+                    <p className="text-red-300 text-sm mb-2">
+                      The requested {panelQuantity} panels exceed our current
+                      available capacity.
+                    </p>
+                    <div className="bg-red-800/30 p-3 rounded text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-red-200">Requested panels:</span>
+                        <span className="text-white font-medium">
+                          {panelQuantity}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-red-200">
+                          Available capacity:
+                        </span>
+                        <span className="text-white font-medium">
+                          {totalAvailableCapacity.toFixed(1)} kWp
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-red-200">
+                          Max panels available:
+                        </span>
+                        <span className="text-green-400 font-medium">
+                          ~
+                          {Math.floor(
+                            totalAvailableCapacity / PANEL_CAPACITY_KWP
+                          )}{" "}
+                          panels
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-red-200 text-xs mt-3">
+                      Please reduce the number of panels or try again later when
+                      more capacity becomes available.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Continue Button */}
               <motion.div {...formElementTransition} className="pt-2">
                 <Button
-                  className="w-full bg-[#E9423A] text-white font-medium py-6 rounded-none"
+                  className="w-full bg-[#E9423A] text-white font-medium py-6 rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
                   onPress={handleContinueToPayment}
-                  disabled={isLoading}
+                  disabled={
+                    isLoading ||
+                    !!allocationPreview.error ||
+                    allocationPreview.allocations.length === 0
+                  }
                 >
                   {isLoading ? (
                     <Spinner color="white" size="sm" />
+                  ) : allocationPreview.error ? (
+                    "Insufficient Capacity Available"
+                  ) : allocationPreview.allocations.length === 0 ? (
+                    "No Allocation Available"
                   ) : (
                     "Continue to Payment"
                   )}

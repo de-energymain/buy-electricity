@@ -29,6 +29,13 @@ import {
 // Import email service
 import { sendPurchaseNotificationEmail } from "../../services/emailApi";
 
+// Import plant allocation service
+import {
+  PlantAllocationService,
+  PlantAllocation,
+  Purchase,
+} from "../../services/plantAllocationService";
+
 // Import crypto icons from assets
 import solIcon from "../../assets/crypto/sol-icon.svg";
 import usdcIcon from "../../assets/crypto/usdc-icon.svg";
@@ -50,12 +57,11 @@ const NRG_MINT_ADDRESS = new PublicKey(
 ); // DOGA token mint address (displayed as NRG in UI)
 
 interface OrderDetails {
-  farm: string;
-  location: string;
   panels: number;
   capacity: number;
   output: number;
   cost: number;
+  plantAllocations: PlantAllocation[];
 }
 
 interface Toast {
@@ -107,12 +113,11 @@ export default function PaymentMethodPage() {
 
   // Order details
   const [orderDetails, setOrderDetails] = useState<OrderDetails>({
-    farm: "Mantra Essence Cooperative Society",
-    location: "Pune, India",
     panels: 29,
     capacity: 13.05,
     output: 0,
     cost: 15225.0,
+    plantAllocations: [],
   });
 
   // Payment selection - Default to SOL instead of NRG
@@ -334,13 +339,16 @@ export default function PaymentMethodPage() {
         : orderDetails.cost;
     }
 
-    if (params.has("farm")) {
-      newOrderDetails.farm = params.get("farm") || orderDetails.farm;
-    }
-
-    if (params.has("location")) {
-      newOrderDetails.location =
-        params.get("location") || orderDetails.location;
+    // Parse plant allocations from query params
+    if (params.has("allocations")) {
+      try {
+        const allocationsStr = params.get("allocations");
+        const allocations = allocationsStr ? JSON.parse(allocationsStr) : [];
+        newOrderDetails.plantAllocations = allocations;
+      } catch (error) {
+        console.error("Error parsing plant allocations:", error);
+        newOrderDetails.plantAllocations = [];
+      }
     }
 
     if (params.has("output")) {
@@ -430,26 +438,144 @@ export default function PaymentMethodPage() {
     showToast("Copied", "Address copied to clipboard", "success", 2000);
   };
 
+  // Helper function to extract primary plant data
+  const getPrimaryPlantData = async (): Promise<{
+    farm: string;
+    location: string;
+  }> => {
+    try {
+      const primaryAllocation = orderDetails.plantAllocations[0];
+      if (primaryAllocation) {
+        const primaryPlant = await PlantAllocationService.getPlant(
+          primaryAllocation.plantId
+        );
+        if (primaryPlant) {
+          return {
+            farm: primaryPlant.name,
+            location: primaryPlant.location,
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Error getting primary plant data:", error);
+    }
+
+    return {
+      farm: "Multi-Plant Purchase",
+      location: "Multiple Locations",
+    };
+  };
+
   // Helper function to send admin notification email
   const sendAdminNotification = async (
     paymentMethod: PaymentMethod,
-    tokenAmount: number,
-    walletName: string,
+    _tokenAmount: number,
+    _walletName: string,
     signature: string
   ) => {
     try {
+      // Get primary plant info for email (first allocation)
+      const primaryAllocation = orderDetails.plantAllocations[0];
+      let primaryPlantName = "Multi-Plant Purchase";
+      let primaryPlantLocation = "Multiple Locations";
+
+      if (primaryAllocation) {
+        try {
+          const primaryPlant = await PlantAllocationService.getPlant(
+            primaryAllocation.plantId
+          );
+          if (primaryPlant) {
+            primaryPlantName = primaryPlant.name;
+            primaryPlantLocation = primaryPlant.location;
+          }
+        } catch (error) {
+          console.error("Error getting primary plant data:", error);
+        }
+      }
+
       await sendPurchaseNotificationEmail({
-        orderDetails,
+        orderDetails: {
+          farm: primaryPlantName,
+          location: primaryPlantLocation,
+          panels: orderDetails.panels,
+          capacity: orderDetails.capacity,
+          output: orderDetails.output,
+          cost: orderDetails.cost,
+        },
         paymentMethod,
-        tokenAmount,
+        tokenAmount: orderDetails.cost, // Use cost as token amount
         walletAddress: walletAddress,
         signature,
-        wallet: walletName,
+        wallet: "Connected Wallet", // Default wallet name
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error("Failed to send admin notification:", error);
       // Don't block the payment flow if email fails
+    }
+  };
+
+  // Save purchase and reserve capacity
+  const savePurchase = async (
+    paymentMethod: PaymentMethod,
+    _tokenAmount: number,
+    _walletName: string,
+    signature: string
+  ) => {
+    try {
+      // Create purchase record for backend API
+      const purchaseData = {
+        walletAddress: publicKey?.toString() || "",
+        paymentMethod,
+        tokenAmount: orderDetails.cost,
+        panelsPurchased: orderDetails.panels,
+        cost: orderDetails.cost,
+        capacity: orderDetails.capacity,
+        output: orderDetails.output,
+        transactionHash: signature,
+        farmName: "Multi-Plant Purchase", // Will be overridden by plantAllocations
+        location: "Multiple Locations", // Will be overridden by plantAllocations
+        plantAllocations: orderDetails.plantAllocations, // This is the key field
+      };
+
+      // Call backend API to save purchase
+      const response = await fetch(
+        "https://buy-electricity-production.up.railway.app/api/purchases",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(purchaseData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to save purchase: ${errorData.message}`);
+      }
+
+      const savedPurchase = await response.json();
+      console.log("✅ Purchase saved successfully:", savedPurchase);
+
+      // Also save to local storage for backwards compatibility
+      const purchase: Purchase = {
+        id: Date.now().toString(),
+        walletAddress: publicKey?.toString() || "",
+        totalPanels: orderDetails.panels,
+        totalCapacity: orderDetails.capacity,
+        totalCost: orderDetails.cost,
+        paymentMethod,
+        signature,
+        timestamp: new Date().toISOString(),
+        plantAllocations: orderDetails.plantAllocations,
+      };
+      PlantAllocationService.savePurchase(purchase);
+
+      return true;
+    } catch (error) {
+      console.error("Failed to save purchase:", error);
+      return false;
     }
   };
 
@@ -602,6 +728,21 @@ export default function PaymentMethodPage() {
             signature
           );
 
+          // Save purchase and reserve capacity
+          const purchaseSaved = await savePurchase(
+            selectedPayment,
+            tokenAmount,
+            wallet?.adapter.name ?? "Unknown",
+            signature
+          );
+
+          if (!purchaseSaved) {
+            throw new Error("Purchase could not be saved. Please try again.");
+          }
+
+          // Get farm and location data for navigation
+          const plantData = await getPrimaryPlantData();
+
           navigate("/payment-success", {
             state: {
               ...orderDetails,
@@ -610,6 +751,8 @@ export default function PaymentMethodPage() {
               wallet: wallet?.adapter.name ?? "Unknown",
               walletAddress: walletAddress,
               signature,
+              farm: plantData.farm,
+              location: plantData.location,
             },
           });
 
@@ -762,6 +905,21 @@ export default function PaymentMethodPage() {
               signature
             );
 
+            // Save purchase and reserve capacity
+            const purchaseSaved = await savePurchase(
+              selectedPayment,
+              tokenAmount,
+              "Google Web3Auth",
+              signature
+            );
+
+            if (!purchaseSaved) {
+              throw new Error("Purchase could not be saved. Please try again.");
+            }
+
+            // Get farm and location data for navigation
+            const plantData = await getPrimaryPlantData();
+
             navigate("/payment-success", {
               state: {
                 ...orderDetails,
@@ -769,6 +927,8 @@ export default function PaymentMethodPage() {
                 tokenAmount,
                 wallet: "Google Web3Auth",
                 signature,
+                farm: plantData.farm,
+                location: plantData.location,
               },
             });
           } catch (error: any) {
@@ -900,6 +1060,21 @@ export default function PaymentMethodPage() {
             signature
           );
 
+          // Save purchase and reserve capacity
+          const purchaseSaved = await savePurchase(
+            selectedPayment,
+            tokenAmount,
+            wallet?.adapter.name ?? "Unknown",
+            signature
+          );
+
+          if (!purchaseSaved) {
+            throw new Error("Purchase could not be saved. Please try again.");
+          }
+
+          // Get farm and location data for navigation
+          const plantData = await getPrimaryPlantData();
+
           navigate("/payment-success", {
             state: {
               ...orderDetails,
@@ -908,6 +1083,8 @@ export default function PaymentMethodPage() {
               wallet: wallet?.adapter.name ?? "Unknown",
               walletAddress: walletAddress,
               signature,
+              farm: plantData.farm,
+              location: plantData.location,
             },
           });
         }
@@ -1053,6 +1230,21 @@ export default function PaymentMethodPage() {
               signature
             );
 
+            // Save purchase and reserve capacity
+            const purchaseSaved = await savePurchase(
+              selectedPayment,
+              tokenAmount,
+              "Google Web3Auth",
+              signature
+            );
+
+            if (!purchaseSaved) {
+              throw new Error("Purchase could not be saved. Please try again.");
+            }
+
+            // Get farm and location data for navigation
+            const plantData = await getPrimaryPlantData();
+
             navigate("/payment-success", {
               state: {
                 ...orderDetails,
@@ -1060,6 +1252,8 @@ export default function PaymentMethodPage() {
                 tokenAmount,
                 wallet: "Google Web3Auth",
                 signature,
+                farm: plantData.farm,
+                location: plantData.location,
               },
             });
           } catch (error: any) {
@@ -1119,6 +1313,21 @@ export default function PaymentMethodPage() {
             signature
           );
 
+          // Save purchase and reserve capacity
+          const purchaseSaved = await savePurchase(
+            selectedPayment,
+            tokenAmount,
+            wallet?.adapter.name ?? "Unknown",
+            signature
+          );
+
+          if (!purchaseSaved) {
+            throw new Error("Purchase could not be saved. Please try again.");
+          }
+
+          // Get farm and location data for navigation
+          const plantData = await getPrimaryPlantData();
+
           navigate("/payment-success", {
             state: {
               ...orderDetails,
@@ -1127,6 +1336,8 @@ export default function PaymentMethodPage() {
               wallet: wallet?.adapter.name ?? "Unknown",
               walletAddress: walletAddress,
               signature,
+              farm: plantData.farm,
+              location: plantData.location,
             },
           });
         }
@@ -1274,6 +1485,23 @@ export default function PaymentMethodPage() {
                 signature
               );
 
+              // Save purchase and reserve capacity
+              const purchaseSaved = await savePurchase(
+                selectedPayment,
+                tokenAmount,
+                "Google Web3Auth",
+                signature
+              );
+
+              if (!purchaseSaved) {
+                throw new Error(
+                  "Purchase could not be saved. Please try again."
+                );
+              }
+
+              // Get farm and location data for navigation
+              const plantData = await getPrimaryPlantData();
+
               navigate("/payment-success", {
                 state: {
                   ...orderDetails,
@@ -1281,6 +1509,8 @@ export default function PaymentMethodPage() {
                   tokenAmount,
                   wallet: "Google Web3Auth",
                   signature,
+                  farm: plantData.farm,
+                  location: plantData.location,
                 },
               });
             } catch (error) {
