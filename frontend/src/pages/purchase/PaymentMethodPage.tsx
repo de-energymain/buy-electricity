@@ -540,7 +540,7 @@ export default function PaymentMethodPage() {
 
       // Call backend API to save purchase
       const response = await fetch(
-        "https://buy-electricity-production.up.railway.app/api/purchases",
+        "http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases",
         {
           method: "POST",
           headers: {

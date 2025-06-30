@@ -1,7 +1,7 @@
 export const getUserData = async (walletID: string) => {
   try {
     const response = await fetch(
-      `https://buy-electricity-production.up.railway.app/api/users/${walletID}`
+      `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}`
     );
 
     if (!response.ok) {
@@ -24,7 +24,7 @@ export const updateUserPanels = async (
 ) => {
   try {
     const response = await fetch(
-      `https://buy-electricity-production.up.railway.app/api/users/${walletID}/panels`,
+      `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}/panels`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

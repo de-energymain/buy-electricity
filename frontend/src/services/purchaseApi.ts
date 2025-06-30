@@ -1,7 +1,7 @@
 export const createPurchase = async (purchaseData: any) => {
   try {
     const response = await fetch(
-      "https://buy-electricity-production.up.railway.app/api/purchases",
+      "http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases",
       {
         method: "POST",
         headers: {
@@ -25,7 +25,7 @@ export const createPurchase = async (purchaseData: any) => {
 export const getPurchasesByWallet = async (walletAddress: string) => {
   try {
     const response = await fetch(
-      `https://buy-electricity-production.up.railway.app/api/purchases/wallet/${walletAddress}`,
+      `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletAddress}`,
       {
         method: "GET",
         headers: {
@@ -53,7 +53,7 @@ export const getPurchasesByWallet = async (walletAddress: string) => {
 export const getUserPlantAllocations = async (walletAddress: string) => {
   try {
     const response = await fetch(
-      `https://buy-electricity-production.up.railway.app/api/users/${walletAddress}/allocations`,
+      `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletAddress}/allocations`,
       {
         method: "GET",
         headers: {
@@ -82,7 +82,7 @@ export const getUserPlantAllocations = async (walletAddress: string) => {
 export const getPlantCapacityAllocations = async (plantId: string) => {
   try {
     const response = await fetch(
-      `https://buy-electricity-production.up.railway.app/api/plants/${plantId}/allocations`,
+      `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/plants/${plantId}/allocations`,
       {
         method: "GET",
         headers: {
@@ -108,7 +108,7 @@ export const getPlantCapacityAllocations = async (plantId: string) => {
 export const getPurchasesByPlant = async (plantId: string) => {
   try {
     const response = await fetch(
-      `https://buy-electricity-production.up.railway.app/api/purchases/plant/${plantId}`,
+      `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/plant/${plantId}`,
       {
         method: "GET",
         headers: {
