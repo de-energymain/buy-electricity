@@ -35,6 +35,7 @@ import {
   PlantAllocationService,
   Plant,
 } from "../../services/plantAllocationService";
+import { getUserPlantAllocations } from "../../services/purchaseApi";
 
 interface PlantData {
   _id: string;
@@ -168,13 +169,13 @@ const PanelsPage: React.FC = () => {
 
   // Load user allocations from backend API
   const loadUserAllocations = async () => {
-    if (!walletID) return;
+    if (!walletID) {
+      setLoadingState((prev) => ({ ...prev, user: false }));
+      return;
+    }
 
     try {
-      // Use the new backend API to get user allocations
-      const { getUserPlantAllocations } = await import(
-        "../../services/purchaseApi"
-      );
+      // Use the backend API to get user allocations
       const response = await getUserPlantAllocations(walletID);
 
       if (response && response.data) {
@@ -209,6 +210,14 @@ const PanelsPage: React.FC = () => {
             purchasedCost: 0,
           }));
         }
+      } else {
+        // No allocations found
+        setUserAllocations([]);
+        setUserPanelData((prev) => ({
+          ...prev,
+          purchasedPanels: 0,
+          purchasedCost: 0,
+        }));
       }
     } catch (error) {
       console.error("Error loading user allocations from API:", error);
@@ -230,13 +239,30 @@ const PanelsPage: React.FC = () => {
               purchasedCost: selectedPlantAllocation.cost,
             }));
           }
+        } else {
+          // No data in localStorage either
+          setUserAllocations([]);
+          setUserPanelData((prev) => ({
+            ...prev,
+            purchasedPanels: 0,
+            purchasedCost: 0,
+          }));
         }
       } catch (localStorageError) {
         console.error(
           "Error loading user allocations from localStorage:",
           localStorageError
         );
+        setUserAllocations([]);
+        setUserPanelData((prev) => ({
+          ...prev,
+          purchasedPanels: 0,
+          purchasedCost: 0,
+        }));
       }
+    } finally {
+      // Always set user loading to false after attempting to load allocations
+      setLoadingState((prev) => ({ ...prev, user: false }));
     }
   };
 
@@ -722,6 +748,9 @@ const PanelsPage: React.FC = () => {
     } catch (error) {
       console.error("Error fetching purchase data:", error);
       setPurchaseData([]);
+    } finally {
+      // Always set user loading to false after purchase data fetch attempt
+      setLoadingState((prev) => ({ ...prev, user: false }));
     }
   };
 
@@ -742,22 +771,40 @@ const PanelsPage: React.FC = () => {
     loadPlantsFromService(); // Load plants from PlantAllocationService
 
     if (!walletID) {
-      setLoadingState((prev) => ({ ...prev, user: false }));
+      setLoadingState({
+        plant: false,
+        inverter: false,
+        user: false,
+      });
       return;
     }
 
+    // Set loading states
+    setLoadingState({
+      plant: false, // Will be set when plant is selected
+      inverter: false, // Will be set when plant is selected
+      user: true, // Loading user data
+    });
+
+    // Fetch user-related data
     loadUserAllocations();
     fetchUserData();
     fetchPurchaseData();
-    // Don't fetch plant-specific data here since selectedPlantId might be empty
+    
+    // Set a fallback timeout to ensure loading doesn't get stuck
+    const timeout = setTimeout(() => {
+      console.warn("⚠️ Loading timeout reached, forcing loading to false");
+      setLoadingState({
+        plant: false,
+        inverter: false,
+        user: false,
+      });
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
   }, [walletID]);
 
-  // Load user allocations when walletID changes (but not when selectedPlantId changes to avoid loops)
-  useEffect(() => {
-    if (walletID) {
-      loadUserAllocations();
-    }
-  }, [walletID]);
+  // Remove the duplicate useEffect for loadUserAllocations - it's already called above
 
   // Fetch plant-specific data when both walletID and selectedPlantId are available
   useEffect(() => {
@@ -1130,6 +1177,31 @@ const PanelsPage: React.FC = () => {
           >
             Retry
           </Button>
+        </div>
+      </DashboardTemplate>
+    );
+  }
+
+  // Show no panels state if user has no panel allocations
+  if (!isLoading && walletID && userAllocations.length === 0) {
+    return (
+      <DashboardTemplate title="Solar Panels" activePage="panels">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🔌</div>
+            <div className="text-xl mb-2 text-white">
+              No solar panels found
+            </div>
+            <div className="text-sm text-gray-400 mb-6">
+              You haven't purchased any solar panels yet. Start your renewable energy journey today!
+            </div>
+            <Button
+              className="bg-[#E9423A] text-white"
+              onPress={() => window.location.href = "/"}
+            >
+              Buy Your First Panels
+            </Button>
+          </div>
         </div>
       </DashboardTemplate>
     );

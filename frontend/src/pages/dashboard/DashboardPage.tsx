@@ -774,6 +774,9 @@ function DashboardPage() {
     } catch (error) {
       console.error("💥 Error fetching purchase data:", error);
       setPurchaseData([]);
+    } finally {
+      // Always set loading to false after purchase data fetch attempt
+      setIsLoading(false);
     }
   };
 
@@ -862,17 +865,14 @@ function DashboardPage() {
     const fetchInitialData = async () => {
       if (!walletID) {
         console.log("⏳ No walletID available yet");
+        setIsLoading(false); // Set loading to false if no wallet ID
         return;
       }
 
       console.log("🚀 Starting initial data fetch for walletID:", walletID);
       setIsLoading(true);
-      try {
-        await fetchPurchaseData(walletID);
-      } catch (error) {
-        console.error("Error fetching purchase data:", error);
-        setIsLoading(false);
-      }
+      await fetchPurchaseData(walletID);
+      // Loading state is now handled in fetchPurchaseData's finally block
     };
 
     fetchInitialData();
@@ -888,11 +888,13 @@ function DashboardPage() {
 
     const fetchPlantRelatedData = async () => {
       if (purchaseData.length === 0) {
-        console.log("⏳ No purchase data available yet");
+        console.log("⏳ No purchase data available - user has no panels");
+        // Loading is already set to false in fetchPurchaseData, don't change it here
         return;
       }
 
       console.log("🌱 Fetching plant and inverter data based on purchase data");
+      setIsLoading(true);
       try {
         await Promise.all([
           fetchAllPlantData(),
@@ -909,8 +911,11 @@ function DashboardPage() {
       }
     };
 
-    fetchPlantRelatedData();
-  }, [purchaseData]);
+    // Only run this effect if we have a walletID (to avoid running on initial mount)
+    if (walletID) {
+      fetchPlantRelatedData();
+    }
+  }, [purchaseData, walletID]); // Added walletID as dependency
 
   // Update nodes when purchase data changes
   useEffect(() => {
@@ -988,11 +993,44 @@ function DashboardPage() {
           <div className="text-center">
             <Spinner size="lg" color="danger" className="mb-4" />
             <div className="text-xl mb-2 text-white">
-              Loading your dashboard...
+              {!walletID 
+                ? "Connecting wallet..." 
+                : purchaseData.length === 0 
+                ? "Checking for panel purchases..." 
+                : "Loading your dashboard..."}
             </div>
             <div className="text-sm text-gray-400">
-              Fetching panel data and calculations
+              {!walletID 
+                ? "Please wait while we establish your connection" 
+                : purchaseData.length === 0 
+                ? "Looking for your solar panel investments" 
+                : "Fetching panel data and calculations"}
             </div>
+          </div>
+        </div>
+      </DashboardTemplate>
+    );
+  }
+
+  // Show no purchases state if user has no panel purchases
+  if (!isLoading && walletID && purchaseData.length === 0) {
+    return (
+      <DashboardTemplate title="Dashboard" activePage="dashboard">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🔌</div>
+            <div className="text-xl mb-2 text-white">
+              No solar panels found
+            </div>
+            <div className="text-sm text-gray-400 mb-6">
+              You haven't purchased any solar panels yet. Start your renewable energy journey today!
+            </div>
+            <Button
+              className="bg-[#E9423A] text-white"
+              onPress={() => navigate("/")}
+            >
+              Buy Your First Panels
+            </Button>
           </div>
         </div>
       </DashboardTemplate>
