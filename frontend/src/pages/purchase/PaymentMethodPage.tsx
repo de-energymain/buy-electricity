@@ -540,7 +540,7 @@ export default function PaymentMethodPage() {
 
       // Call backend API to save purchase
       const response = await fetch(
-        "http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases",
+        "https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases",
         {
           method: "POST",
           headers: {

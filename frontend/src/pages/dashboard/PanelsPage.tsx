@@ -678,7 +678,7 @@ const PanelsPage: React.FC = () => {
 
     try {
       const userResponse = await fetch(
-        `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}`
+        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}`
       );
       if (userResponse.ok) {
         const userData = await userResponse.json();
@@ -710,7 +710,7 @@ const PanelsPage: React.FC = () => {
 
     try {
       const purchaseResponse = await fetch(
-        `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletID}`
+        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletID}`
       );
       if (purchaseResponse.ok) {
         const purchaseResult = await purchaseResponse.json();

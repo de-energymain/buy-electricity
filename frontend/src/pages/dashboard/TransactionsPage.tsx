@@ -114,7 +114,7 @@ const TransactionsPage: React.FC = () => {
   ): Promise<{ transactions: Transaction[]; earliestDate: number | null }> => {
     try {
       const response = await fetch(
-        `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletAddress}`
+        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletAddress}`
       );
       if (response.ok) {
         const result = await response.json();
@@ -159,7 +159,7 @@ const TransactionsPage: React.FC = () => {
   ): Promise<UserPanelData | null> => {
     try {
       const response = await fetch(
-        `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletAddress}`
+        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletAddress}`
       );
       if (response.ok) {
         const userData = await response.json();

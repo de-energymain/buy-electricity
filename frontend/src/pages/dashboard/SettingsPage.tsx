@@ -107,7 +107,7 @@ const SettingsPage: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}/notifications`
+        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}/notifications`
       );
       if (response.ok) {
         const result = await response.json();
@@ -136,7 +136,7 @@ const SettingsPage: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}`,
+        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}`,
         {
           method: "PUT",
           headers: {
@@ -232,7 +232,7 @@ const SettingsPage: React.FC = () => {
       setIsUpdatingNotifications(true);
       try {
         const response = await fetch(
-          `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}/notifications`,
+          `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}/notifications`,
           {
             method: "PUT",
             headers: {

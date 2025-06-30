@@ -730,7 +730,7 @@ function DashboardPage() {
   const updateUserInDatabase = async (userData: UserData) => {
     try {
       const response = await fetch(
-        "http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users",
+        "https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users",
         {
           method: "POST",
           headers: {
@@ -756,7 +756,7 @@ function DashboardPage() {
     try {
       console.log("🔍 Fetching purchase data for wallet:", walletAddress);
       const response = await fetch(
-        `http://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletAddress}`
+        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletAddress}`
       );
       if (response.ok) {
         const result = await response.json();
