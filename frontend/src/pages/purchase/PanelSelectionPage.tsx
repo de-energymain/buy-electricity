@@ -44,6 +44,10 @@ const PanelSelectionPage: React.FC = () => {
   const location = useLocation();
   const { connected } = useWallet(); // Get wallet connection status
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(true); // Loading state for panel/capacity data
+  const [isCapacityLoaded, setIsCapacityLoaded] = useState<boolean>(false); // Track if capacity is loaded
+  const [isAllocationLoaded, setIsAllocationLoaded] = useState<boolean>(false); // Track if allocation is loaded
+  const [isUrlParamsProcessed, setIsUrlParamsProcessed] = useState<boolean>(false); // Track if URL params are processed
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Panel configuration and allocation preview
@@ -90,13 +94,16 @@ const PanelSelectionPage: React.FC = () => {
 
     const loadAvailableCapacity = async (): Promise<void> => {
       try {
+        setIsCapacityLoaded(false);
         // Load total available capacity from dynamic API
         const availableCapacity =
           await PlantAllocationService.getTotalAvailableCapacity();
         setTotalAvailableCapacity(availableCapacity);
+        setIsCapacityLoaded(true);
       } catch (error) {
         console.error("Error loading available capacity:", error);
         setTotalAvailableCapacity(0);
+        setIsCapacityLoaded(true); // Set to true even on error to prevent infinite loading
       }
     };
 
@@ -106,6 +113,7 @@ const PanelSelectionPage: React.FC = () => {
 
   // Extract panels from query params if available, with support for both dollarAmount and kwh
   useEffect(() => {
+    console.log("🔗 Processing URL params...");
     const queryParams = new URLSearchParams(location.search);
     const panels = parseFloat(queryParams.get("panels") || "0");
 
@@ -113,7 +121,11 @@ const PanelSelectionPage: React.FC = () => {
     const dollarAmount = parseFloat(queryParams.get("dollarAmount") || "0");
     const kwh = parseFloat(queryParams.get("kwh") || "0");
 
+    // Reset allocation state when processing URL params
+    setIsAllocationLoaded(false);
+
     if (panels > 0) {
+      console.log("📊 Setting panels from URL:", panels);
       setPanelQuantity(panels);
     } else if (dollarAmount > 0) {
       // Calculate panels from dollar amount if no panel count is provided
@@ -124,23 +136,42 @@ const PanelSelectionPage: React.FC = () => {
       const effectiveMonthlyProduction = 3.75 * 0.8 * 30; // = 90
       const requiredCapacity = monthlyUsageKWh / effectiveMonthlyProduction;
       const requiredPanels = Math.ceil(requiredCapacity);
+      console.log("💰 Calculated panels from dollarAmount:", requiredPanels);
       setPanelQuantity(requiredPanels);
     } else if (kwh > 0) {
       // Fallback for old kwh-based calculation
       const effectiveMonthlyProduction = 3.75 * 0.8 * 30; // = 90
       const requiredCapacity = kwh / effectiveMonthlyProduction;
       const requiredPanels = Math.ceil(requiredCapacity);
+      console.log("⚡ Calculated panels from kWh:", requiredPanels);
       setPanelQuantity(requiredPanels);
+    } else {
+      console.log("📋 Using default panel quantity:", panelQuantity);
     }
+    
+    // Mark URL params as processed
+    console.log("✅ URL params processed");
+    setIsUrlParamsProcessed(true);
   }, [location.search]);
 
-  // Calculate allocation preview when panel quantity changes
+  // Calculate allocation preview when panel quantity changes (only after URL params are processed)
   useEffect(() => {
+    // Don't calculate allocation until URL params are processed
+    if (!isUrlParamsProcessed) {
+      console.log("⏳ Waiting for URL params to be processed before calculating allocation");
+      return;
+    }
+
+    console.log("🧮 Starting allocation calculation for", panelQuantity, "panels");
+
     const calculateAllocation = async () => {
       try {
+        setIsAllocationLoaded(false);
         const result = await PlantAllocationService.allocatePanels(
           panelQuantity
         );
+
+        console.log("📊 Allocation result:", result);
 
         setAllocationPreview({
           allocations: result.allocations,
@@ -165,13 +196,16 @@ const PanelSelectionPage: React.FC = () => {
           const pricePerKWh = 0.15;
           const dailyNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
 
-          setCalculations({
+          const newCalculations = {
             totalCapacity: result.totalCapacity,
             dailyOutput,
             platformFee,
             totalCost: result.totalCost,
             dailyNRGYield,
-          });
+          };
+
+          console.log("💰 Final calculations:", newCalculations);
+          setCalculations(newCalculations);
         } else {
           // Reset calculations if allocation fails
           setCalculations({
@@ -182,8 +216,10 @@ const PanelSelectionPage: React.FC = () => {
             dailyNRGYield: 0,
           });
         }
+        console.log("✅ Allocation calculation complete");
+        setIsAllocationLoaded(true);
       } catch (error) {
-        console.error("Error calculating allocation:", error);
+        console.error("❌ Error calculating allocation:", error);
         setAllocationPreview({
           allocations: [],
           totalCapacity: 0,
@@ -197,11 +233,24 @@ const PanelSelectionPage: React.FC = () => {
           totalCost: 0,
           dailyNRGYield: 0,
         });
+        setIsAllocationLoaded(true); // Set to true even on error to prevent infinite loading
       }
     };
 
     calculateAllocation();
-  }, [panelQuantity]);
+  }, [panelQuantity, isUrlParamsProcessed]);
+
+  // Update overall loading state based on capacity, allocation loading, and URL params processing
+  useEffect(() => {
+    const newLoadingState = !(isCapacityLoaded && isAllocationLoaded && isUrlParamsProcessed);
+    console.log("🔄 Loading state check:", {
+      isCapacityLoaded,
+      isAllocationLoaded,
+      isUrlParamsProcessed,
+      newLoadingState
+    });
+    setIsDataLoading(newLoadingState);
+  }, [isCapacityLoaded, isAllocationLoaded, isUrlParamsProcessed]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
@@ -212,12 +261,14 @@ const PanelSelectionPage: React.FC = () => {
       );
       const maxAllowed = maxPanelsFromCapacity; // Enforce strict capacity limits
       const finalValue = Math.min(value, maxAllowed);
+      setIsAllocationLoaded(false); // Reset allocation state when quantity changes
       setPanelQuantity(finalValue);
     }
   };
 
   const handleDecreaseQuantity = (): void => {
     if (panelQuantity > 1) {
+      setIsAllocationLoaded(false); // Reset allocation state when quantity changes
       setPanelQuantity((prev) => prev - 1);
     }
   };
@@ -229,6 +280,7 @@ const PanelSelectionPage: React.FC = () => {
     );
 
     if (panelQuantity < maxPanelsFromCapacity) {
+      setIsAllocationLoaded(false); // Reset allocation state when quantity changes
       setPanelQuantity((prev) => prev + 1);
     }
   };
@@ -324,7 +376,13 @@ const PanelSelectionPage: React.FC = () => {
           </div>
 
           <CardBody className="bg-[#2F2F2F] p-6">
-            <div className="space-y-6">
+            {isDataLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Spinner color="danger" size="lg" />
+                <p className="text-gray-300 text-sm">Loading panel data and calculations...</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
               <div>
                 <h3 className="text-xl font-bold text-white mb-4 font-electrolize">
                   Panel Details
@@ -465,85 +523,6 @@ const PanelSelectionPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Capacity Warning Message (when getting close to limit) */}
-                {!allocationPreview.error &&
-                  totalAvailableCapacity > 0 &&
-                  panelQuantity >=
-                    Math.floor(
-                      (totalAvailableCapacity / PANEL_CAPACITY_KWP) * 0.8
-                    ) && (
-                    <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
-                          <span className="text-black text-xs font-bold">
-                            !
-                          </span>
-                        </div>
-                        <span className="text-yellow-400 font-medium text-sm">
-                          High Demand Alert
-                        </span>
-                      </div>
-                      <p className="text-yellow-200 text-xs">
-                        You're purchasing {panelQuantity} panels out of{" "}
-                        {Math.floor(
-                          totalAvailableCapacity / PANEL_CAPACITY_KWP
-                        )}{" "}
-                        available. Consider securing your purchase soon as
-                        capacity is limited.
-                      </p>
-                    </div>
-                  )}
-
-                {/* Capacity Error Message */}
-                {allocationPreview.error && (
-                  <div className="mb-4 p-4 bg-red-900/20 border border-red-600/30 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">!</span>
-                      </div>
-                      <span className="text-red-400 font-medium">
-                        Insufficient Capacity
-                      </span>
-                    </div>
-                    <p className="text-red-300 text-sm mb-2">
-                      The requested {panelQuantity} panels exceed our current
-                      available capacity.
-                    </p>
-                    <div className="bg-red-800/30 p-3 rounded text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-red-200">Requested panels:</span>
-                        <span className="text-white font-medium">
-                          {panelQuantity}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-red-200">
-                          Available capacity:
-                        </span>
-                        <span className="text-white font-medium">
-                          {totalAvailableCapacity.toFixed(1)} kWp
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-red-200">
-                          Max panels available:
-                        </span>
-                        <span className="text-green-400 font-medium">
-                          ~
-                          {Math.floor(
-                            totalAvailableCapacity / PANEL_CAPACITY_KWP
-                          )}{" "}
-                          panels
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-red-200 text-xs mt-3">
-                      Please reduce the number of panels or try again later when
-                      more capacity becomes available.
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* Continue Button */}
@@ -553,12 +532,15 @@ const PanelSelectionPage: React.FC = () => {
                   onPress={handleContinueToPayment}
                   disabled={
                     isLoading ||
+                    isDataLoading ||
                     !!allocationPreview.error ||
                     allocationPreview.allocations.length === 0
                   }
                 >
                   {isLoading ? (
                     <Spinner color="white" size="sm" />
+                  ) : isDataLoading ? (
+                    "Loading..."
                   ) : allocationPreview.error ? (
                     "Insufficient Capacity Available"
                   ) : allocationPreview.allocations.length === 0 ? (
@@ -569,6 +551,7 @@ const PanelSelectionPage: React.FC = () => {
                 </Button>
               </motion.div>
             </div>
+            )}
           </CardBody>
         </Card>
       </div>
