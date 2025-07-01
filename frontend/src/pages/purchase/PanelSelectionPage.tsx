@@ -500,7 +500,7 @@ const PanelSelectionPage: React.FC = () => {
                 {/* Cost Breakdown */}
                 <div className="space-y-2 border-t border-gray-700 pt-4">
                   <div className="flex justify-between">
-                    <div className="text-gray-300">Per Panels Cost</div>
+                    <div className="text-gray-300">Per Panel Cost</div>
                     <div className="text-white font-medium">$550.00</div>
                   </div>
                   <div className="flex justify-between">
