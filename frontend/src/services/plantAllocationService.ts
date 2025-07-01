@@ -64,7 +64,7 @@ const convertPlantDataToPlant = async (
       solarIndex: 5.0, // Default value (could come from API)
       panelPower: 1000, // Watts per panel (1 kWp = 1000W)
       efficiency: 98, // Default efficiency
-      pricePerPanel: 1, // USD - could come from API
+      pricePerPanel: 550, // USD - could come from API
       networkFee: 0, // Default network fee
       status: availableCapacity > 0 ? "active" : "full",
     };
@@ -80,7 +80,7 @@ const convertPlantDataToPlant = async (
       solarIndex: 5.0,
       panelPower: 1000,
       efficiency: 98,
-      pricePerPanel: 1,
+      pricePerPanel: 550,
       networkFee: 0,
       status: "active",
     };
