@@ -80,8 +80,8 @@ const ByPanelsForm: React.FC = () => {
         const requiredPanels = Math.ceil(requiredCapacity);
         setPanelCount(requiredPanels);
 
-        // Cost = Panels × $525
-        const totalCost = requiredPanels * 525;
+        // Cost = Panels × $550
+        const totalCost = requiredPanels * 550;
         setEstimatedCost(totalCost);
       }
       setIsLoading(false);

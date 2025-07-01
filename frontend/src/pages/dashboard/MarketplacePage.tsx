@@ -81,7 +81,7 @@ const MarketplacePage: React.FC = () => {
         location: "Jaipur, Rajasthan, India",
         type: "solar",
         capacity: 250,
-        panelPrice: 525,
+        panelPrice: 550,
         roi: 12.5,
         panelsAvailable: 1240,
         energyPerPanel: 1.8,

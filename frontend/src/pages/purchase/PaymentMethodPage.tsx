@@ -621,10 +621,8 @@ export default function PaymentMethodPage() {
 
         // Handle USDC payment via Solana wallet adapter
         if (connected && publicKey && signTransaction) {
-          // For testing purposes, send to your own wallet (you can change this to any valid wallet address)
-          const recipient = publicKey; // Send to yourself for testing
-          // Alternative: use a different valid wallet address like:
-          // const recipient = new PublicKey("9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
+          // Send payment to company treasury wallet
+          const recipient = new PublicKey("5iHtAYDfRH6oU4BzmkK3oupXPQN5okzSGVficfGE3JSg");
 
           console.log("Starting USDC payment transaction");
           console.log("Sender public key:", publicKey.toString());
@@ -1279,7 +1277,7 @@ export default function PaymentMethodPage() {
         // Handle payment via Solana wallet adapter
         if (connected && publicKey && signTransaction) {
           const lamports = Math.floor(tokenAmount * LAMPORTS_PER_SOL);
-          const recipient = publicKey; // Send to yourself for testing
+          const recipient = new PublicKey("5iHtAYDfRH6oU4BzmkK3oupXPQN5okzSGVficfGE3JSg"); // Company treasury wallet
           const tx = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: publicKey,
