@@ -1,14 +1,13 @@
 // src/components/ByPanelsForm.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Button, Card, CardBody, CardHeader, Input, Spinner } from "@nextui-org/react";
+import { Button, Card, CardBody, CardHeader, Spinner } from "@nextui-org/react";
 import { ArrowLeft, LogIn, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useWallet } from "@solana/wallet-adapter-react"; // Import wallet hook
 import logo from "../../assets/logo.svg";
 import {
   FormContainer,
-  inputClasses,
   cardClasses,
   secondaryButtonClasses,
   formElementTransition
@@ -158,45 +157,22 @@ const ByPanelsForm: React.FC = () => {
 
               <div className="flex gap-4">
                 {/* Panels Required */}
-                <div className="flex-1 font-electrolize">
-                  <Input
-                    type="number"
-                    size="lg"
-                    placeholder="Number of Panels"
-                    value={panelCount.toString()}
-                    variant="faded"
-                    isReadOnly
-                    endContent={<div className="text-default-400">Panels</div>}
-                    classNames={{
-                      ...inputClasses,
-                      inputWrapper: [
-                        "rounded-none",
-                        "!border-gray-500",
-                        "!bg-[#5E5E5E]",
-                        inputClasses.inputWrapper,
-                      ].join(" "),
-                    }}
-                  />
+                <div className="flex-1">
+                  <div className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-4 text-center h-28 flex flex-col justify-center">
+                    <div className="text-sm text-gray-400 mb-2">Panels Required</div>
+                    <div className="text-2xl font-bold text-white font-electrolize">
+                      {panelCount}
+                    </div>
+                  </div>
                 </div>
                 {/* Estimated Cost */}
-                <div className="flex-1 font-electrolize">
-                  <Input
-                    type="text"
-                    size="lg"
-                    placeholder="Estimated Cost"
-                    value={estimatedCost ? `$${estimatedCost}` : ""}
-                    variant="faded"
-                    isReadOnly
-                    classNames={{
-                      ...inputClasses,
-                      inputWrapper: [
-                        "rounded-none",
-                        "!border-gray-500",
-                        "!bg-[#5E5E5E]",
-                        inputClasses.inputWrapper,
-                      ].join(" "),
-                    }}
-                  />
+                <div className="flex-1">
+                  <div className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-4 text-center h-28 flex flex-col justify-center">
+                    <div className="text-sm text-gray-400 mb-2">Estimated Cost</div>
+                    <div className="text-2xl font-bold text-white font-electrolize">
+                      ${estimatedCost}
+                    </div>
+                  </div>
                 </div>
               </div>
 
