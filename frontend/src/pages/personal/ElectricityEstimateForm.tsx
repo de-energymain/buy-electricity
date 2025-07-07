@@ -253,18 +253,20 @@ const ElectricityEstimateForm: React.FC = () => {
                 <Slider
                   size="lg"
                   step={5}
-                  minValue={10}
+                  minValue={5}
                   maxValue={100}
                   value={savingsPercentage}
                   onChange={(value) => setSavingsPercentage(Array.isArray(value) ? value[0] : value)}
                   className="max-w-full"
                   classNames={{
                     base: "max-w-full",
-                    track: "bg-[#5E5E5E] h-2",
-                    filler: "bg-[#E9423A]",
-                    thumb: "bg-[#E9423A] border-2 border-white shadow-lg w-6 h-6",
+                    track: "bg-[#5E5E5E] h-2 !border-none",
+                    filler: "bg-[#E9423A] !border-none",
+                    thumb: "bg-[#E9423A] border-2 border-white shadow-lg w-6 h-6 !bg-[#E9423A] data-[pressed=true]:bg-[#E9423A] data-[hover=true]:bg-[#E9423A] data-[focus=true]:bg-[#E9423A]",
                     mark: "text-white text-xs font-medium",
                     label: "text-white font-electrolize",
+                    step: "!bg-[#5E5E5E]",
+                    trackWrapper: "!bg-[#5E5E5E]"
                   }}
                   marks={[
                     { value: 25, label: "25%" },
