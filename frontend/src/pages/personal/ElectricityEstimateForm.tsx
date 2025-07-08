@@ -291,7 +291,7 @@ const ElectricityEstimateForm: React.FC = () => {
                   <div className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-3 text-center min-h-[70px] flex flex-col justify-center">
                     <div className="text-xs text-gray-400 mb-1">Reserved Solar</div>
                     <div className="text-base font-bold text-white font-electrolize">
-                      {reservedSolar}W
+                      {(reservedSolar / 1000).toFixed(1)} kW
                     </div>
                   </div>
                   <div className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-3 text-center min-h-[70px] flex flex-col justify-center">
@@ -315,14 +315,6 @@ const ElectricityEstimateForm: React.FC = () => {
                     <div className="text-base font-bold text-white font-electrolize">
                       ${updatedBillAmount}
                     </div>
-                  </div>
-                </div>
-
-                {/* Panels Required */}
-                <div className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-3 text-center min-h-[70px] flex flex-col justify-center">
-                  <div className="text-sm text-gray-400 mb-1">Solar Panels Required</div>
-                  <div className="text-xl font-bold text-white font-electrolize">
-                    {estimatedPanels} kW
                   </div>
                 </div>
               </motion.div>
