@@ -306,7 +306,7 @@ const ElectricityEstimateForm: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-3 text-center min-h-[70px] flex flex-col justify-center">
                     <div className="text-xs text-gray-400 mb-1">Monthly Credits</div>
-                    <div className="text-base font-bold text-green-400 font-electrolize">
+                    <div className="text-base font-bold text-white font-electrolize">
                       ${monthlyCredits}
                     </div>
                   </div>
