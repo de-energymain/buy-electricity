@@ -527,7 +527,7 @@ export default function PaymentMethodPage() {
       const purchaseData = {
         walletAddress: publicKey?.toString() || "",
         paymentMethod,
-        tokenAmount: orderDetails.cost,
+        tokenAmount: tokenAmount,
         panelsPurchased: orderDetails.panels,
         cost: orderDetails.cost,
         capacity: orderDetails.capacity,

@@ -119,6 +119,7 @@ const TransactionsPage: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         const purchases = result.data || [];
+        //console.log("Purchase data", purchases);
 
         let earliestDate: number | null = null;
 
@@ -163,11 +164,13 @@ const TransactionsPage: React.FC = () => {
       );
       if (response.ok) {
         const userData = await response.json();
+        //console.log("UserData in Transactions page", userData);
         const panelData: UserPanelData = {
           generatedYield: userData.user.panelDetails.generatedYield || 0,
           purchasedPanels: userData.user.panelDetails.purchasedPanels || 0,
           purchasedCost: userData.user.panelDetails.purchasedCost || 0,
         };
+        //console.log("Panel Data:", panelData);
         setUserPanelData(panelData);
         return panelData;
       }
