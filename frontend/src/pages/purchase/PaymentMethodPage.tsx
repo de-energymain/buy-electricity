@@ -321,7 +321,7 @@ export default function PaymentMethodPage() {
     if (params.has("panels")) {
       const panelsValue = params.get("panels");
       newOrderDetails.panels = panelsValue
-        ? parseInt(panelsValue)
+        ? parseFloat(panelsValue)
         : orderDetails.panels;
     }
 
