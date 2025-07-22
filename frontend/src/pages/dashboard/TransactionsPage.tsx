@@ -85,7 +85,26 @@ const TransactionsPage: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const rowsPerPage = 10;
+
+  //Exchange rates to USD
+  const [dollarToSOLRate, setDollarToSOLRate] = useState<number>(20);
   const DOLLAR_TO_NRG_RATE = 0.03;
+
+  useEffect(() => {
+    const fetchSOLExchangeRate = async () => {
+      try {
+        const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
+        const data = await response.json();
+        //console.log("fetchSOLResponse", data.solana.usd);
+        setDollarToSOLRate(data.solana.usd);
+      }
+     catch (error) {
+      console.error("Error fetching USD/SOL exchange Rate. Default Rate will be used.")
+    } 
+  };
+  fetchSOLExchangeRate();
+  }, []);
+
 
   // Solana connection
   const connection = new Connection("https://api.devnet.solana.com");
@@ -493,7 +512,7 @@ const TransactionsPage: React.FC = () => {
 
     const totalSpent = purchases.reduce((sum, tx) => {
       const rate =
-        tx.token === "SOL" ? 20 : tx.token === "USDC" ? 1 : DOLLAR_TO_NRG_RATE;
+        tx.token === "SOL" ? dollarToSOLRate : tx.token === "USDC" ? 1 : DOLLAR_TO_NRG_RATE;
       return sum + tx.amount * rate;
     }, 0);
 
