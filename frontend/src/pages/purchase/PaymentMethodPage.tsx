@@ -321,21 +321,21 @@ export default function PaymentMethodPage() {
     if (params.has("panels")) {
       const panelsValue = params.get("panels");
       newOrderDetails.panels = panelsValue
-        ? parseFloat(panelsValue)
+        ? Math.abs(parseFloat(panelsValue))
         : orderDetails.panels;
     }
 
     if (params.has("capacity")) {
       const capacityValue = params.get("capacity");
       newOrderDetails.capacity = capacityValue
-        ? parseFloat(capacityValue)
+        ? Math.abs(parseFloat(capacityValue))
         : orderDetails.capacity;
     }
 
     if (params.has("cost")) {
       const costValue = params.get("cost");
       newOrderDetails.cost = costValue
-        ? parseFloat(costValue)
+        ? Math.abs(parseFloat(costValue))
         : orderDetails.cost;
     }
 
