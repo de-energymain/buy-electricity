@@ -321,7 +321,7 @@ export default function PaymentMethodPage() {
     if (params.has("panels")) {
       const panelsValue = params.get("panels");
       newOrderDetails.panels = panelsValue
-        ? parseInt(panelsValue)
+        ? parseFloat(panelsValue)
         : orderDetails.panels;
     }
 
@@ -527,7 +527,7 @@ export default function PaymentMethodPage() {
       const purchaseData = {
         walletAddress: publicKey?.toString() || "",
         paymentMethod,
-        tokenAmount: orderDetails.cost,
+        tokenAmount: tokenAmount,
         panelsPurchased: orderDetails.panels,
         cost: orderDetails.cost,
         capacity: orderDetails.capacity,
