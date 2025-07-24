@@ -98,6 +98,7 @@ const PanelSelectionPage: React.FC = () => {
         // Load total available capacity from dynamic API
         const availableCapacity =
           await PlantAllocationService.getTotalAvailableCapacity();
+        //console.log("🌞 Available Capacity:", availableCapacity);
         setTotalAvailableCapacity(availableCapacity);
         setIsCapacityLoaded(true);
       } catch (error) {
@@ -395,9 +396,9 @@ const PanelSelectionPage: React.FC = () => {
                     {totalAvailableCapacity > 0 && (
                       <div className="text-xs text-gray-400">
                         Available:{" "}
-                        {Math.floor(
+                        {
                           totalAvailableCapacity / PANEL_CAPACITY_KWP
-                        )}{" "}
+                        }{" "}
                         panels
                       </div>
                     )}
