@@ -120,7 +120,6 @@ interface PurchaseData {
 interface UserPanelData {
   purchasedPanels: number;
   purchasedCost: number;
-  generatedYield: number;
 }
 
 function DashboardPage() {
@@ -144,8 +143,8 @@ function DashboardPage() {
   const [userPanelData, setUserPanelData] = useState<UserPanelData>({
     purchasedPanels: 0,
     purchasedCost: 0,
-    generatedYield: 0,
   });
+  const [userGeneratedYield, setUserGeneratedYield] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [lastYieldUpdate, setLastYieldUpdate] = useState<Date | null>(null);
 
@@ -629,7 +628,7 @@ function DashboardPage() {
   // Calculate real-time stats from actual data (SAME LOGIC AS PANELS PAGE)
   const calculateRealStats = () => {
     const totalPanels = userPanelData.purchasedPanels;
-    const dollarYield = userPanelData.generatedYield;
+    const dollarYield = userGeneratedYield;
     const nrgEarnings = dollarYield / DOLLAR_TO_NRG_RATE;
 
     // Calculate total energy generated based on purchase history (SAME AS PANELS PAGE)
@@ -710,7 +709,7 @@ function DashboardPage() {
       // Calculate earnings for this farm
       const farmCost = purchases.reduce((sum, p) => sum + p.cost, 0);
       const farmYield =
-        (farmCost / userPanelData.purchasedCost) * userPanelData.generatedYield;
+        (farmCost / userPanelData.purchasedCost) * userGeneratedYield;
       const farmNRGEarnings = farmYield / DOLLAR_TO_NRG_RATE;
 
       return {
@@ -786,7 +785,6 @@ function DashboardPage() {
       return {
         purchasedPanels: 0,
         purchasedCost: 0,
-        generatedYield: 0,
       };
     }
 
@@ -796,11 +794,30 @@ function DashboardPage() {
         acc.purchasedCost += purchase.cost || 0;
         return acc;
       },
-      { purchasedPanels: 0, purchasedCost: 0, generatedYield: 0 }
+      { purchasedPanels: 0, purchasedCost: 0 }
     );
 
     console.log("📊 Calculated user panel data from purchases:", totals);
     return totals;
+  };
+
+  const fetchUserYield = async (walletId : string) => {
+    try{
+      const response = await fetch(
+        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletId}`
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        //console.log("📨 fetchUserYield Result:", result);
+        if (result.success && result.user?.panelDetails?.generatedYield) {
+          console.log("📥 User's Generated Yield:", result.user.panelDetails.generatedYield);
+          setUserGeneratedYield(result.user.panelDetails.generatedYield);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching yield", error);
+    }
   };
 
   // Update authentication status when wallet connection changes
@@ -876,6 +893,7 @@ function DashboardPage() {
     };
 
     fetchInitialData();
+    fetchUserYield(walletID);
   }, [walletID]);
 
   // Fetch plant and inverter data after purchase data is loaded
@@ -1063,7 +1081,7 @@ function DashboardPage() {
               <CardBody className="p-4">
                 <div className="mb-4">
                   <h3 className="text-lg font-medium text-white">
-                    {stats.totalPanels} Panels
+                    {stats.totalPanels.toFixed(1)} Panels
                   </h3>
                   <p className="text-sm text-gray-400">
                     {nodes.length > 0

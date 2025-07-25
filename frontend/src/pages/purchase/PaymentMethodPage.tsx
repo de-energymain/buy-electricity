@@ -25,6 +25,7 @@ import {
   getAccount,
   createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
+import { updateUserPanels } from "../../services/userApi";
 
 // Import email service
 import { sendPurchaseNotificationEmail } from "../../services/emailApi";
@@ -523,6 +524,19 @@ export default function PaymentMethodPage() {
     signature: string
   ) => {
     try {
+      //Update User API
+      try{
+        await updateUserPanels(
+          publicKey?.toString() || web3AuthWalletInfo?.publicKey || "",
+          {
+            panelsPurchased: orderDetails.panels,
+            cost: orderDetails.cost
+          }
+        );
+      } catch (error) {
+        console.error("Failed to update user panel details", error);
+      }
+
       // Create purchase record for backend API
       const purchaseData = {
         walletAddress: publicKey?.toString() || "",
