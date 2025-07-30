@@ -36,7 +36,9 @@ export const updateUserPanels = async (
       throw new Error(`Failed to update user panels: ${response.statusText}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    console.log("User API updated:", result);
+    return result;
   } catch (error) {
     console.error("Error updating user panels:", error);
     throw error;

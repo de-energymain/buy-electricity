@@ -188,9 +188,10 @@ export class PlantAllocationService {
         if (remainingPanels <= 0) break;
 
         // Calculate how many panels we can allocate from this plant
-        const maxPanelsFromCapacity = Math.floor(
+        /*const maxPanelsFromCapacity = Math.floor(
           plant.availableCapacity / PANEL_CAPACITY_KWP
-        );
+        );*/
+        const maxPanelsFromCapacity = plant.availableCapacity / PANEL_CAPACITY_KWP; 
         const panelsToAllocate = Math.min(
           remainingPanels,
           maxPanelsFromCapacity
@@ -214,7 +215,7 @@ export class PlantAllocationService {
         }
       }
 
-      if (remainingPanels > 0) {
+      if (remainingPanels > 0.0000001) { //making it float-safe
         return {
           success: false,
           allocations: [],
