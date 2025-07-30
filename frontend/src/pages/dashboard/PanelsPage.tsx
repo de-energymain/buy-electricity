@@ -1137,9 +1137,10 @@ const PanelsPage: React.FC = () => {
     }
   };
 
-  // Check if we should show loading state
+  // Check if we should show loading state - show loader until we have finished loading user data
   const isLoading =
-    loadingState.plant || loadingState.inverter || loadingState.user;
+    loadingState.plant || loadingState.inverter || loadingState.user || 
+    (walletID && userAllocations.length === 0 && errorState.user === null);
 
   // Check if we have critical errors (plant data is most important)
   const hasCriticalError = errorState.plant !== null;

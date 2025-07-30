@@ -125,6 +125,7 @@ export default function PaymentMethodPage() {
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("SOL");
   const [tokenAmount, setTokenAmount] = useState(0.05);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [lastTransactionTime, setLastTransactionTime] = useState<number>(0);
   const [lockMinutes, setLockMinutes] = useState(13);
   const [lockSeconds, setLockSeconds] = useState(22);
   const [walletBalance, setWalletBalance] = useState<number>(0);
@@ -137,7 +138,7 @@ export default function PaymentMethodPage() {
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({
     sol: 20,
     usdc: 1,
-    nrg: 0.1, // $0.1 per NRG token (placeholder rate)
+    nrg: 0.03, // $0.03 per NRG token
   });
   const [isLoadingRates, setIsLoadingRates] = useState(true);
 
@@ -214,7 +215,7 @@ export default function PaymentMethodPage() {
         setExchangeRates({
           sol: data.solana.usd,
           usdc: data["usd-coin"].usd,
-          nrg: 0.1, // Placeholder rate for NRG - can be updated with real API later
+          nrg: 0.03, // Updated rate for NRG
         });
       } catch (error) {
         console.error("Error fetching exchange rates:", error);
@@ -607,7 +608,20 @@ export default function PaymentMethodPage() {
 
   // Enhanced payment processing with validation and security checks
   const handleProceedToPayment = async () => {
+    // Prevent rapid duplicate transactions (5 second cooldown)
+    const currentTime = Date.now();
+    if (currentTime - lastTransactionTime < 5000) {
+      showToast(
+        "Please Wait",
+        "Please wait a moment before submitting another transaction",
+        "warning",
+        3000
+      );
+      return;
+    }
+    
     setIsProcessingPayment(true);
+    setLastTransactionTime(currentTime);
     const processingId = toastKey;
     showToast(
       "Processing Payment",
@@ -1046,14 +1060,46 @@ export default function PaymentMethodPage() {
             )
           );
 
-          const { blockhash } = await connection.getLatestBlockhash();
+          // Get fresh blockhash for transaction uniqueness
+          const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
           tx.recentBlockhash = blockhash;
           tx.feePayer = publicKey;
+          
+          // Sign and send transaction with retry logic
           const signedTx = await signTransaction(tx);
-          const signature = await connection.sendRawTransaction(
-            signedTx.serialize()
-          );
-          await connection.confirmTransaction(signature, "confirmed");
+          
+          // Use sendTransaction with skipPreflight to avoid simulation issues
+          let signature;
+          try {
+            signature = await connection.sendRawTransaction(
+              signedTx.serialize(),
+              {
+                skipPreflight: true,
+                maxRetries: 3
+              }
+            );
+          } catch (error: any) {
+            // Handle specific "already processed" error
+            if (error.message && error.message.includes("already been processed")) {
+              throw new Error("Transaction was already processed. If you don't see the payment reflected, please wait a moment and refresh the page.");
+            }
+            // Handle other simulation/send errors
+            if (error.message && error.message.includes("Simulation failed")) {
+              throw new Error("Transaction simulation failed. Please try again with a fresh transaction.");
+            }
+            throw error;
+          }
+          
+          // Wait for confirmation with timeout
+          const confirmation = await connection.confirmTransaction({
+            signature,
+            blockhash,
+            lastValidBlockHeight
+          }, "confirmed");
+          
+          if (confirmation.value.err) {
+            throw new Error(`Transaction failed: ${confirmation.value.err}`);
+          }
 
           // Complete transaction
           setToasts((prev) => prev.filter((t) => t.id !== processingId));

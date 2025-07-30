@@ -122,12 +122,12 @@ const PanelSelectionPage: React.FC = () => {
     const dollarAmount = parseFloat(queryParams.get("dollarAmount") || "0");
     const kwh = parseFloat(queryParams.get("kwh") || "0");
 
-    // Reset allocation state when processing URL params
-    setIsAllocationLoaded(false);
-
+    // Only reset allocation state if a param is actually changing the panel quantity
+    let didSet = false;
     if (panels > 0) {
       console.log("📊 Setting panels from URL:", panels);
       setPanelQuantity(panels);
+      didSet = true;
     } else if (dollarAmount > 0) {
       // Calculate panels from dollar amount if no panel count is provided
       // Convert dollars to kWh first
@@ -139,6 +139,7 @@ const PanelSelectionPage: React.FC = () => {
       const requiredPanels = Math.ceil(requiredCapacity);
       console.log("💰 Calculated panels from dollarAmount:", requiredPanels);
       setPanelQuantity(requiredPanels);
+      didSet = true;
     } else if (kwh > 0) {
       // Fallback for old kwh-based calculation
       const effectiveMonthlyProduction = 3.75 * 0.8 * 30; // = 90
@@ -146,10 +147,11 @@ const PanelSelectionPage: React.FC = () => {
       const requiredPanels = Math.ceil(requiredCapacity);
       console.log("⚡ Calculated panels from kWh:", requiredPanels);
       setPanelQuantity(requiredPanels);
+      didSet = true;
     } else {
       console.log("📋 Using default panel quantity:", panelQuantity);
     }
-    
+    if (didSet) setIsAllocationLoaded(false);
     // Mark URL params as processed
     console.log("✅ URL params processed");
     setIsUrlParamsProcessed(true);
@@ -169,7 +171,7 @@ const PanelSelectionPage: React.FC = () => {
       try {
         setIsAllocationLoaded(false);
         const result = await PlantAllocationService.allocatePanels(
-          panelQuantity
+          Math.round(panelQuantity * 10) / 10
         );
 
         console.log("📊 Allocation result:", result);
@@ -195,7 +197,7 @@ const PanelSelectionPage: React.FC = () => {
           // Calculate daily NRG yield
           const dailyEnergy = result.totalCapacity * avgSolarIndex;
           const pricePerKWh = 0.15;
-          const dailyNRGYield = (dailyEnergy * pricePerKWh) / 0.1;
+          const dailyNRGYield = (dailyEnergy * pricePerKWh) / 0.03;
 
           const newCalculations = {
             totalCapacity: result.totalCapacity,
@@ -208,7 +210,7 @@ const PanelSelectionPage: React.FC = () => {
           console.log("💰 Final calculations:", newCalculations);
           setCalculations(newCalculations);
         } else {
-          // Reset calculations if allocation fails
+          // Only reset calculations if allocation fails, not on every load
           setCalculations({
             totalCapacity: 0,
             dailyOutput: 0,
@@ -254,7 +256,7 @@ const PanelSelectionPage: React.FC = () => {
   }, [isCapacityLoaded, isAllocationLoaded, isUrlParamsProcessed]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
+    const value = parseFloat(e.target.value);
     if (!isNaN(value) && value >= 1) {
       // Convert kWp capacity to panel count for maximum allowed
       const maxPanelsFromCapacity = Math.floor(
@@ -262,15 +264,17 @@ const PanelSelectionPage: React.FC = () => {
       );
       const maxAllowed = maxPanelsFromCapacity; // Enforce strict capacity limits
       const finalValue = Math.min(value, maxAllowed);
+      // Round to one decimal place to prevent floating-point precision issues
+      const roundedValue = Math.round(finalValue * 10) / 10;
       setIsAllocationLoaded(false); // Reset allocation state when quantity changes
-      setPanelQuantity(finalValue);
+      setPanelQuantity(roundedValue);
     }
   };
 
   const handleDecreaseQuantity = (): void => {
     if (panelQuantity > 1) {
       setIsAllocationLoaded(false); // Reset allocation state when quantity changes
-      setPanelQuantity((prev) => prev - 1);
+      setPanelQuantity((prev) => Math.round((prev - 0.1) * 10) / 10);
     }
   };
 
@@ -282,7 +286,7 @@ const PanelSelectionPage: React.FC = () => {
 
     if (panelQuantity < maxPanelsFromCapacity) {
       setIsAllocationLoaded(false); // Reset allocation state when quantity changes
-      setPanelQuantity((prev) => prev + 1);
+      setPanelQuantity((prev) => Math.round((prev + 0.1) * 10) / 10);
     }
   };
 
@@ -302,7 +306,7 @@ const PanelSelectionPage: React.FC = () => {
 
     // Create query params with plant allocation data
     const queryParams = new URLSearchParams({
-      panels: panelQuantity.toString(),
+      panels: (Math.round(panelQuantity * 10) / 10).toString(),
       capacity: calculations.totalCapacity.toString(),
       output: calculations.dailyOutput.toString(),
       cost: calculations.totalCost.toString(),
@@ -325,6 +329,17 @@ const PanelSelectionPage: React.FC = () => {
     e.preventDefault();
     navigate(isAuthenticated ? "/dashboard" : "/login");
   };
+
+  if (isDataLoading) {
+    return (
+      <FormContainer>
+        <div className="flex flex-col items-center justify-center min-h-[80vh]">
+          <Spinner color="danger" size="lg" />
+          <p className="text-gray-300 text-sm mt-4">Loading panel data and calculations...</p>
+        </div>
+      </FormContainer>
+    );
+  }
 
   return (
     <FormContainer>
@@ -377,13 +392,7 @@ const PanelSelectionPage: React.FC = () => {
           </div>
 
           <CardBody className="bg-[#2F2F2F] p-6">
-            {isDataLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                <Spinner color="danger" size="lg" />
-                <p className="text-gray-300 text-sm">Loading panel data and calculations...</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
+            <div className="space-y-6">
               <div>
                 <h3 className="text-xl font-bold text-white mb-4 font-electrolize">
                   Panel Details
@@ -414,11 +423,12 @@ const PanelSelectionPage: React.FC = () => {
                     </Button>
                     <input
                       type="number"
+                      step="0.1"
                       min={1}
                       max={Math.floor(
                         totalAvailableCapacity / PANEL_CAPACITY_KWP
                       )}
-                      value={panelQuantity}
+                      value={Math.round(panelQuantity * 10) / 10}
                       onChange={handleQuantityChange}
                       className="mx-4 h-10 w-16 text-center text-xl font-bold text-white bg-[#1e1e1e] border border-gray-700 rounded [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                     />
@@ -506,7 +516,7 @@ const PanelSelectionPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <div className="text-gray-300">
-                      Total Panel Cost ({panelQuantity} panels)
+                      Total Panel Cost ({(Math.round(panelQuantity * 10) / 10).toFixed(1)} panels)
                     </div>
                     <div className="text-white font-medium">
                       ${calculations.totalCost.toFixed(2)}
@@ -552,7 +562,6 @@ const PanelSelectionPage: React.FC = () => {
                 </Button>
               </motion.div>
             </div>
-            )}
           </CardBody>
         </Card>
       </div>
