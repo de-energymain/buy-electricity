@@ -665,7 +665,7 @@ function DashboardPage() {
     return {
       energyGenerated: Math.round(totalEnergyGenerated), // NOW USES SAME CALCULATION AS PANELS PAGE
       energyChange: Math.round(Math.random() * 15 + 5), // Simulated growth
-      nrgEarnings: Math.round(nrgEarnings),
+      nrgEarnings: parseFloat(nrgEarnings.toFixed(2)),
       earningsChange: Math.round(earningsChange),
       carbonImpact: parseFloat(carbonImpact.toFixed(2)),
       carbonChange: Math.round(Math.random() * 20 + 5), // Simulated growth
@@ -720,7 +720,7 @@ function DashboardPage() {
         panels: totalPanels,
         capacity: parseFloat(totalCapacity.toFixed(2)),
         dailyOutput: Math.round(totalPanels * 2.8),
-        earnings: Math.round(farmNRGEarnings),
+        earnings: parseFloat(farmNRGEarnings.toFixed(2)),
       };
     });
   };

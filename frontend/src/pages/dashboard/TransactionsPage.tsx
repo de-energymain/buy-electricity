@@ -183,13 +183,13 @@ const TransactionsPage: React.FC = () => {
       );
       if (response.ok) {
         const userData = await response.json();
-        //console.log("UserData in Transactions page", userData);
+        console.log("UserData in Transactions page", userData);
         const panelData: UserPanelData = {
           generatedYield: userData.user.panelDetails.generatedYield || 0,
           purchasedPanels: userData.user.panelDetails.purchasedPanels || 0,
           purchasedCost: userData.user.panelDetails.purchasedCost || 0,
         };
-        //console.log("Panel Data:", panelData);
+        console.log("Panel Data:", panelData);
         setUserPanelData(panelData);
         return panelData;
       }
@@ -518,7 +518,9 @@ const TransactionsPage: React.FC = () => {
 
     // Include yield from both blockchain transactions AND user panel data
     const blockchainYield = yields.reduce((sum, tx) => sum + tx.amount, 0);
-    const totalYield = blockchainYield;
+    // Convert user's generated yield from USD to NRG for display
+    const userYieldInNRG = userPanelData.generatedYield / DOLLAR_TO_NRG_RATE;
+    const totalYield = blockchainYield + userYieldInNRG;
 
     const totalTransfers = transfers.reduce((sum, tx) => sum + tx.amount, 0);
 
