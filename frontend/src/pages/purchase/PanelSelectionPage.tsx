@@ -170,11 +170,21 @@ const PanelSelectionPage: React.FC = () => {
     const calculateAllocation = async () => {
       try {
         setIsAllocationLoaded(false);
+        console.log("🔄 Starting allocation calculation for panels:", Math.round(panelQuantity * 10) / 10);
+        
         const result = await PlantAllocationService.allocatePanels(
           Math.round(panelQuantity * 10) / 10
         );
 
         console.log("📊 Allocation result:", result);
+        console.log("📊 Allocation details:", {
+          success: result.success,
+          allocationsCount: result.allocations.length,
+          totalCapacity: result.totalCapacity,
+          totalCost: result.totalCost,
+          error: result.error,
+          allocations: result.allocations
+        });
 
         setAllocationPreview({
           allocations: result.allocations,
@@ -184,7 +194,7 @@ const PanelSelectionPage: React.FC = () => {
         });
 
         // Update calculations for display
-        if (result.success) {
+        if (result.success && result.allocations.length > 0) {
           // Calculate estimated daily output (kWh) - using average solar index
           const avgSolarIndex = 4.8; // Average across plants
           const dailyOutput = parseFloat(
@@ -257,7 +267,7 @@ const PanelSelectionPage: React.FC = () => {
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= 1) {
+    if (!isNaN(value) && value >= 0.1) {
       // Convert kWp capacity to panel count for maximum allowed
       const maxPanelsFromCapacity = Math.floor(
         totalAvailableCapacity / PANEL_CAPACITY_KWP
@@ -272,7 +282,7 @@ const PanelSelectionPage: React.FC = () => {
   };
 
   const handleDecreaseQuantity = (): void => {
-    if (panelQuantity > 1) {
+    if (panelQuantity > 0.1) {
       setIsAllocationLoaded(false); // Reset allocation state when quantity changes
       setPanelQuantity((prev) => Math.round((prev - 0.1) * 10) / 10);
     }
@@ -291,16 +301,30 @@ const PanelSelectionPage: React.FC = () => {
   };
 
   const handleContinueToPayment = (): void => {
+    console.log("🔄 Continue to payment clicked");
+    console.log("📊 Current allocation preview:", allocationPreview);
+    
     // Check if allocation is valid
     if (allocationPreview.error) {
-      console.error("Cannot proceed: Insufficient capacity");
+      console.error("❌ Cannot proceed: Allocation error:", allocationPreview.error);
       return;
     }
 
-    if (allocationPreview.allocations.length === 0) {
-      console.error("Cannot proceed: No allocations available");
+    if (!allocationPreview.allocations || allocationPreview.allocations.length === 0) {
+      console.error("❌ Cannot proceed: No allocations available");
+      console.error("📊 Debug info:", {
+        allocations: allocationPreview.allocations,
+        totalCapacity: allocationPreview.totalCapacity,
+        totalCost: allocationPreview.totalCost,
+        panelQuantity,
+        calculations
+      });
+      // Maybe show an error to the user here
+      alert("Error: No plant allocations available. Please try selecting a different quantity or try again.");
       return;
     }
+
+    console.log("✅ Proceeding with allocations:", allocationPreview.allocations);
 
     setIsLoading(true);
 
@@ -312,6 +336,9 @@ const PanelSelectionPage: React.FC = () => {
       cost: calculations.totalCost.toString(),
       allocations: JSON.stringify(allocationPreview.allocations),
     });
+    
+    console.log("🔗 Navigation query params:", queryParams.toString());
+    console.log("🔗 Stringified allocations:", JSON.stringify(allocationPreview.allocations));
 
     // Add a slight delay for better UX
     setTimeout(() => {
@@ -416,15 +443,16 @@ const PanelSelectionPage: React.FC = () => {
                     <Button
                       isIconOnly
                       size="sm"
-                      className="bg-[#222] text-white rounded-full"
+                      className="bg-[#222] text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
                       onPress={handleDecreaseQuantity}
+                      disabled={panelQuantity <= 0.1}
                     >
                       <Minus size={16} />
                     </Button>
                     <input
                       type="number"
                       step="0.1"
-                      min={1}
+                      min={0.1}
                       max={Math.floor(
                         totalAvailableCapacity / PANEL_CAPACITY_KWP
                       )}

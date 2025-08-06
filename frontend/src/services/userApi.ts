@@ -1,7 +1,9 @@
+import { API_CONFIG } from '../config/api';
+
 export const getUserData = async (walletID: string) => {
   try {
     const response = await fetch(
-      `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}`
+      `${API_CONFIG.BASE_URL}/api/users/${walletID}`
     );
 
     if (!response.ok) {
@@ -24,7 +26,7 @@ export const updateUserPanels = async (
 ) => {
   try {
     const response = await fetch(
-      `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}/panels`,
+      `${API_CONFIG.BASE_URL}/api/users/${walletID}/panels`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

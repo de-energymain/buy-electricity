@@ -7,6 +7,7 @@ import {
   cardClasses,
   secondaryButtonClasses,
 } from "../../shared/styles";
+import { API_CONFIG } from "../../config/api";
 
 // Import wallet connection libraries
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -130,9 +131,18 @@ export default function PaymentMethodPage() {
   const [lockSeconds, setLockSeconds] = useState(22);
   const [walletBalance, setWalletBalance] = useState<number>(0);
 
-  const walletAddress = publicKey
-    ? publicKey.toBase58()
-    : web3AuthWalletInfo?.publicKey ?? "Unknown";
+  // Get consistent wallet address across all scenarios
+  const getWalletAddress = (): string => {
+    if (publicKey) {
+      return publicKey.toBase58();
+    }
+    if (web3AuthWalletInfo?.publicKey) {
+      return web3AuthWalletInfo.publicKey;
+    }
+    return "";
+  };
+
+  const walletAddress = getWalletAddress();
 
   //Exchange rates
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({
@@ -345,12 +355,20 @@ export default function PaymentMethodPage() {
     if (params.has("allocations")) {
       try {
         const allocationsStr = params.get("allocations");
+        console.log("🔗 PaymentMethodPage: Raw allocations string:", allocationsStr);
+        
         const allocations = allocationsStr ? JSON.parse(allocationsStr) : [];
+        console.log("🔗 PaymentMethodPage: Parsed allocations:", allocations);
+        console.log("🔗 PaymentMethodPage: Allocations count:", allocations.length);
+        
         newOrderDetails.plantAllocations = allocations;
       } catch (error) {
-        console.error("Error parsing plant allocations:", error);
+        console.error("❌ PaymentMethodPage: Error parsing plant allocations:", error);
         newOrderDetails.plantAllocations = [];
       }
+    } else {
+      console.warn("⚠️ PaymentMethodPage: No allocations parameter found in URL");
+      newOrderDetails.plantAllocations = [];
     }
 
     if (params.has("output")) {
@@ -517,79 +535,131 @@ export default function PaymentMethodPage() {
     }
   };
 
-  // Save purchase and reserve capacity
+  // Save purchase and reserve capacity - IMPROVED VERSION
   const savePurchase = async (
     paymentMethod: PaymentMethod,
     _tokenAmount: number,
     _walletName: string,
     signature: string
   ) => {
+    const currentWalletAddress = getWalletAddress();
+    
+    console.log('🔄 Starting purchase save process', {
+      signature,
+      walletAddress: currentWalletAddress,
+      paymentMethod,
+      tokenAmount: _tokenAmount,
+      panels: orderDetails.panels,
+      allocationsCount: orderDetails.plantAllocations.length
+    });
+
+    // Input validation
+    if (!currentWalletAddress) {
+      console.error('❌ Invalid wallet address');
+      return false;
+    }
+
+    if (!signature) {
+      console.error('❌ Missing transaction signature');
+      return false;
+    }
+
+    if (!orderDetails.plantAllocations || orderDetails.plantAllocations.length === 0) {
+      console.error('❌ Missing plant allocations:', orderDetails);
+      return false;
+    }
+
     try {
-      //Update User API
-      try{
-        await updateUserPanels(
-          publicKey?.toString() || web3AuthWalletInfo?.publicKey || "",
-          {
-            panelsPurchased: orderDetails.panels,
-            cost: orderDetails.cost
-          }
-        );
+      // 1. Update User API (non-critical, can fail without blocking)
+      try {
+        console.log('📝 Updating user panel details...');
+        await updateUserPanels(currentWalletAddress, {
+          panelsPurchased: orderDetails.panels,
+          cost: orderDetails.cost
+        });
+        console.log('✅ User panel details updated successfully');
       } catch (error) {
-        console.error("Failed to update user panel details", error);
+        console.warn('⚠️  Failed to update user panel details (non-critical)', error);
+        // Continue with purchase save even if this fails
       }
 
-      // Create purchase record for backend API
+      // 2. Create purchase record for backend API (CRITICAL)
       const purchaseData = {
-        walletAddress: publicKey?.toString() || "",
+        walletAddress: currentWalletAddress,
         paymentMethod,
-        tokenAmount: tokenAmount,
+        tokenAmount: tokenAmount, // Use the component state tokenAmount
         panelsPurchased: orderDetails.panels,
         cost: orderDetails.cost,
         capacity: orderDetails.capacity,
         output: orderDetails.output,
         transactionHash: signature,
-        farmName: "Multi-Plant Purchase", // Will be overridden by plantAllocations
-        location: "Multiple Locations", // Will be overridden by plantAllocations
-        plantAllocations: orderDetails.plantAllocations, // This is the key field
-      };
-
-      // Call backend API to save purchase
-      const response = await fetch(
-        "https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(purchaseData),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to save purchase: ${errorData.message}`);
-      }
-
-      const savedPurchase = await response.json();
-      console.log("✅ Purchase saved successfully:", savedPurchase);
-
-      // Also save to local storage for backwards compatibility
-      const purchase: Purchase = {
-        id: Date.now().toString(),
-        walletAddress: publicKey?.toString() || "",
-        totalPanels: orderDetails.panels,
-        totalCapacity: orderDetails.capacity,
-        totalCost: orderDetails.cost,
-        paymentMethod,
-        signature,
-        timestamp: new Date().toISOString(),
+        farmName: "Multi-Plant Purchase",
+        location: "Multiple Locations",
         plantAllocations: orderDetails.plantAllocations,
       };
-      PlantAllocationService.savePurchase(purchase);
+
+      console.log('💾 Saving purchase to database...', {
+        signature,
+        allocationsCount: purchaseData.plantAllocations.length,
+        totalCost: purchaseData.cost
+      });
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/purchases`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(purchaseData),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Database save failed:', {
+          status: response.status,
+          responseData,
+          purchaseData
+        });
+        
+        // Handle specific error cases
+        if (response.status === 409) {
+          console.warn('⚠️  Transaction already exists in database');
+          // This might be okay - the purchase is already saved
+          return true;
+        }
+        
+        throw new Error(`Database save failed: ${responseData.message || response.statusText}`);
+      }
+
+      console.log("✅ Purchase saved successfully to database:", responseData);
+
+      // 3. Save to local storage for backup (non-critical)
+      try {
+        const purchase: Purchase = {
+          id: Date.now().toString(),
+          walletAddress: currentWalletAddress,
+          totalPanels: orderDetails.panels,
+          totalCapacity: orderDetails.capacity,
+          totalCost: orderDetails.cost,
+          paymentMethod,
+          signature,
+          timestamp: new Date().toISOString(),
+          plantAllocations: orderDetails.plantAllocations,
+        };
+        PlantAllocationService.savePurchase(purchase);
+        console.log('📱 Purchase saved to local storage as backup');
+      } catch (error) {
+        console.warn('⚠️  Failed to save to local storage (non-critical)', error);
+      }
 
       return true;
     } catch (error) {
-      console.error("Failed to save purchase:", error);
+      console.error("💥 Failed to save purchase:", {
+        error,
+        signature,
+        walletAddress: currentWalletAddress,
+        orderDetails
+      });
       return false;
     }
   };

@@ -5,6 +5,7 @@ import { Bell, User, Loader2 } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
 import { getUserData } from "../../services/userApi";
 import { inputClasses } from "../../shared/styles";
+import { API_CONFIG } from "../../config/api";
 
 interface NotificationPreferences {
   email: boolean;
@@ -107,7 +108,7 @@ const SettingsPage: React.FC = () => {
 
     try {
       const response = await fetch(
-        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}/notifications`
+        `${API_CONFIG.BASE_URL}/api/users/${walletID}/notifications`
       );
       if (response.ok) {
         const result = await response.json();
@@ -136,7 +137,7 @@ const SettingsPage: React.FC = () => {
 
     try {
       const response = await fetch(
-        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}`,
+        `${API_CONFIG.BASE_URL}/api/users/${walletID}`,
         {
           method: "PUT",
           headers: {
@@ -232,7 +233,7 @@ const SettingsPage: React.FC = () => {
       setIsUpdatingNotifications(true);
       try {
         const response = await fetch(
-          `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}/notifications`,
+          `${API_CONFIG.BASE_URL}/api/users/${walletID}/notifications`,
           {
             method: "PUT",
             headers: {

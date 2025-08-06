@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import LineChart from "../../components/LineChart";
 import DashboardTemplate from "../../components/DashboardTemplate";
+import { API_CONFIG } from "../../config/api";
 import {
   PlantAllocationService,
   Plant,
@@ -704,7 +705,7 @@ const PanelsPage: React.FC = () => {
 
     try {
       const userResponse = await fetch(
-        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletID}`
+        `${API_CONFIG.BASE_URL}/api/users/${walletID}`
       );
       if (userResponse.ok) {
         const userData = await userResponse.json();
@@ -736,7 +737,7 @@ const PanelsPage: React.FC = () => {
 
     try {
       const purchaseResponse = await fetch(
-        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletID}`
+        `${API_CONFIG.BASE_URL}/api/purchases/wallet/${walletID}`
       );
       if (purchaseResponse.ok) {
         const purchaseResult = await purchaseResponse.json();

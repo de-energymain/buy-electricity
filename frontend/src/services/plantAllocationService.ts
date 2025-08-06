@@ -92,19 +92,50 @@ export class PlantAllocationService {
   // Get all plants with current capacity status
   static async getPlants(): Promise<Plant[]> {
     try {
+      console.log("🌱 getPlants: Starting plant data retrieval");
+      
       const plantIds = getAllPlantIds();
+      console.log("🌱 getPlants: Plant IDs:", plantIds);
+      
+      if (plantIds.length === 0) {
+        console.warn("⚠️ getPlants: No plant IDs available");
+        return [];
+      }
+      
       const plantDataList = await Promise.all(
-        plantIds.map((id) => fetchPlantDataCached(id))
+        plantIds.map(async (id) => {
+          console.log("🌱 getPlants: Fetching data for plant:", id);
+          try {
+            return await fetchPlantDataCached(id);
+          } catch (error) {
+            console.error(`❌ getPlants: Failed to fetch plant ${id}:`, error);
+            return null;
+          }
+        })
       );
+
+      // Filter out null results
+      const validPlantData = plantDataList.filter(data => data !== null);
+      console.log("🌱 getPlants: Valid plant data count:", validPlantData.length);
 
       // Convert plant data to plants with current allocations
       const plants = await Promise.all(
-        plantDataList.map((plantData) => convertPlantDataToPlant(plantData))
+        validPlantData.map(async (plantData) => {
+          try {
+            return await convertPlantDataToPlant(plantData);
+          } catch (error) {
+            console.error(`❌ getPlants: Failed to convert plant data:`, error);
+            return null;
+          }
+        })
       );
 
-      return plants;
+      const validPlants = plants.filter(plant => plant !== null) as Plant[];
+      console.log("🌱 getPlants: Final plants count:", validPlants.length);
+      
+      return validPlants;
     } catch (error) {
-      console.error("Error getting plants:", error);
+      console.error("💥 getPlants: Critical error:", error);
       return [];
     }
   }
@@ -150,7 +181,17 @@ export class PlantAllocationService {
     error?: string;
   }> {
     try {
+      console.log("🌱 PlantAllocationService: Starting allocation for panels:", requestedPanels);
+      
       const plants = await this.getPlants();
+      console.log("🌱 PlantAllocationService: Retrieved plants:", plants.length);
+      console.log("🌱 PlantAllocationService: Plants details:", plants.map(p => ({
+        id: p.id,
+        name: p.name,
+        availableCapacity: p.availableCapacity,
+        status: p.status
+      })));
+      
       const allocations: PlantAllocation[] = [];
       let remainingPanels = requestedPanels;
       let totalCapacity = 0;
@@ -162,17 +203,24 @@ export class PlantAllocationService {
           ? total + plant.availableCapacity
           : total;
       }, 0);
+      
+      console.log("🌱 PlantAllocationService: Total available capacity:", totalAvailableCapacity);
+      
       const requiredCapacity = requestedPanels * PANEL_CAPACITY_KWP;
+      
+      console.log("🌱 PlantAllocationService: Required capacity:", requiredCapacity, "kWp");
 
       if (requiredCapacity > totalAvailableCapacity) {
+        const error = `Insufficient capacity. Required: ${requiredCapacity.toFixed(
+          2
+        )} kWp, Available: ${totalAvailableCapacity.toFixed(2)} kWp`;
+        console.error("❌ PlantAllocationService:", error);
         return {
           success: false,
           allocations: [],
           totalCapacity: 0,
           totalCost: 0,
-          error: `Insufficient capacity. Required: ${requiredCapacity.toFixed(
-            2
-          )} kWp, Available: ${totalAvailableCapacity.toFixed(2)} kWp`,
+          error,
         };
       }
 

@@ -7,6 +7,7 @@ import {
   getPurchasesByPlant,
   getPlantCapacityAllocations,
   getUserPlantAllocations,
+  recoverFailedTransaction,
 } from "../controllers/purchaseController";
 
 const router = express.Router();
@@ -15,6 +16,9 @@ router.post("/purchases", createPurchase);
 router.get("/purchases", getAllPurchases);
 router.delete("/purchases/:transactionHash", deletePurchase);
 router.get("/purchases/wallet/:walletAddress", getPurchasesByWallet);
+
+// Recovery endpoint for failed transactions
+router.post("/purchases/recovery", recoverFailedTransaction);
 
 // New multi-plant routes
 router.get("/purchases/plant/:plantId", getPurchasesByPlant);

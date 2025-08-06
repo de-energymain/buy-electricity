@@ -30,6 +30,7 @@ import {
   ParsedTransactionWithMeta,
 } from "@solana/web3.js";
 import DashboardTemplate from "../../components/DashboardTemplate";
+import { API_CONFIG } from "../../config/api";
 
 // Simplified transaction interface focusing on the 3 types we care about
 interface Transaction {
@@ -133,7 +134,7 @@ const TransactionsPage: React.FC = () => {
   ): Promise<{ transactions: Transaction[]; earliestDate: number | null }> => {
     try {
       const response = await fetch(
-        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletAddress}`
+        `${API_CONFIG.BASE_URL}/api/purchases/wallet/${walletAddress}`
       );
       if (response.ok) {
         const result = await response.json();
@@ -179,7 +180,7 @@ const TransactionsPage: React.FC = () => {
   ): Promise<UserPanelData | null> => {
     try {
       const response = await fetch(
-        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletAddress}`
+        `${API_CONFIG.BASE_URL}/api/users/${walletAddress}`
       );
       if (response.ok) {
         const userData = await response.json();

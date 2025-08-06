@@ -16,6 +16,7 @@ import {
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ArrowRight, Zap, DollarSign } from "lucide-react";
 import DashboardTemplate from "../../components/DashboardTemplate";
+import { API_CONFIG } from "../../config/api";
 
 interface NodeData {
   id: string;
@@ -729,7 +730,7 @@ function DashboardPage() {
   const updateUserInDatabase = async (userData: UserData) => {
     try {
       const response = await fetch(
-        "https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users",
+        `${API_CONFIG.BASE_URL}/api/users`,
         {
           method: "POST",
           headers: {
@@ -755,7 +756,7 @@ function DashboardPage() {
     try {
       console.log("🔍 Fetching purchase data for wallet:", walletAddress);
       const response = await fetch(
-        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/purchases/wallet/${walletAddress}`
+        `${API_CONFIG.BASE_URL}/api/purchases/wallet/${walletAddress}`
       );
       if (response.ok) {
         const result = await response.json();
@@ -804,7 +805,7 @@ function DashboardPage() {
   const fetchUserYield = async (walletId : string) => {
     try{
       const response = await fetch(
-        `https://kccgg4g8skcsc4cs8owoowc0.13.201.240.77.sslip.io/api/users/${walletId}`
+        `${API_CONFIG.BASE_URL}/api/users/${walletId}`
       );
 
       if (response.ok) {
