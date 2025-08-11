@@ -361,13 +361,19 @@ export default function PaymentMethodPage() {
         console.log("🔗 PaymentMethodPage: Parsed allocations:", allocations);
         console.log("🔗 PaymentMethodPage: Allocations count:", allocations.length);
         
+        if (allocations.length === 0) {
+          console.warn("⚠️ PaymentMethodPage: Parsed allocations array is empty!");
+        }
+        
         newOrderDetails.plantAllocations = allocations;
       } catch (error) {
         console.error("❌ PaymentMethodPage: Error parsing plant allocations:", error);
+        console.error("❌ PaymentMethodPage: Raw allocations string was:", params.get("allocations"));
         newOrderDetails.plantAllocations = [];
       }
     } else {
       console.warn("⚠️ PaymentMethodPage: No allocations parameter found in URL");
+      console.warn("⚠️ PaymentMethodPage: Available URL params:", Array.from(params.entries()));
       newOrderDetails.plantAllocations = [];
     }
 
@@ -565,8 +571,29 @@ export default function PaymentMethodPage() {
     }
 
     if (!orderDetails.plantAllocations || orderDetails.plantAllocations.length === 0) {
-      console.error('❌ Missing plant allocations:', orderDetails);
-      return false;
+      console.warn('⚠️ Missing plant allocations, attempting to generate them...');
+      
+      // Import PlantAllocationService dynamically
+      try {
+        const { PlantAllocationService } = await import('../../services/plantAllocationService');
+        const allocationResult = await PlantAllocationService.allocatePanels(orderDetails.panels);
+        
+        if (allocationResult.success && allocationResult.allocations.length > 0) {
+          console.log('✅ Generated allocations successfully:', allocationResult.allocations);
+          orderDetails.plantAllocations = allocationResult.allocations;
+          // Update the order details state too
+          setOrderDetails(prev => ({
+            ...prev,
+            plantAllocations: allocationResult.allocations
+          }));
+        } else {
+          console.error('❌ Failed to generate plant allocations:', allocationResult.error);
+          return false;
+        }
+      } catch (error) {
+        console.error('❌ Error generating plant allocations:', error);
+        return false;
+      }
     }
 
     try {
@@ -1197,7 +1224,15 @@ export default function PaymentMethodPage() {
           );
 
           if (!purchaseSaved) {
-            throw new Error("Purchase could not be saved. Please try again.");
+            // Show specific error message to user for NRG payment
+            setToasts((prev) => prev.filter((t) => t.id !== processingId));
+            showToast(
+              "Purchase Save Failed",
+              "NRG payment processed but couldn't save to database. Your payment is secure. Please contact support with your transaction signature: " + signature.slice(0, 8) + "...",
+              "error",
+              10000
+            );
+            throw new Error("Purchase could not be saved. Payment processed successfully. Transaction: " + signature);
           }
 
           // Get farm and location data for navigation
